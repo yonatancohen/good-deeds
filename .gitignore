@@ -31,6 +31,8 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.local
 .env*.local
 
 # typescript
@@ -39,3 +41,15 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Claude Code local settings (contains command allowlists, may include secrets)
+.claude/settings.local.json
+
+# Vercel
+.vercel
+
+# EAS
+.easignore
+*.aab
+*.apk
+*.ipa
