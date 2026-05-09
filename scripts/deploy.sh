@@ -25,6 +25,9 @@ if [ "${1:-}" = "--prod" ] || [ "${1:-}" = "-p" ]; then
 fi
 
 # ---------- preflight ----------
+# Prefer the project's local CLIs (installed by deploy-setup.sh as devDeps),
+# fall back to global if a user installed them that way.
+export PATH="$PROJECT_ROOT/node_modules/.bin:$PATH"
 command -v vercel >/dev/null 2>&1 || die "vercel CLI not installed. Run: npm run deploy:setup"
 command -v eas    >/dev/null 2>&1 || die "eas CLI not installed. Run: npm run deploy:setup"
 [ -f "$PROJECT_ROOT/.vercel/project.json" ] || die "Vercel project not linked. Run: npm run deploy:setup"

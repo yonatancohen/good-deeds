@@ -44,22 +44,39 @@ set +a
 [ -n "${EXPO_PUBLIC_SUPABASE_ANON_KEY:-}" ] || die "EXPO_PUBLIC_SUPABASE_ANON_KEY is empty in .env"
 ok ".env looks good"
 
-# ---------- install CLIs ----------
-say "Installing/updating Vercel CLI + EAS CLI (global)…"
-npm i -g vercel @expo/eas-cli >/dev/null
-ok "vercel $(vercel --version) / eas $(eas --version)"
-
 # ---------- node deps ----------
+# .npmrc in this project already pins us to the public registry, but pass it
+# explicitly too so this works even if someone overrides it.
+PUBLIC_REGISTRY="https://registry.npmjs.org/"
 if [ ! -d "$PROJECT_ROOT/node_modules" ]; then
   say "Installing project dependencies…"
-  npm install --legacy-peer-deps
+  npm install --legacy-peer-deps --registry="$PUBLIC_REGISTRY"
   ok "node_modules installed"
 fi
 
-# Make sure expo-updates is wired up natively (no-op if already)
-say "Ensuring expo-updates is configured…"
-npx expo install expo-updates >/dev/null 2>&1 || true
-ok "expo-updates ready"
+# ---------- install CLIs as project devDependencies ----------
+# Local install (not global) — keeps the global npm config untouched and
+# everything stays version-pinned in package.json. Binaries land in
+# node_modules/.bin and `npm run …` scripts pick them up automatically.
+# Public registry is forced because the work-computer JFrog mirror may not
+# have these packages (which is what bit us originally).
+#
+# Inherits min-release-age=21 from the project .npmrc.
+say "Installing Vercel + EAS CLI as project devDependencies…"
+npm install --save-dev --legacy-peer-deps \
+  --registry="$PUBLIC_REGISTRY" \
+  vercel eas-cli >/dev/null
+VERCEL_BIN="$PROJECT_ROOT/node_modules/.bin/vercel"
+EAS_BIN="$PROJECT_ROOT/node_modules/.bin/eas"
+ok "vercel $("$VERCEL_BIN" --version) / eas $("$EAS_BIN" --version)"
+# Make these visible to the rest of this script (and any subshell)
+export PATH="$PROJECT_ROOT/node_modules/.bin:$PATH"
+
+# expo-updates is already declared in package.json. We deliberately do NOT
+# run `npx expo install expo-updates` here because that command auto-rewrites
+# the package.json to whatever Expo's SDK currently recommends, which often
+# breaks the project's 21-day min-release-age policy.
+ok "expo-updates ready (declared in package.json)"
 
 # ---------- Vercel ----------
 say "Logging into Vercel (browser will open if needed)…"
