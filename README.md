@@ -94,26 +94,24 @@ If your phone isn't on the same Wi-Fi (or Wi-Fi blocks peer connections), use tu
 npm start -- --tunnel
 ```
 
-### Sharing a preview with someone (no install of Xcode/Android Studio needed for them)
+### Sharing a build with someone (no Xcode/Android Studio needed for them)
 
-After running:
-
-```bash
-./node_modules/.bin/eas update --branch preview --message "first build for review"
-```
-
-EAS prints a permalink for that specific update. The stable URL for **always-latest preview** of this project is:
+After running an `eas update`, the CLI prints an **Update group ID**. The shareable URL is built from `projectId` + `group`:
 
 ```
-https://expo.dev/preview/update?channel-name=preview&runtime-version=exposdk:54.0.0&appScheme=exp+good-deeds&projectId=90100a76-6a01-41ca-8407-c39174787046
+https://expo.dev/preview/update?projectId=<PROJECT_ID>&group=<UPDATE_GROUP_ID>
 ```
 
-Send that to the reviewer. They:
-1. Install Expo Go on their phone.
-2. Open the URL on their phone (tap the link in WhatsApp, email, etc.).
-3. The link opens Expo Go and loads the latest `preview` update.
+For **this** project, `projectId` is always `90100a76-6a01-41ca-8407-c39174787046`. Only the `group` changes per update.
 
-Project page on Expo (lists every update, lets the reviewer pick a specific one): **https://expo.dev/accounts/yonico86/projects/good-deeds**
+The reviewer:
+1. Installs Expo Go on their phone (App Store / Play Store).
+2. Taps the URL on their phone (WhatsApp, email, etc.).
+3. Expo Go opens and loads that specific update.
+
+> **Important caveat:** that URL points to **one specific update**, not "latest of this branch". Each new `eas update` has a new `group` ID, so you'd resend the URL. To get auto-updating "latest" behavior, see "Real installable APK" below.
+
+Project page on Expo (lists every update; the reviewer can browse and pick one): **https://expo.dev/accounts/yonico86/projects/good-deeds**
 
 ### `eas update` parameters explained
 
@@ -200,16 +198,23 @@ EAS builds it on their servers (free tier: 30 builds / month). When done, EAS pr
 
 For internal distribution this goes through TestFlight (requires the $99/yr Apple account). Without it, iPhone users have to use Expo Go.
 
-### Sharing URL summary (copy-pasteable)
+### Sharing URL summary
+
+The URL format for opening any update in Expo Go:
+
+```
+https://expo.dev/preview/update?projectId=90100a76-6a01-41ca-8407-c39174787046&group=<UPDATE_GROUP_ID>
+```
+
+Replace `<UPDATE_GROUP_ID>` with the **Update group ID** printed by `eas update`. Each push to a branch produces a new group ID — copy from the `eas update` output and resend the URL when you ship a new version.
 
 | What | URL |
 |---|---|
-| **Preview app on Expo Go** (latest preview build) | `https://expo.dev/preview/update?channel-name=preview&runtime-version=exposdk:54.0.0&appScheme=exp+good-deeds&projectId=90100a76-6a01-41ca-8407-c39174787046` |
-| **Production app on Expo Go** (latest prod build) | `https://expo.dev/preview/update?channel-name=production&runtime-version=exposdk:54.0.0&appScheme=exp+good-deeds&projectId=90100a76-6a01-41ca-8407-c39174787046` |
-| **Expo project dashboard** (all updates, channels, branches) | https://expo.dev/accounts/yonico86/projects/good-deeds |
+| **Expo project dashboard** (browse all updates, branches, channels) | https://expo.dev/accounts/yonico86/projects/good-deeds |
+| **Branches dashboard** (latest update per branch) | https://expo.dev/accounts/yonico86/projects/good-deeds/branches |
 | **Web app** | (your Vercel deploy URL) |
 
-> Replace `exposdk:54.0.0` with the actual SDK version if you ever upgrade Expo SDK. Find the current version with `node -p "require('./node_modules/expo/package.json').version"`.
+For **continuous "always-latest"** behavior on phones (no resending URLs), build a development client APK once with `eas build --platform android --profile preview` and give teachers that. They install it, and every `eas update --branch production` reaches them automatically.
 
 ## Environment variables
 
