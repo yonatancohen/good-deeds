@@ -471,7 +471,6 @@ function GiveCreditModal({ visible, student, classId, onClose, onSuccess }: Give
 
   return (
     <AdminSheet visible={visible} onClose={handleClose}>
-      <View style={AS.sheetHandle} />
       <Text style={S.modalTitle} accessibilityRole="header">{t('giveCredit')}</Text>
       {student && (
         <Text style={S.modalSub}>עבור {student.first_name} {student.last_name}</Text>
@@ -658,7 +657,6 @@ function HistoryModal({ visible, student, events, currentUserId, onClose, onDele
 
   return (
     <AdminSheet visible={visible} onClose={onClose}>
-      <View style={AS.sheetHandle} />
       <View style={S.historyHeader}>
         <Text style={S.historyTitle} accessibilityRole="header">{t('creditHistory')}</Text>
         {student && (
@@ -822,11 +820,12 @@ export default function TeacherScreen() {
     );
   }
 
-  // Load active gifts once
+  // Reload active gifts every time the redemption sheet opens
   React.useEffect(() => {
+    if (!redemptionVisible) return;
     supabase.from('gifts').select('*').eq('is_active', true).is('deleted_at', null).order('name')
       .then(({ data }) => setGifts(data ?? []));
-  }, []);
+  }, [redemptionVisible]);
 
   // Load redemptions when sheet opens
   React.useEffect(() => {
@@ -1292,7 +1291,6 @@ export default function TeacherScreen() {
 
       {/* ── Add / Edit Student Sheet ── */}
       <AdminSheet visible={studentSheetVisible} onClose={() => setStudentSheetVisible(false)}>
-        <View style={AS.sheetHandle} />
         <Text style={AS.sheetTitle} accessibilityRole="header">
           {editingStudent ? `ערוך תלמיד — ${editingStudent.first_name} ${editingStudent.last_name}` : 'הוסף תלמיד'}
         </Text>
@@ -1347,7 +1345,6 @@ export default function TeacherScreen() {
 
       {/* ── Class Picker Sheet ── */}
       <AdminSheet visible={classPickerVisible} onClose={() => setClassPickerVisible(false)}>
-        <View style={AS.sheetHandle} />
         <Text style={AS.sheetTitle} accessibilityRole="header">בחר כיתה</Text>
 
         <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
@@ -1435,7 +1432,6 @@ export default function TeacherScreen() {
 
       {/* ── Redemption Sheet ── */}
       <AdminSheet visible={redemptionVisible} onClose={() => setRedemptionVisible(false)}>
-        <View style={AS.sheetHandle} />
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <Text style={[AS.sheetTitle, { marginBottom: 0 }]} accessibilityRole="header">רישומי מתנות</Text>
           {selectedClass && (
