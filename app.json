@@ -38,6 +38,13 @@
     ],
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "90100a76-6a01-41ca-8407-c39174787046"
+      }
+    },
+    "owner": "yonico86"
   }
 }
