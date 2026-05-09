@@ -16,7 +16,7 @@ Single Expo codebase → web + iOS + Android. Backend on Supabase.
 
 | | |
 |---|---|
-| Web app | (see Vercel dashboard → Deployments) |
+| Web app | https://good-omega-three.vercel.app |
 | Vercel project | https://vercel.com/yonatancohens-projects/good |
 | EAS project | https://expo.dev/accounts/yonico86/projects/good-deeds |
 | GitHub repo | https://github.com/yonatancohen/good-deeds |
@@ -198,23 +198,28 @@ EAS builds it on their servers (free tier: 30 builds / month). When done, EAS pr
 
 For internal distribution this goes through TestFlight (requires the $99/yr Apple account). Without it, iPhone users have to use Expo Go.
 
-### Sharing URL summary
+### Sharing URLs (always-latest, no manual updates)
 
-The URL format for opening any update in Expo Go:
+A serverless function at `/install` looks up the most recent EAS update on a channel and redirects to it. **One stable URL — works forever, even after every `eas update`.**
 
-```
-https://expo.dev/preview/update?projectId=90100a76-6a01-41ca-8407-c39174787046&group=<UPDATE_GROUP_ID>
-```
-
-Replace `<UPDATE_GROUP_ID>` with the **Update group ID** printed by `eas update`. Each push to a branch produces a new group ID — copy from the `eas update` output and resend the URL when you ship a new version.
-
-| What | URL |
+| What | URL to share |
 |---|---|
-| **Expo project dashboard** (browse all updates, branches, channels) | https://expo.dev/accounts/yonico86/projects/good-deeds |
-| **Branches dashboard** (latest update per branch) | https://expo.dev/accounts/yonico86/projects/good-deeds/branches |
-| **Web app** | (your Vercel deploy URL) |
+| **Production app on Expo Go** (always latest) | https://good-omega-three.vercel.app/install |
+| **Preview app on Expo Go** (always latest) | https://good-omega-three.vercel.app/install?channel=preview |
+| **Web app** | https://good-omega-three.vercel.app |
+| **Expo project dashboard** | https://expo.dev/accounts/yonico86/projects/good-deeds |
 
-For **continuous "always-latest"** behavior on phones (no resending URLs), build a development client APK once with `eas build --platform android --profile preview` and give teachers that. They install it, and every `eas update --branch production` reaches them automatically.
+How it works: when someone taps the URL, Vercel calls Expo's GraphQL API ("what's the latest update on the production channel?"), gets back a group ID, and 302-redirects to `https://expo.dev/preview/update?projectId=…&group=<latest>`. The phone then opens Expo Go with the freshest bundle. Result is cached for 60s to avoid hammering the API.
+
+Required Vercel env var: `EXPO_TOKEN` (Expo personal access token, same one you'd use for `eas login` automation). Set in Vercel → Project → Settings → Environment Variables.
+
+If you'd rather have a specific frozen update URL (e.g. for a press demo, or to roll out a specific version), grab the **Update group ID** from `eas update` output and use:
+
+```
+https://expo.dev/preview/update?projectId=90100a76-6a01-41ca-8407-c39174787046&group=<GROUP_ID>
+```
+
+For **standalone-app** behavior (real `.apk` on Android, no Expo Go needed), run `./node_modules/.bin/eas build --platform android --profile preview` and share the resulting `.apk` URL.
 
 ## Environment variables
 

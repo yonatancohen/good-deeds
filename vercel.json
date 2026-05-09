@@ -8,7 +8,15 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/((?!_expo|assets|favicon.ico|.*\\..*).*)",
+      "source": "/install",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/install/:channel",
+      "destination": "/api/app?channel=:channel"
+    },
+    {
+      "source": "/((?!_expo|assets|favicon.ico|api|install|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
