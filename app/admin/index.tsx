@@ -114,7 +114,7 @@ export default function AdminHomeScreen() {
               </Text>
             </View>
             <Image
-              source={require('@/assets/ponpon.png')}
+              source={require('@/assets/icon.png')}
               style={S.avatar}
               accessibilityLabel="תמונת פרופיל"
             />

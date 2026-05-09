@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   
@@ -23,33 +24,6 @@ import { useBreakpoint } from '@/lib/responsive';
 
 type Tab = 'password' | 'magic';
 
-// ── Pom-pom logo icon ──────────────────────────────────────────────────────────
-function PomPomIcon() {
-  const balls = [
-    { color: '#C4B5FD', x: -11, y: -11 },
-    { color: '#93C5FD', x:  11, y: -11 },
-    { color: '#6EE7B7', x:  11, y:  11 },
-    { color: '#FDE68A', x: -11, y:  11 },
-    { color: '#F9A8D4', x:   0, y: -14 },
-    { color: '#fff',    x:   0, y:   0 },   // center highlight
-  ];
-  return (
-    <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-      {balls.map((b, i) => (
-        <View key={i} style={{
-          position: 'absolute',
-          width: i === 5 ? 22 : 18,
-          height: i === 5 ? 22 : 18,
-          borderRadius: 999,
-          backgroundColor: b.color,
-          left: 22 - (i === 5 ? 11 : 9) + b.x,
-          top:  22 - (i === 5 ? 11 : 9) + b.y,
-          opacity: i === 5 ? 0.35 : 0.88,
-        }} />
-      ))}
-    </View>
-  );
-}
 
 const S = StyleSheet.create({
   screen:   { flex: 1, backgroundColor: Colors.bg },
@@ -216,7 +190,12 @@ export default function LoginScreen() {
             {/* ── Logo ── */}
             <View style={S.logoWrap}>
               <View style={S.logoBox}>
-                <PomPomIcon />
+                <Image
+                  source={require('@/assets/icon.png')}
+                  style={{ width: 56, height: 56 }}
+                  resizeMode="contain"
+                  accessibilityLabel="לוגו תפסתי אותך בטוב"
+                />
               </View>
               <Text style={S.appName} accessibilityRole="header">
                 תפסתי אותך בטוב
