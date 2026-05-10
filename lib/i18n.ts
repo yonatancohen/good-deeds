@@ -50,7 +50,7 @@ const he = {
     gifts: 'פרסים',
     deeds: 'מעשים טובים',
     settings: 'הגדרות',
-    redemptions: 'מתנות',
+    redemptions: 'מתנות לכיתה',
     inviteTeacher: 'הזמן מורה',
     schoolName: 'שם בית הספר',
     schoolNameHint: 'שם שיוצג בכל הדפים',

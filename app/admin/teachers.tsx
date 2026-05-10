@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { confirmAction } from '@/lib/confirm';
+import { safeBack } from '@/lib/navigation';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import type { Tables } from '@/types/supabase';
@@ -358,7 +359,7 @@ export default function AdminTeachersScreen() {
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
         <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
             <ChevronRight size={20} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={AS.headerTitle} accessibilityRole="header">{t('teachers')}</Text>
@@ -450,11 +451,11 @@ export default function AdminTeachersScreen() {
           </Text>
         </View>
 
-        <Text style={AS.fieldLabel}>שם המורה *</Text>
+        <Text style={AS.fieldLabel}>שם המורה</Text>
         <Text style={AS.fieldHint}>שם התצוגה במערכת</Text>
         <TextInput value={inviteName} onChangeText={setInviteName} placeholder="דנה כהן" placeholderTextColor="#94a3b8" textAlign="right" style={AS.input} accessibilityLabel="שם המורה" />
 
-        <Text style={AS.fieldLabel}>{t('email')} *</Text>
+        <Text style={AS.fieldLabel}>{t('email')}</Text>
         <Text style={AS.fieldHint}>יישלח קישור לכתובת זו</Text>
         <TextInput value={inviteEmail} onChangeText={setInviteEmail} placeholder="dana@school.com" placeholderTextColor="#94a3b8" keyboardType="email-address" autoCapitalize="none" textAlign="right" style={[AS.input, { marginBottom: 20 }]} accessibilityLabel="אימייל" />
 

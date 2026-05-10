@@ -15,12 +15,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Mail, Lock } from 'lucide-react-native';
+import { Mail, Lock, ArrowRight } from 'lucide-react-native';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { Button, Colors, FormField, Card } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
+import { shadow } from '@/lib/shadow';
 
 type Tab = 'password' | 'magic';
 
@@ -28,19 +29,21 @@ type Tab = 'password' | 'magic';
 const S = StyleSheet.create({
   screen:   { flex: 1, backgroundColor: Colors.bg },
   kvoid:    { flex: 1 },
-  content:  { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 },
+  content:  { paddingHorizontal: 24, paddingTop: 72, paddingBottom: 48 },
 
   // ── Logo ──
-  logoWrap: { alignItems: 'center', marginBottom: 40 },
-  logoBox: {
-    width: 80, height: 80,
-    backgroundColor: Colors.primary,
-    borderRadius: 24,
+  logoWrap: { alignItems: 'center', marginBottom: 36 },
+  logoShadow: {
+    width: 106, height: 106,
+    borderRadius: 53,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35, shadowRadius: 16, elevation: 12,
+    marginBottom: 18,
+    ...shadow(Colors.primary, 10, 20, 0.45, 14),
+  },
+  logoBox: {
+    width: 100, height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
   },
   appName: {
     fontSize: 28, fontWeight: '700', color: Colors.text,
@@ -65,8 +68,7 @@ const S = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: '#fff',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08, shadowRadius: 3, elevation: 2,
+    ...shadow('#000', 1, 3, 0.08, 2),
   },
   tabText: { fontSize: 14, fontWeight: '600', fontFamily: 'Nunito_600SemiBold' } as any,
   tabTextActive:   { color: '#4338ca' },
@@ -78,9 +80,15 @@ const S = StyleSheet.create({
     backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
     borderRadius: 12, paddingHorizontal: 16, minHeight: 52,
   },
+  inputRowFocused: {
+    borderColor: Colors.primary,
+    borderWidth: 2,
+    backgroundColor: '#faf9ff',
+  },
   inputText: {
     flex: 1, color: Colors.text, fontSize: 16, paddingVertical: 14,
     fontFamily: 'Nunito_400Regular',
+    ...(Platform.OS === 'web' ? { outlineWidth: 0, outlineStyle: 'none' } as any : {}),
   } as any,
 
   // ── Forgot / link button ──
@@ -88,6 +96,16 @@ const S = StyleSheet.create({
   forgotText: {
     color: '#6366f1', fontSize: 14, fontWeight: '600',
     fontFamily: 'Nunito_600SemiBold', writingDirection: 'rtl',
+  } as any,
+
+  // ── Back to public ──
+  backToPublic: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
+    gap: 6, marginTop: 24, minHeight: 44,
+  },
+  backToPublicText: {
+    color: '#94a3b8', fontSize: 14,
+    fontFamily: 'Nunito_400Regular', writingDirection: 'rtl',
   } as any,
 
   // ── Magic-sent confirmation ──
@@ -124,6 +142,7 @@ export default function LoginScreen() {
   const [password, setPassword]   = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // Redirect once authenticated
   useEffect(() => {
@@ -185,17 +204,19 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[S.content, isDesktop && { alignSelf: 'center', width: '100%', maxWidth: 440, paddingHorizontal: 32 }]}>
+          <View style={[S.content, isDesktop && { alignSelf: 'center', width: '100%', maxWidth: 440, paddingHorizontal: 32, paddingTop: 80 }]}>
 
             {/* ── Logo ── */}
             <View style={S.logoWrap}>
-              <View style={S.logoBox}>
-                <Image
-                  source={require('@/assets/icon.png')}
-                  style={{ width: 56, height: 56 }}
-                  resizeMode="contain"
-                  accessibilityLabel="לוגו תפסתי אותך בטוב"
-                />
+              <View style={S.logoShadow}>
+                <View style={S.logoBox}>
+                  <Image
+                    source={require('@/assets/icon.png')}
+                    style={{ width: 100, height: 100 }}
+                    resizeMode="cover"
+                    accessibilityLabel="לוגו תפסתי אותך בטוב"
+                  />
+                </View>
               </View>
               <Text style={S.appName} accessibilityRole="header">
                 תפסתי אותך בטוב
@@ -233,15 +254,13 @@ export default function LoginScreen() {
             </View>
 
             <Card style={{ padding: 20 }}>
-              {/* Fixed-height wrapper prevents card from shifting layout when switching tabs */}
-              <View style={{ minHeight: 290 }}>
 
               {/* ── Password tab ── */}
               {tab === 'password' && (
                 <View>
                   <FormField label={t('email')} hint="כתובת האימייל שרשומה בבית הספר" required>
-                    <View style={S.inputRow}>
-                      <Mail size={18} color={Colors.muted} style={{ marginLeft: 8 }} />
+                    <View style={[S.inputRow, focusedField === 'email-pw' && S.inputRowFocused]}>
+                      <Mail size={18} color={focusedField === 'email-pw' ? Colors.primary : Colors.muted} style={{ marginLeft: 8 }} />
                       <TextInput
                         value={email}
                         onChangeText={setEmail}
@@ -252,6 +271,8 @@ export default function LoginScreen() {
                         autoCorrect={false}
                         textAlign="right"
                         style={S.inputText}
+                        onFocus={() => setFocusedField('email-pw')}
+                        onBlur={() => setFocusedField(null)}
                         accessibilityLabel="שדה כתובת אימייל"
                         accessibilityHint="הזן את כתובת האימייל שלך"
                       />
@@ -259,8 +280,8 @@ export default function LoginScreen() {
                   </FormField>
 
                   <FormField label={t('password')} hint="הסיסמה שקיבלת מהמנהל בעת ההצטרפות" required>
-                    <View style={S.inputRow}>
-                      <Lock size={18} color={Colors.muted} style={{ marginLeft: 8 }} />
+                    <View style={[S.inputRow, focusedField === 'password' && S.inputRowFocused]}>
+                      <Lock size={18} color={focusedField === 'password' ? Colors.primary : Colors.muted} style={{ marginLeft: 8 }} />
                       <TextInput
                         value={password}
                         onChangeText={setPassword}
@@ -269,6 +290,8 @@ export default function LoginScreen() {
                         secureTextEntry
                         textAlign="right"
                         style={S.inputText}
+                        onFocus={() => setFocusedField('password')}
+                        onBlur={() => setFocusedField(null)}
                         accessibilityLabel="שדה סיסמה"
                         accessibilityHint="הזן את הסיסמה שלך"
                         onSubmitEditing={handlePasswordLogin}
@@ -323,8 +346,8 @@ export default function LoginScreen() {
                         hint="נשלח אליך קישור כניסה חד-פעמי — ללא צורך בסיסמה"
                         required
                       >
-                        <View style={S.inputRow}>
-                          <Mail size={18} color={Colors.muted} style={{ marginLeft: 8 }} />
+                        <View style={[S.inputRow, focusedField === 'email-magic' && S.inputRowFocused]}>
+                          <Mail size={18} color={focusedField === 'email-magic' ? Colors.primary : Colors.muted} style={{ marginLeft: 8 }} />
                           <TextInput
                             value={email}
                             onChangeText={setEmail}
@@ -335,6 +358,8 @@ export default function LoginScreen() {
                             autoCorrect={false}
                             textAlign="right"
                             style={S.inputText}
+                            onFocus={() => setFocusedField('email-magic')}
+                            onBlur={() => setFocusedField(null)}
                             accessibilityLabel="שדה כתובת אימייל לקישור כניסה"
                             accessibilityHint="הזן את האימייל שלך ונשלח לך קישור לכניסה"
                             onSubmitEditing={handleMagicLink}
@@ -352,8 +377,19 @@ export default function LoginScreen() {
                   )}
                 </View>
               )}
-              </View>
             </Card>
+
+            {/* ── Back to public page ── */}
+            <TouchableOpacity
+              onPress={() => router.replace('/')}
+              style={[S.backToPublic, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
+              accessibilityRole="link"
+              accessibilityLabel="חזרה לדף הציבורי"
+            >
+              <ArrowRight size={15} color="#94a3b8" />
+              <Text style={S.backToPublicText}>חזרה לדף ההצלחות</Text>
+            </TouchableOpacity>
+
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

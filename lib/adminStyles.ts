@@ -4,6 +4,7 @@
  */
 import { StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/components/ui';
+import { shadow } from '@/lib/shadow';
 import { useBreakpoint } from '@/lib/responsive';
 
 /**
@@ -68,8 +69,7 @@ export const AS = StyleSheet.create({
   row: {
     backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 16,
     marginBottom: 12,
-    shadowColor: '#64748b', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+    ...shadow('#64748b', 2, 8, 0.08, 3),
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
   },
   rowLeft: { flex: 1, marginLeft: 12 },

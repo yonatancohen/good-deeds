@@ -19,6 +19,7 @@ import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
 import { Skeleton, Colors } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
+import { shadow } from '@/lib/shadow';
 
 const webPtr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
 
@@ -157,17 +158,33 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
 function CardSkeleton() {
   return (
     <View style={S.card}>
-      <View style={[S.cardTop, { paddingVertical: 16 }]}>
-        <Skeleton width={80} height={22} />
-        <Skeleton width={60} height={18} />
+
+      {/* mirrors cardTop — row-reverse: name+grade on right, points on left */}
+      <View style={S.cardTop}>
+        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8, flex: 1 }}>
+          <Skeleton width={88} height={20} />
+          <Skeleton width={40} height={18} style={{ borderRadius: 6 }} />
+        </View>
+        <Skeleton width={52} height={15} />
       </View>
+
+      {/* mirrors cardProg — row-reverse: bar+row on right, jar on left */}
       <View style={S.cardProg}>
         <View style={{ flex: 1 }}>
           <Skeleton width="100%" height={8} rounded />
-          <Skeleton width={120} height={13} style={{ marginTop: 8, alignSelf: 'flex-end' }} />
+          <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 6 }}>
+            <Skeleton width={28} height={12} />
+            <Skeleton width={110} height={12} />
+          </View>
         </View>
-        <Skeleton width={34} height={51} rounded />
+        {/* mirrors PompomJar: lid + body + count */}
+        <View style={{ alignItems: 'center', gap: 2 }}>
+          <Skeleton width={26} height={5} style={{ borderRadius: 3 }} />
+          <Skeleton width={34} height={44} style={{ borderRadius: 6 }} />
+          <Skeleton width={18} height={11} />
+        </View>
       </View>
+
     </View>
   );
 }
@@ -216,31 +233,35 @@ export default function PublicScreen() {
         {/* ── Class cards list ── */}
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={[S.listContent, isDesktop && { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 16, padding: 20 }]}
+          contentContainerStyle={[S.listContent, isDesktop && { padding: 20 }]}
           showsVerticalScrollIndicator={false}
         >
-          {loading && <><CardSkeleton /><CardSkeleton /><CardSkeleton /></>}
+          <View style={isDesktop ? S.grid : undefined}>
 
-          {!loading && error && (
-            <View style={S.errorCard}>
-              <Text style={S.errorText}>{error}</Text>
-            </View>
-          )}
+            {loading && Array.from({ length: 6 }, (_, i) => (
+              <CardSkeleton key={i} />
+            ))}
 
-          {!loading && !error && data.length === 0 && (
-            <View style={S.empty}>
-              <View style={S.emptyIcon}>
-                <Star size={26} color={Colors.muted} />
+            {!loading && error && (
+              <View style={S.errorCard}>
+                <Text style={S.errorText}>{error}</Text>
               </View>
-              <Text style={S.emptyText}>{t('noClasses')}</Text>
-            </View>
-          )}
+            )}
 
-          {!loading && !error && data.map(item => (
-            <View key={item.class.id} style={isDesktop ? { width: '47%' } : { width: '100%' }}>
-              <ClassCard item={item} />
-            </View>
-          ))}
+            {!loading && !error && data.length === 0 && (
+              <View style={S.empty}>
+                <View style={S.emptyIcon}>
+                  <Star size={26} color={Colors.muted} />
+                </View>
+                <Text style={S.emptyText}>{t('noClasses')}</Text>
+              </View>
+            )}
+
+            {!loading && !error && data.map(item => (
+              <ClassCard key={item.class.id} item={item} />
+            ))}
+
+          </View>
         </ScrollView>
 
         {/* ── Staff login — fixed bottom ── */}
@@ -309,14 +330,18 @@ const S = StyleSheet.create({
   } as any,
 
   // List
-  listContent: { padding: 16, paddingBottom: 16 },
+  listContent: { padding: 16, paddingBottom: 32 },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: 16,
+  } as any,
 
   // Card
   card: {
     backgroundColor: '#fff', borderRadius: 16, borderWidth: 1,
     borderColor: '#F1F5F9', marginBottom: 12, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+    ...shadow('#000', 2, 8, 0.05, 2),
   },
   cardTop: {
     flexDirection: 'row-reverse', alignItems: 'center',

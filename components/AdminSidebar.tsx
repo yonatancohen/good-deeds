@@ -41,7 +41,7 @@ export default function AdminSidebar() {
     { label: 'כיתות',       route: '/admin/classes',     Icon: BookOpen    },
     { label: 'מורים',       route: '/admin/teachers',    Icon: Users       },
     { label: 'מעשים טובים', route: '/admin/deeds',       Icon: Heart       },
-    { label: 'מתנות',       route: '/admin/gifts',       Icon: Gift        },
+    { label: 'מתנות לכיתה', route: '/admin/gifts',       Icon: Gift        },
     { label: 'פדיונות',     route: '/admin/redemptions', Icon: ShoppingBag },
     { label: 'הגדרות',      route: '/admin/settings',    Icon: Settings    },
   ];

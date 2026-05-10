@@ -30,6 +30,7 @@ import {
   TextStyle,
   Platform,
 } from 'react-native';
+import { shadow } from '@/lib/shadow';
 
 // ── Colour constants ──────────────────────────────────────────────────────────
 export const Colors = {
@@ -78,11 +79,7 @@ const S = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#f1f5f9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadow('#000', 2, 8, 0.07, 3),
   },
 
   // ── Badge ─────────────────────────────────────────────────────────────────
@@ -476,7 +473,7 @@ export function FormField({ label, hint, required, children }: FormFieldProps) {
     <View style={S.formField}>
       <Text style={[S.formLabel, { writingDirection: 'rtl' }]}>
         {label}
-        {required && <Text style={S.formRequired}> *</Text>}
+        {/* required indicator removed — mandatory fields are self-evident from context */}
       </Text>
       {hint && (
         <Text style={[S.formHint, { writingDirection: 'rtl' }]}>{hint}</Text>

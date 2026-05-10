@@ -6,6 +6,7 @@
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/components/ui';
+import { shadow } from '@/lib/shadow';
 
 interface PrimarySwitchProps {
   value: boolean;
@@ -50,8 +51,7 @@ const S = StyleSheet.create({
   trackOff: { backgroundColor: '#e2e8f0' },
   thumb: {
     width: 22, height: 22, borderRadius: 11,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.18, shadowRadius: 2, elevation: 2,
+    ...shadow('#000', 1, 2, 0.18, 2),
   },
   thumbOn: {
     backgroundColor: Colors.primary,

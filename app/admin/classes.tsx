@@ -6,13 +6,14 @@ import {
 } from 'react-native';
 import { confirmAction } from '@/lib/confirm';
 import AdminSheet from '@/components/AdminSheet';
-import { Building2, Pencil, Trash2, Plus, ChevronRight, Layers } from 'lucide-react-native';
+import { Building2, Pencil, Trash2, Plus, ChevronRight, Layers, Upload } from 'lucide-react-native';
 import { Colors } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { safeBack } from '@/lib/navigation';
 import type { Tables } from '@/types/supabase';
 
 type ClassRow = Tables<'classes'>;
@@ -255,7 +256,7 @@ export default function AdminClassesScreen() {
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
         <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
             <ChevronRight size={20} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={AS.headerTitle} accessibilityRole="header">{t('classes')}</Text>
@@ -302,6 +303,9 @@ export default function AdminClassesScreen() {
                         </View>
                       </View>
                       <View style={AS.rowActions}>
+                        <TouchableOpacity onPress={() => router.push(`/teacher/upload?classId=${cls.id}` as any)} style={[AS.iconBtn, webPointer]} accessibilityRole="button" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
+                          <Upload size={16} color={Colors.primary} />
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={() => openEdit(cls)} style={[AS.iconBtn, webPointer]} accessibilityRole="button" accessibilityLabel={`ערוך ${cls.name}`}>
                           <Pencil size={16} color={Colors.muted} />
                         </TouchableOpacity>
@@ -411,12 +415,12 @@ export default function AdminClassesScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Grade letter */}
-              <Text style={AS.fieldLabel}>שכבה *</Text>
+              <Text style={AS.fieldLabel}>שכבה</Text>
               <Text style={AS.fieldHint}>בחר שכבת הגיל</Text>
               <PillGroup options={GRADES} value={selGrade} onSelect={setSelGrade} label="שכבה" />
 
               {/* Class number */}
-              <Text style={[AS.fieldLabel, { marginTop: 16 }]}>מספר כיתה *</Text>
+              <Text style={[AS.fieldLabel, { marginTop: 16 }]}>מספר כיתה</Text>
               <Text style={AS.fieldHint}>בחר מספר מקבילה</Text>
               <PillGroup options={NUMBERS} value={selNum} onSelect={setSelNum} label="מספר כיתה" />
 

@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { confirmAction } from '@/lib/confirm';
+import { safeBack } from '@/lib/navigation';
 import type { Tables } from '@/types/supabase';
 
 type Deed = Tables<'deeds'>;
@@ -100,9 +101,12 @@ export default function AdminDeedsScreen() {
   }
 
   async function handleToggleActive(deed: Deed) {
+    setDeeds(prev => prev.map(d => d.id === deed.id ? { ...d, is_active: !d.is_active } : d));
     const { error } = await supabase.from('deeds').update({ is_active: !deed.is_active }).eq('id', deed.id);
-    if (error) Alert.alert('שגיאה', error.message);
-    else loadDeeds();
+    if (error) {
+      setDeeds(prev => prev.map(d => d.id === deed.id ? { ...d, is_active: deed.is_active } : d));
+      Alert.alert('שגיאה', error.message);
+    }
   }
 
   async function handleDelete(deed: Deed) {
@@ -124,7 +128,7 @@ export default function AdminDeedsScreen() {
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
         <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
             <ChevronRight size={20} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={AS.headerTitle} accessibilityRole="header">{t('deeds')}</Text>
@@ -204,11 +208,11 @@ export default function AdminDeedsScreen() {
           {editingDeed ? `ערוך: ${editingDeed.name}` : t('addDeed')}
         </Text>
 
-        <Text style={AS.fieldLabel}>{t('deedName')} *</Text>
+        <Text style={AS.fieldLabel}>{t('deedName')}</Text>
         <Text style={AS.fieldHint}>{t('deedNameHint')}</Text>
         <TextInput value={name} onChangeText={setName} placeholder="עזרה לחבר" placeholderTextColor="#94a3b8" textAlign="right" style={AS.input} accessibilityLabel="שם המעשה" />
 
-        <Text style={AS.fieldLabel}>{t('deedAmount')} *</Text>
+        <Text style={AS.fieldLabel}>{t('deedAmount')}</Text>
         <Text style={AS.fieldHint}>{t('deedAmountHint')}</Text>
         <View style={S.amtPickerWrap}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {

@@ -34,6 +34,7 @@ import type { Tables } from '@/types/supabase';
 import moment from 'moment';
 import 'moment/locale/he';
 import { Colors, ProgressBar } from '@/components/ui';
+import { shadow } from '@/lib/shadow';
 
 moment.locale('he');
 
@@ -142,9 +143,8 @@ const S = StyleSheet.create({
   // ── Progress card ──
   progressCard: {
     marginHorizontal: 16, backgroundColor: '#fff',
-    borderRadius: 20, overflow: 'hidden', marginBottom: 16,
-    shadowColor: '#64748b', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10, shadowRadius: 12, elevation: 4,
+    borderRadius: 20, overflow: 'hidden', marginBottom: 24,
+    ...shadow('#64748b', 4, 12, 0.10, 4),
   },
   progressCardInner: {
     paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16,
@@ -165,7 +165,7 @@ const S = StyleSheet.create({
   } as any,
 
   // ── Students section ──
-  studentsWrap: { paddingHorizontal: 16 },
+  studentsWrap: { paddingHorizontal: 16, paddingTop: 8 },
   studentsHeaderRow: {
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
   },
@@ -198,8 +198,7 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12,
     marginBottom: 10,
-    shadowColor: '#64748b', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+    ...shadow('#64748b', 2, 8, 0.08, 3),
   },
   studentLeft: { flexDirection: 'row-reverse', alignItems: 'center', flex: 1 },
 
@@ -268,13 +267,11 @@ const S = StyleSheet.create({
     backgroundColor: '#F8FAFC', borderRadius: 14,
     borderWidth: 1.5, borderColor: '#E2E8F0',
     paddingHorizontal: 12, marginBottom: 12,
-    shadowColor: 'transparent', shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0, shadowRadius: 0, elevation: 0,
+    ...shadow('transparent', 0, 0, 0, 0),
   },
   searchWrapFocused: {
     backgroundColor: '#fff', borderColor: Colors.primary,
-    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15, shadowRadius: 6, elevation: 2,
+    ...shadow(Colors.primary, 0, 6, 0.15, 2),
   },
   searchInput: {
     flex: 1, height: 44, fontSize: 15, color: '#1e293b',
@@ -368,13 +365,13 @@ const S = StyleSheet.create({
 
   // ── History Modal ──
   historyHeader: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16,
+    alignItems: 'flex-end', marginBottom: 16,
   },
   historyTitle: {
-    fontSize: 17, fontWeight: '700', color: Colors.text, writingDirection: 'rtl',
+    fontSize: 18, fontWeight: '700', color: Colors.text, writingDirection: 'rtl', textAlign: 'right',
   } as any,
   historyStudentName: {
-    color: Colors.muted, fontSize: 14, writingDirection: 'rtl',
+    color: Colors.muted, fontSize: 15, writingDirection: 'rtl', textAlign: 'right', marginTop: 2,
   } as any,
   historyEmpty: {
     color: '#94a3b8', textAlign: 'center', paddingVertical: 32, writingDirection: 'rtl',
@@ -422,22 +419,12 @@ function GiveCreditModal({ visible, student, classId, onClose, onSuccess }: Give
   const [selectedDeedId, setSelectedDeedId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const deedScrollRef = React.useRef<ScrollView>(null);
-
-  // Sort ascending so smallest is at index 0 (rightmost with row-reverse)
+  // Sort descending: largest deed first (rightmost in row-reverse = most prominent)
   const sortedDeeds = React.useMemo(
-    () => [...deeds].sort((a, b) => a.amount - b.amount),
+    () => [...deeds].sort((a, b) => b.amount - a.amount),
     [deeds],
   );
   const selectedDeed = deeds.find((d) => d.id === selectedDeedId);
-
-  // When the sheet opens, scroll to the right end → smallest deed visible first
-  React.useEffect(() => {
-    if (visible) {
-      const t = setTimeout(() => deedScrollRef.current?.scrollToEnd({ animated: false }), 80);
-      return () => clearTimeout(t);
-    }
-  }, [visible]);
 
   async function handleSubmit() {
     if (!student || !selectedDeedId || !selectedDeed || !user) return;
@@ -479,13 +466,7 @@ function GiveCreditModal({ visible, student, classId, onClose, onSuccess }: Give
       {/* Deed picker */}
       <Text style={S.sectionTitle}>{t('selectDeed')}</Text>
       <Text style={S.sectionHint}>בחר את המעשה הטוב שהתלמיד ביצע</Text>
-      <ScrollView
-        ref={deedScrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ flexDirection: 'row-reverse', paddingBottom: 4 }}
-        style={{ marginBottom: 16 }}
-      >
+      <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         {sortedDeeds.map((deed) => {
           const active = selectedDeedId === deed.id;
           return (
@@ -502,7 +483,7 @@ function GiveCreditModal({ visible, student, classId, onClose, onSuccess }: Give
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
 
       {/* Note */}
       <Text style={S.sectionTitle}>{t('note')} (אופציונלי)</Text>
@@ -820,9 +801,9 @@ export default function TeacherScreen() {
     );
   }
 
-  // Reload active gifts every time the redemption sheet opens
+  // Reload active gifts every time the redemption sheet opens; clear on close to avoid stale flash
   React.useEffect(() => {
-    if (!redemptionVisible) return;
+    if (!redemptionVisible) { setGifts([]); return; }
     supabase.from('gifts').select('*').eq('is_active', true).is('deleted_at', null).order('name')
       .then(({ data }) => setGifts(data ?? []));
   }, [redemptionVisible]);
@@ -1295,7 +1276,7 @@ export default function TeacherScreen() {
           {editingStudent ? `ערוך תלמיד — ${editingStudent.first_name} ${editingStudent.last_name}` : 'הוסף תלמיד'}
         </Text>
 
-        <Text style={AS.fieldLabel}>שם פרטי *</Text>
+        <Text style={AS.fieldLabel}>שם פרטי</Text>
         <TextInput
           value={studentFirstName}
           onChangeText={setStudentFirstName}
@@ -1307,7 +1288,7 @@ export default function TeacherScreen() {
           autoCapitalize="words"
         />
 
-        <Text style={AS.fieldLabel}>שם משפחה *</Text>
+        <Text style={AS.fieldLabel}>שם משפחה</Text>
         <TextInput
           value={studentLastName}
           onChangeText={setStudentLastName}
@@ -1415,6 +1396,7 @@ export default function TeacherScreen() {
             ...prev,
             [studentId]: (prev[studentId] ?? 0) + amount,
           }));
+          refetch();
         }}
       />
 
@@ -1433,7 +1415,7 @@ export default function TeacherScreen() {
       {/* ── Redemption Sheet ── */}
       <AdminSheet visible={redemptionVisible} onClose={() => setRedemptionVisible(false)}>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <Text style={[AS.sheetTitle, { marginBottom: 0 }]} accessibilityRole="header">רישומי מתנות</Text>
+          <Text style={[AS.sheetTitle, { marginBottom: 0 }]} accessibilityRole="header">רישומי מתנות לכיתה</Text>
           {selectedClass && (
             <View style={S.redemptionClassBadge}>
               <Trophy size={14} color={Colors.primary} />

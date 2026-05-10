@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Colors } from '@/components/ui';
 import { TriangleAlert } from 'lucide-react-native';
+import { shadow } from '@/lib/shadow';
 
 // ── Module-level bridge (imperative API) ─────────────────────────────────────
 type ShowFn = (title: string, message: string, confirmLabel: string) => Promise<boolean>;
@@ -146,11 +147,7 @@ const S = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 20,
     alignItems: 'center',
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.18,
-    shadowRadius: 32,
-    elevation: 24,
+    ...shadow('#0f172a', 16, 32, 0.18, 24),
   },
   iconWrap: {
     width: 56, height: 56, borderRadius: 16,

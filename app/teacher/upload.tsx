@@ -18,6 +18,7 @@ import '@/lib/i18n';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import { supabase } from '@/lib/supabase';
+import { safeBack } from '@/lib/navigation';
 import { FolderOpen, CheckCircle2, ChevronRight } from 'lucide-react-native';
 import { Colors } from '@/components/ui';
 import { AS, webPointer } from '@/lib/adminStyles';
@@ -230,7 +231,7 @@ export default function UploadScreen() {
         </View>
         <Text style={S.doneTitle}>{t('imported')}</Text>
         <Text style={S.doneSub}>{importedCount} תלמידים יובאו לכיתה</Text>
-        <TouchableOpacity onPress={() => router.back()} style={[S.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה לכיתה">
+        <TouchableOpacity onPress={() => safeBack(router, '/teacher')} style={[S.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה לכיתה">
           <Text style={S.backBtnText}>{t('back')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -241,7 +242,7 @@ export default function UploadScreen() {
     <SafeAreaView style={AS.screen}>
       {/* Header */}
       <View style={S.header}>
-        <TouchableOpacity onPress={() => router.back()} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+        <TouchableOpacity onPress={() => safeBack(router, '/teacher')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
           <ChevronRight size={20} color={Colors.primary} />
         </TouchableOpacity>
         <Text style={S.headerTitle} accessibilityRole="header">{t('uploadCsv')}</Text>

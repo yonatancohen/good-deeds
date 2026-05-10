@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/supabase';
 
@@ -42,15 +42,19 @@ export function useClassStudents(classId: string | null): UseClassStudents {
   const [creditEvents, setCreditEvents] = useState<CreditEventWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Only show the loading spinner on the very first fetch for a given classId.
+  // Background refetches (realtime, onSuccess) update data silently.
+  const hasData = useRef(false);
 
   const load = useCallback(async () => {
     if (!classId) {
       setStudents([]);
       setCreditEvents([]);
+      hasData.current = false;
       return;
     }
 
-    setLoading(true);
+    if (!hasData.current) setLoading(true);
     try {
       const [studentsRes, redemptionsRes] = await Promise.all([
         supabase.from('students').select('*').eq('class_id', classId).order('last_name'),
@@ -148,6 +152,7 @@ export function useClassStudents(classId: string | null): UseClassStudents {
 
       setStudents(studentsWithCredits);
       setCreditEvents(events);
+      hasData.current = true;
       setError(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת תלמידים');
@@ -157,6 +162,7 @@ export function useClassStudents(classId: string | null): UseClassStudents {
   }, [classId]);
 
   useEffect(() => {
+    hasData.current = false; // reset for new class → show spinner on first load
     load();
 
     if (!classId) return;

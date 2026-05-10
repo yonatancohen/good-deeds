@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { confirmAction } from '@/lib/confirm';
+import { safeBack } from '@/lib/navigation';
 import type { Tables } from '@/types/supabase';
 
 type Gift = Tables<'gifts'>;
@@ -87,9 +88,12 @@ export default function AdminGiftsScreen() {
   }
 
   async function handleToggleActive(gift: Gift) {
+    setGifts(prev => prev.map(g => g.id === gift.id ? { ...g, is_active: !g.is_active } : g));
     const { error } = await supabase.from('gifts').update({ is_active: !gift.is_active }).eq('id', gift.id);
-    if (error) Alert.alert('שגיאה', error.message);
-    else loadGifts();
+    if (error) {
+      setGifts(prev => prev.map(g => g.id === gift.id ? { ...g, is_active: gift.is_active } : g));
+      Alert.alert('שגיאה', error.message);
+    }
   }
 
   async function handleDelete(gift: Gift) {
@@ -111,7 +115,7 @@ export default function AdminGiftsScreen() {
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
         <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
             <ChevronRight size={20} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={AS.headerTitle} accessibilityRole="header">{t('gifts')}</Text>
@@ -180,7 +184,7 @@ export default function AdminGiftsScreen() {
           {editingGift ? 'ערוך פרס' : 'הוסף פרס'}
         </Text>
 
-        <Text style={AS.fieldLabel}>שם הפרס *</Text>
+        <Text style={AS.fieldLabel}>שם הפרס</Text>
         <Text style={AS.fieldHint}>לדוגמה: פיצה לכיתה, ערב קולנוע</Text>
         <TextInput value={name} onChangeText={setName} placeholder="פיצה לכיתה" placeholderTextColor="#94a3b8" textAlign="right" style={AS.input} accessibilityLabel="שם הפרס" />
 

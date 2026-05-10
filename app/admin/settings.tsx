@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/hooks/useSettings';
+import { safeBack } from '@/lib/navigation';
 import { Colors } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 
@@ -37,7 +38,7 @@ function toHebrewYear(gregorianAcademicStart: number): string {
 function getSchoolYears(): string[] {
   const now = new Date();
   const base = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-  return [0, 1, 2].map(i => toHebrewYear(base + i));
+  return [-1, 0, 1].map(i => toHebrewYear(base + i));
 }
 
 // ── Pill selector ─────────────────────────────────────────────────────────────
@@ -123,7 +124,7 @@ export default function AdminSettingsScreen() {
     if (error) {
       Alert.alert('שגיאה', error.message);
     } else {
-      Alert.alert('✅', t('saved'), [{ text: 'אישור', onPress: () => router.back() }]);
+      Alert.alert('✅', t('saved'), [{ text: 'אישור', onPress: () => safeBack(router, '/admin') }]);
     }
   }
 
@@ -140,7 +141,7 @@ export default function AdminSettingsScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         {/* Header */}
         <View style={[AS.header, { justifyContent: 'flex-start' }]}>
-          <TouchableOpacity onPress={() => router.back()} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
             <ChevronRight size={20} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={AS.headerTitle} accessibilityRole="header">{t('settings')}</Text>
@@ -154,7 +155,7 @@ export default function AdminSettingsScreen() {
             }}>
               {/* School Name */}
               <View>
-                <Text style={AS.fieldLabel}>{t('schoolName')} *</Text>
+                <Text style={AS.fieldLabel}>{t('schoolName')}</Text>
                 <Text style={AS.fieldHint}>{t('schoolNameHint')}</Text>
                 <TextInput
                   value={schoolName}

@@ -24,6 +24,7 @@ export function useDeeds(): UseDeeds {
         .from('deeds')
         .select('*')
         .eq('is_active', true)
+        .is('deleted_at', null)
         .order('amount', { ascending: false });
 
       if (!mounted) return;

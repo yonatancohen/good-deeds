@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Trophy, Gift as GiftIcon, ChevronRight, Plus, Trash2 } from 'lucide-react-native';
+import { Trophy, Gift as GiftIcon, ChevronRight, Plus, Trash2, AlertTriangle } from 'lucide-react-native';
 import { confirmAction } from '@/lib/confirm';
 import { Colors } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { safeBack } from '@/lib/navigation';
 import { useSettings } from '@/hooks/useSettings';
 import type { Tables } from '@/types/supabase';
 import moment from 'moment';
@@ -66,6 +67,14 @@ const S = StyleSheet.create({
   pillRow: {
     flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16,
   },
+  noGiftsBanner: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 10,
+    backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FCD34D',
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16,
+  },
+  noGiftsText: {
+    flex: 1, color: '#92400E', fontSize: 13, textAlign: 'right', writingDirection: 'rtl',
+  } as any,
   pill: {
     paddingHorizontal: 16, paddingVertical: 12,
     borderRadius: 12, borderWidth: 2, minHeight: 44, justifyContent: 'center',
@@ -137,7 +146,7 @@ export default function AdminRedemptionsScreen() {
   const loadData = useCallback(async () => {
     const [classesRes, giftsRes, redemptionsRes] = await Promise.all([
       supabase.from('classes').select('*').is('deleted_at', null).order('name'),
-      supabase.from('gifts').select('*').eq('is_active', true).order('name'),
+      supabase.from('gifts').select('*').eq('is_active', true).is('deleted_at', null).order('name'),
       supabase.from('redemption_rounds').select('*, classes(*), gifts(*)').order('redeemed_at', { ascending: false }).limit(200),
     ]);
 
@@ -193,7 +202,7 @@ export default function AdminRedemptionsScreen() {
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
         <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
             <ChevronRight size={20} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={AS.headerTitle} accessibilityRole="header">{t('redemptions')}</Text>
@@ -219,7 +228,7 @@ export default function AdminRedemptionsScreen() {
             {redemptions.length === 0 ? (
               <View style={AS.emptyWrap}>
                 <View style={[AS.emptyIcon, { backgroundColor: '#FFEDD5' }]}><Trophy size={28} color={Colors.accent} /></View>
-                <Text style={AS.emptyTitle}>אין מתנות עדיין</Text>
+                <Text style={AS.emptyTitle}>אין מתנות לכיתה עדיין</Text>
                 <Text style={AS.emptyHint}>לחץ על "+ הוספה" כדי להוסיף.</Text>
               </View>
             ) : (
@@ -272,16 +281,24 @@ export default function AdminRedemptionsScreen() {
             <Text style={AS.sheetTitle} accessibilityRole="header">רשום מתנה לכיתה</Text>
 
             {/* Class picker */}
-            <Text style={S.sectionLabel}>כיתה *</Text>
+            <Text style={S.sectionLabel}>כיתה</Text>
             <Text style={S.sectionHint}>
               {currentYear ? `כיתות שנת ${currentYear} (לא מחוקות)` : 'בחר את הכיתה שהגיעה למטרה'}
             </Text>
             {pickerClasses.length === 0 ? (
-              <View style={{ backgroundColor: '#FFFBEB', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#FDE68A' }}>
-                <Text style={{ color: '#92400e', fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any}>
-                  לא נמצאו כיתות{currentYear ? ` לשנת ${currentYear}` : ''}. ניתן להוסיף כיתות בדף הכיתות.
+              <TouchableOpacity
+                style={[S.noGiftsBanner, webPointer]}
+                onPress={() => { setModalVisible(false); router.push('/admin/classes' as any); }}
+                accessibilityRole="link"
+                accessibilityLabel="עבור לדף כיתות"
+              >
+                <AlertTriangle size={18} color="#D97706" />
+                <Text style={S.noGiftsText}>
+                  אין כיתות מוגדרות. לחץ להוסיף כיתה בדף{' '}
+                  <Text style={{ fontWeight: '700', textDecorationLine: 'underline' }}>כיתות</Text>
+                  .
                 </Text>
-              </View>
+              </TouchableOpacity>
             ) : (
               <View style={S.pillRow}>
                 {pickerClasses.map((cls) => {
@@ -303,25 +320,41 @@ export default function AdminRedemptionsScreen() {
             )}
 
             {/* Gift picker */}
-            <Text style={S.sectionLabel}>מתנה *</Text>
+            <Text style={S.sectionLabel}>מתנה</Text>
             <Text style={S.sectionHint}>המתנה שהכיתה בחרה</Text>
-            <View style={S.pillRow}>
-              {gifts.map((gift) => {
-                const active = selectedGiftId === gift.id;
-                return (
-                  <TouchableOpacity
-                    key={gift.id}
-                    onPress={() => setSelectedGiftId(gift.id)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: active }}
-                    accessibilityLabel={`מתנה: ${gift.name}`}
-                    style={[S.pill, active ? S.pillActiveGift : S.pillInactive, webPointer]}
-                  >
-                    <Text style={active ? S.pillTextActive : S.pillTextInactive}>{gift.name}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {gifts.length === 0 ? (
+              <TouchableOpacity
+                style={[S.noGiftsBanner, webPointer]}
+                onPress={() => { setModalVisible(false); router.push('/admin/gifts' as any); }}
+                accessibilityRole="link"
+                accessibilityLabel="עבור לדף מתנות לכיתה"
+              >
+                <AlertTriangle size={18} color="#D97706" />
+                <Text style={S.noGiftsText}>
+                  אין מתנות פעילות. לחץ להוסיף מתנה בדף{' '}
+                  <Text style={{ fontWeight: '700', textDecorationLine: 'underline' }}>מתנות לכיתה</Text>
+                  .
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={S.pillRow}>
+                {gifts.map((gift) => {
+                  const active = selectedGiftId === gift.id;
+                  return (
+                    <TouchableOpacity
+                      key={gift.id}
+                      onPress={() => setSelectedGiftId(gift.id)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: active }}
+                      accessibilityLabel={`מתנה: ${gift.name}`}
+                      style={[S.pill, active ? S.pillActiveGift : S.pillInactive, webPointer]}
+                    >
+                      <Text style={active ? S.pillTextActive : S.pillTextInactive}>{gift.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
 
             {/* Note */}
             <Text style={S.sectionLabel}>הערה (אופציונלי)</Text>
