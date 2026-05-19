@@ -17,28 +17,12 @@ import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
 import { Skeleton, Colors } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
+import { cardDepthStyle } from '@/lib/cardDepth';
 import { shadow } from '@/lib/shadow';
 import { getClassColorScheme } from '@/lib/classColors';
 
 const webPtr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
-const CARD_DEPTH = '#5b4300';
 const MAX_CONTENT_W = 900;
-
-function cardDepthStyle(pressed: boolean, hovered: boolean): object {
-  if (Platform.OS === 'web') {
-    const transition = { transition: 'box-shadow 0.22s ease, transform 0.22s ease' } as any;
-    if (pressed) return { ...transition, boxShadow: '0 1px 0 #5b4300' };
-    if (hovered) {
-      return {
-        ...transition,
-        boxShadow: '0 14px 32px rgba(91,67,0,0.14), 0 6px 0 #5b4300',
-      };
-    }
-    return { ...transition, boxShadow: '0 5px 0 #5b4300' };
-  }
-  if (pressed) return shadow(CARD_DEPTH, 1, 6, 0.14, 3);
-  return shadow(CARD_DEPTH, 5, 14, 0.2, 8);
-}
 
 // ── Pompom jar ────────────────────────────────────────────────────────────────
 const POMPOM_COLORS = ['#EF4444','#F97316','#EAB308','#22C55E','#3B82F6','#8B5CF6','#EC4899','#06B6D4'];
