@@ -127,16 +127,18 @@ export default function AdminDeedsScreen() {
   return (
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
-        <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
-            <ChevronRight size={20} color={Colors.primary} />
+        <View style={[AS.headerInner, pageContent]}>
+          <View style={AS.headerLeft}>
+            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+              <ChevronRight size={20} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={AS.headerTitle} accessibilityRole="header">{t('deeds')}</Text>
+          </View>
+          <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מעשה חדש">
+            <Plus size={15} color="#fff" />
+            <Text style={AS.addBtnText}>הוספה</Text>
           </TouchableOpacity>
-          <Text style={AS.headerTitle} accessibilityRole="header">{t('deeds')}</Text>
         </View>
-        <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מעשה חדש">
-          <Plus size={15} color="#fff" />
-          <Text style={AS.addBtnText}>הוספה</Text>
-        </TouchableOpacity>
       </View>
 
       {loading ? (

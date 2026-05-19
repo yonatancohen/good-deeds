@@ -140,11 +140,13 @@ export default function AdminSettingsScreen() {
     <SafeAreaView style={AS.screen}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         {/* Header */}
-        <View style={[AS.header, { justifyContent: 'flex-start' }]}>
-          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
-            <ChevronRight size={20} color={Colors.primary} />
-          </TouchableOpacity>
-          <Text style={AS.headerTitle} accessibilityRole="header">{t('settings')}</Text>
+        <View style={AS.header}>
+          <View style={[AS.headerInner, pageContent, { justifyContent: 'flex-start' }]}>
+            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+              <ChevronRight size={20} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={AS.headerTitle} accessibilityRole="header">{t('settings')}</Text>
+          </View>
         </View>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={listPad} keyboardShouldPersistTaps="handled">

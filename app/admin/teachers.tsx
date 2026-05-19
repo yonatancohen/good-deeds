@@ -374,25 +374,27 @@ export default function AdminTeachersScreen() {
   return (
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
-        <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
-            <ChevronRight size={20} color={Colors.primary} />
-          </TouchableOpacity>
-          <Text style={AS.headerTitle} accessibilityRole="header">{t('teachers')}</Text>
-        </View>
-        <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
-          <TouchableOpacity
-            onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}
-            style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
-            accessibilityRole="button" accessibilityLabel="ייבוא מורים מ-CSV"
-          >
-            <FileUp size={15} color={Colors.primary} />
-            <Text style={[AS.addBtnText, { color: Colors.primary }]}>CSV</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setInviteVisible(true)} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מורה חדש">
-            <Plus size={15} color="#fff" />
-            <Text style={AS.addBtnText}>הוספה</Text>
-          </TouchableOpacity>
+        <View style={[AS.headerInner, pageContent]}>
+          <View style={AS.headerLeft}>
+            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+              <ChevronRight size={20} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={AS.headerTitle} accessibilityRole="header">{t('teachers')}</Text>
+          </View>
+          <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}
+              style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
+              accessibilityRole="button" accessibilityLabel="ייבוא מורים מ-CSV"
+            >
+              <FileUp size={15} color={Colors.primaryDark} />
+              <Text style={AS.addBtnText}>CSV</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setInviteVisible(true)} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מורה חדש">
+              <Plus size={15} color="#fff" />
+              <Text style={AS.addBtnText}>הוספה</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

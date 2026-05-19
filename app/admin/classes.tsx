@@ -255,25 +255,27 @@ export default function AdminClassesScreen() {
   return (
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
-        <View style={AS.headerLeft}>
-          <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
-            <ChevronRight size={20} color={Colors.primary} />
-          </TouchableOpacity>
-          <Text style={AS.headerTitle} accessibilityRole="header">{t('classes')}</Text>
-        </View>
-        <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
-          <TouchableOpacity
-            onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); setBulkYear(schoolYears[0]); }}
-            style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
-            accessibilityRole="button" accessibilityLabel="יצירת כיתות בבulk"
-          >
-            <Layers size={15} color={Colors.primaryDark} />
-            <Text style={AS.addBtnText}>הוספה חכמה</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף כיתה חדשה">
-            <Plus size={15} color="#fff" />
-            <Text style={AS.addBtnText}>הוספה</Text>
-          </TouchableOpacity>
+        <View style={[AS.headerInner, pageContent]}>
+          <View style={AS.headerLeft}>
+            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+              <ChevronRight size={20} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={AS.headerTitle} accessibilityRole="header">{t('classes')}</Text>
+          </View>
+          <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); setBulkYear(schoolYears[0]); }}
+              style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
+              accessibilityRole="button" accessibilityLabel="יצירת כיתות בבulk"
+            >
+              <Layers size={15} color={Colors.primaryDark} />
+              <Text style={AS.addBtnText}>הוספה חכמה</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף כיתה חדשה">
+              <Plus size={15} color="#fff" />
+              <Text style={AS.addBtnText}>הוספה</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

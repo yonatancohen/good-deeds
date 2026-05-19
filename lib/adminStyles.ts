@@ -31,10 +31,13 @@ export const AS = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg },
 
   // ── Header bar ───────────────────────────────────────────────────────────
+  // Usage: <View style={AS.header}><View style={[AS.headerInner, pageContent]}>…</View></View>
   header: {
-    paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1, borderBottomColor: Colors.border,
+  },
+  headerInner: {
+    paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
   },
   headerLeft: { flexDirection: 'row-reverse', alignItems: 'center' },
