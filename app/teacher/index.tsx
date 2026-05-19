@@ -1,9 +1,10 @@
 /**
- * Teacher Home — Class Grid
+ * Teacher Home — Class Cards
  *
- * Responsive grid of coloured class cards. Tap → /teacher/[classId].
- * Grid columns: 2 mobile · 3 narrow tablet · 4–6 desktop (scales with width).
- * Card colour is stable: derived from the first Hebrew letter in the class name.
+ * Stitch-design card list: full-width coloured cards on mobile,
+ * responsive 2–4 col grid on wider screens.
+ * Card colour cycles through 6 design-system palette colours,
+ * keyed by the first Hebrew letter in the class name.
  */
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LogOut, ClipboardList, ShieldCheck, Users } from 'lucide-react-native';
+import { LogOut, ClipboardList, ShieldCheck, GraduationCap, Users } from 'lucide-react-native';
 
 import { AS } from '@/lib/adminStyles';
 import { Colors } from '@/components/ui';
@@ -30,22 +31,18 @@ import { supabase } from '@/lib/supabase';
 import { useTeacherClassesWithProgress } from '@/hooks/useTeacherClassesWithProgress';
 import '@/lib/i18n';
 
-// ── Colour palette ────────────────────────────────────────────────────────────
-// Index 0 = א, 1 = ב, 2 = ג … Cycles after 10.
+// ── 6-colour palette from design system ──────────────────────────────────────
+// Each entry: card background + appropriate foreground for text/icons.
 const CLASS_COLORS = [
-  '#FF8C42', // א – warm orange
-  '#4ECDC4', // ב – teal
-  '#6C63FF', // ג – violet
-  '#FF6B6B', // ד – coral
-  '#48C774', // ה – green
-  '#0074D9', // ו – blue
-  '#E040FB', // ז – purple
-  '#FF9800', // ח – amber
-  '#00BCD4', // ט – cyan
-  '#F06292', // י – pink
+  { bg: Colors.accent,     text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', track: 'rgba(255,255,255,0.28)', fill: 'rgba(255,255,255,0.88)' }, // א coral
+  { bg: Colors.secondary,  text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', track: 'rgba(255,255,255,0.28)', fill: 'rgba(255,255,255,0.88)' }, // ב blue
+  { bg: Colors.success,    text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', track: 'rgba(255,255,255,0.28)', fill: 'rgba(255,255,255,0.88)' }, // ג green
+  { bg: Colors.primary,    text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    track: 'rgba(120,89,0,0.20)',    fill: 'rgba(120,89,0,0.70)'     }, // ד amber
+  { bg: Colors.salmon,     text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    track: 'rgba(120,89,0,0.20)',    fill: 'rgba(120,89,0,0.70)'     }, // ה salmon
+  { bg: Colors.peach,      text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    track: 'rgba(120,89,0,0.20)',    fill: 'rgba(120,89,0,0.70)'     }, // ו peach
 ] as const;
 
-/** First Hebrew letter found in name → stable 0-based palette index */
+/** First Hebrew letter found → stable 0-based index into CLASS_COLORS */
 const HEB_ALPHA = 'אבגדהוזחטיכלמנסעפצקרשת';
 function hebrewColorIndex(name: string): number {
   for (const ch of name) {
@@ -59,13 +56,12 @@ function hebrewColorIndex(name: string): number {
 const MAX_CONTENT_W = 960;
 
 function numCols(width: number, isWeb: boolean): number {
-  if (!isWeb) return width >= 600 ? 3 : 2;
+  if (!isWeb) return width >= 600 ? 2 : 1;
   const w = Math.min(width, MAX_CONTENT_W);
-  if (w < 560)  return 2;
-  if (w < 820)  return 3;
-  if (w < 1000) return 4;
-  if (w < 1200) return 5;
-  return 6;
+  if (w < 700)  return 1;
+  if (w < 960)  return 2;
+  if (w < 1200) return 3;
+  return 4;
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -76,7 +72,7 @@ const GRID_GAP  = 12;
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
 
-  // ── Header bar (full-width) ──
+  // ── Header bar ──
   headerBar: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
@@ -135,9 +131,9 @@ const S = StyleSheet.create({
     textAlign: 'left', writingDirection: 'rtl',
   } as any,
 
-  // ── Grid ──
+  // ── Grid wrapper ──
   grid: {
-    flexDirection: 'row-reverse',   // RTL: cards start from the right
+    flexDirection: 'row-reverse',
     flexWrap: 'wrap',
     paddingHorizontal: GRID_PAD,
     gap: GRID_GAP,
@@ -145,42 +141,67 @@ const S = StyleSheet.create({
 
   // ── Class card ──
   card: {
-    borderRadius: 24,
+    borderRadius: 22,
     overflow: 'hidden',
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 14,
-    minHeight: 160,
+    padding: 18,
+    minHeight: 148,
     justifyContent: 'space-between',
-    ...shadow('#0f172a', 4, 16, 0.14, 6),
+    ...shadow('#0f172a', 6, 20, 0.16, 8),
   },
+
+  // Top row: name block (right) + icon bubble (left)
+  cardTop: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardNameBlock: { flex: 1, alignItems: 'flex-end', marginLeft: 10 },
   cardName: {
     fontSize: 22, fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
-    color: '#fff',
     textAlign: 'right', writingDirection: 'rtl',
-    flexShrink: 1,
+    lineHeight: 28,
   } as any,
-  cardSub: {
-    fontSize: 13, marginTop: 3,
-    color: 'rgba(255,255,255,0.75)',
+  cardStudentRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  cardStudents: {
+    fontSize: 13,
     textAlign: 'right', writingDirection: 'rtl',
   } as any,
+  cardIconBubble: {
+    width: 44, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    flexShrink: 0,
+  },
+
+  // Bottom: score row + progress bar
   cardBottom: { marginTop: 14 },
-  cardProgressTrack: {
-    height: 6, borderRadius: 999, overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    marginBottom: 6,
+  cardScoreRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  cardProgressFill: {
-    height: '100%' as any, borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-  },
-  cardProgressLabel: {
-    fontSize: 11, fontWeight: '600',
-    color: 'rgba(255,255,255,0.75)',
+  cardScore: {
+    fontSize: 20, fontWeight: '700',
+    fontFamily: 'Baloo2_700Bold',
     textAlign: 'right', writingDirection: 'rtl',
   } as any,
+  cardGoalLabel: {
+    fontSize: 12, fontWeight: '500',
+    textAlign: 'left', writingDirection: 'rtl',
+  } as any,
+  cardTrack: {
+    height: 7, borderRadius: 999, overflow: 'hidden',
+  },
+  cardFill: {
+    height: '100%' as any, borderRadius: 999,
+  },
 
   // ── Empty state ──
   empty: { alignItems: 'center', paddingVertical: 80, paddingHorizontal: 32 },
@@ -218,15 +239,13 @@ export default function TeacherHome() {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
 
-  // Cap card width to MAX_CONTENT_W so cards don't over-stretch on wide screens
   const effectiveW = isWeb ? Math.min(width, MAX_CONTENT_W) : width;
   const cols       = numCols(width, isWeb);
   const cardW      = (effectiveW - GRID_PAD * 2 - GRID_GAP * (cols - 1)) / cols;
   const goal       = settings?.global_goal ?? 100;
 
   const displayName = useMemo(() => {
-    const name = user?.display_name ?? user?.email?.split('@')[0] ?? 'מורה';
-    return name;
+    return user?.display_name ?? user?.email?.split('@')[0] ?? 'מורה';
   }, [user]);
 
   async function handleLogout() {
@@ -234,12 +253,10 @@ export default function TeacherHome() {
     router.replace('/');
   }
 
-  // centred container on web (applied to both header inner + grid)
   const centreStyle = isWeb
     ? { maxWidth: MAX_CONTENT_W, alignSelf: 'center' as const, width: '100%' as any }
     : undefined;
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <SafeAreaView style={AS.centered}>
@@ -254,13 +271,10 @@ export default function TeacherHome() {
       {/* ── Header ── */}
       <View style={S.headerBar}>
         <View style={[S.headerInner, centreStyle]}>
-          {/* Greeting — right side (RTL first child in row-reverse) */}
           <View style={S.headerText}>
             <Text style={S.headerTitle}>שלום, {displayName} 👋</Text>
             <Text style={S.headerSub}>הכיתות שלך</Text>
           </View>
-
-          {/* Action buttons — left side */}
           <View style={S.headerBtns}>
             {user && (
               <TouchableOpacity
@@ -311,17 +325,16 @@ export default function TeacherHome() {
             <>
               {/* Section label */}
               <View style={S.sectionRow}>
-                <Text style={S.sectionTitle}>כיתות</Text>
+                <Text style={S.sectionTitle}>הכיתות שלי</Text>
                 <Text style={S.classCount}>{classes.length} כיתות</Text>
               </View>
 
               {/* Grid */}
               <View style={S.grid}>
                 {classes.map((item) => {
-                  const bg      = CLASS_COLORS[hebrewColorIndex(item.class.name)];
+                  const scheme  = CLASS_COLORS[hebrewColorIndex(item.class.name)];
                   const pct     = goal > 0 ? Math.min(item.totalCredits / goal, 1) : 0;
                   const pctPct  = Math.round(pct * 100);
-                  const label   = `${item.totalCredits} / ${goal} נקודות`;
 
                   return (
                     <TouchableOpacity
@@ -329,21 +342,48 @@ export default function TeacherHome() {
                       onPress={() => router.push(`/teacher/class/${item.class.id}`)}
                       accessibilityRole="button"
                       accessibilityLabel={`כיתה ${item.class.name}`}
-                      activeOpacity={0.85}
-                      style={[S.card, { backgroundColor: bg, width: cardW }, ptr]}
+                      activeOpacity={0.82}
+                      style={[S.card, { backgroundColor: scheme.bg, width: cardW }, ptr]}
                     >
-                      {/* Class name + student count */}
-                      <View>
-                        <Text style={S.cardName}>{item.class.name}</Text>
-                        <Text style={S.cardSub}>{item.studentCount} תלמידים</Text>
+                      {/* ── Top row ── */}
+                      <View style={S.cardTop}>
+                        {/* Class name + students (right/RTL) */}
+                        <View style={S.cardNameBlock}>
+                          <Text style={[S.cardName, { color: scheme.text }]}>
+                            {item.class.name}
+                          </Text>
+                          <View style={S.cardStudentRow}>
+                            <Users size={11} color={scheme.sub} />
+                            <Text style={[S.cardStudents, { color: scheme.sub }]}>
+                              {item.studentCount} תלמידים
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Icon bubble (left/RTL) */}
+                        <View style={S.cardIconBubble}>
+                          <GraduationCap size={22} color={scheme.text} />
+                        </View>
                       </View>
 
-                      {/* Progress bar */}
+                      {/* ── Bottom: score + progress ── */}
                       <View style={S.cardBottom}>
-                        <View style={S.cardProgressTrack}>
-                          <View style={[S.cardProgressFill, { width: `${pctPct}%` as any }]} />
+                        <View style={S.cardScoreRow}>
+                          <Text style={[S.cardScore, { color: scheme.text }]}>
+                            {item.totalCredits}/{goal}
+                          </Text>
+                          <Text style={[S.cardGoalLabel, { color: scheme.sub }]}>
+                            יעד קבוצתי
+                          </Text>
                         </View>
-                        <Text style={S.cardProgressLabel}>{label}</Text>
+                        <View style={[S.cardTrack, { backgroundColor: scheme.track }]}>
+                          <View
+                            style={[
+                              S.cardFill,
+                              { width: `${pctPct}%` as any, backgroundColor: scheme.fill },
+                            ]}
+                          />
+                        </View>
                       </View>
                     </TouchableOpacity>
                   );
