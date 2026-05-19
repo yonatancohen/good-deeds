@@ -35,7 +35,6 @@ import { shadow } from '@/lib/shadow';
 
 import { useClassStudents, CreditEventWithDetails } from '@/hooks/useClassStudents';
 import { useDeeds } from '@/hooks/useDeeds';
-import { useTeacherClasses } from '@/hooks/useTeacherClasses';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { confirmAction } from '@/lib/confirm';
@@ -49,6 +48,7 @@ moment.locale('he');
 
 type StudentRow = Tables<'students'>;
 type DeedRow    = Tables<'deeds'>;
+type ClassRow   = Tables<'classes'>;
 
 const ptr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
 
@@ -58,6 +58,7 @@ interface DeedPickerSheetProps {
   visible: boolean;
   className: string;
   studentCount: number;
+  deeds: DeedRow[];
   onClose: () => void;
   onConfirm: (deed: DeedRow) => Promise<void>;
 }
@@ -66,10 +67,10 @@ function DeedPickerSheet({
   visible,
   className,
   studentCount,
+  deeds,
   onClose,
   onConfirm,
 }: DeedPickerSheetProps) {
-  const { deeds, loading: deedsLoading } = useDeeds();
   const [selectedDeedId, setSelectedDeedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -110,10 +111,7 @@ function DeedPickerSheet({
       <Text style={S.sectionLabel}>בחר מעשה טוב</Text>
       <Text style={S.sectionHint}>כל תלמידי הכיתה יקבלו את הנקודות</Text>
 
-      {deedsLoading ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginVertical: 24 }} />
-      ) : (
-        <ScrollView
+      <ScrollView
           showsVerticalScrollIndicator={false}
           style={{ maxHeight: 300 }}
           contentContainerStyle={S.deedList}
@@ -145,7 +143,6 @@ function DeedPickerSheet({
             );
           })}
         </ScrollView>
-      )}
 
       {/* Selected summary */}
       {selectedDeed && (
@@ -196,13 +193,13 @@ function DeedPickerSheet({
 interface GiveCreditSheetProps {
   visible: boolean;
   student: StudentRow | null;
+  deeds: DeedRow[];
+  userId: string;
   onClose: () => void;
   onSuccess: (studentId: string, amount: number) => void;
 }
 
-function GiveCreditSheet({ visible, student, onClose, onSuccess }: GiveCreditSheetProps) {
-  const { user } = useAuth();
-  const { deeds } = useDeeds();
+function GiveCreditSheet({ visible, student, deeds, userId, onClose, onSuccess }: GiveCreditSheetProps) {
   const [selectedDeedId, setSelectedDeedId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -214,14 +211,14 @@ function GiveCreditSheet({ visible, student, onClose, onSuccess }: GiveCreditShe
   const selectedDeed = deeds.find((d) => d.id === selectedDeedId);
 
   async function handleSubmit() {
-    if (!student || !selectedDeedId || !selectedDeed || !user) return;
+    if (!student || !selectedDeedId || !selectedDeed) return;
     setSubmitting(true);
     const { error } = await supabase.from('credit_events').insert({
       student_id: student.id,
       deed_id:    selectedDeedId,
       amount:     selectedDeed.amount,
       note:       note.trim() || null,
-      given_by:   user.id,
+      given_by:   userId,
     });
     setSubmitting(false);
     if (error) {
@@ -320,12 +317,12 @@ interface HistorySheetProps {
   student: StudentRow | null;
   events: CreditEventWithDetails[];
   currentUserId: string;
+  isAdmin: boolean;
   onClose: () => void;
   onDeleted: () => void;
 }
 
-function HistorySheet({ visible, student, events, currentUserId, onClose, onDeleted }: HistorySheetProps) {
-  const { isAdmin } = useAuth();
+function HistorySheet({ visible, student, events, currentUserId, isAdmin, onClose, onDeleted }: HistorySheetProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const studentEvents = events.filter((e) => e.student_id === student?.id);
@@ -482,9 +479,17 @@ function StudentItem({ student, credits, onGiveCredit, onViewHistory, onEdit, on
 export default function ClassDetailScreen() {
   const router = useRouter();
   const { classId } = useLocalSearchParams<{ classId: string }>();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();          // ← single call, shared below
   const { settings } = useSettings();
-  const { classes } = useTeacherClasses();
+  const { deeds } = useDeeds();                  // ← single call, passed to sheets
+
+  // Fetch only this one class (not all classes)
+  const [classRow, setClassRow] = useState<ClassRow | null>(null);
+  React.useEffect(() => {
+    if (!classId) return;
+    supabase.from('classes').select('*').eq('id', classId).maybeSingle()
+      .then(({ data }) => setClassRow(data ?? null));
+  }, [classId]);
 
   const {
     students,
@@ -495,7 +500,6 @@ export default function ClassDetailScreen() {
   } = useClassStudents(classId ?? null);
 
   const goal = settings?.global_goal ?? 100;
-  const tc   = classes.find((c) => c.class.id === classId);
 
   // Local optimistic state
   const [deletedStudentIds,      setDeletedStudentIds]      = useState<Set<string>>(new Set());
@@ -633,7 +637,7 @@ export default function ClassDetailScreen() {
     );
   }
 
-  const className = tc?.class.name ?? '';
+  const className = classRow?.name ?? '';
 
   return (
     <SafeAreaView style={S.screen}>
@@ -652,12 +656,10 @@ export default function ClassDetailScreen() {
           <Text style={S.headerTitle} accessibilityRole="header">
             כיתה {className}
           </Text>
-          {tc && (
-            <Text style={S.headerSub}>
-              {(tc.studentCount + locallyAddedStudents.length)} תלמידים
-              {tc.class.grade ? ` · שכבה ${tc.class.grade}` : ''}
-            </Text>
-          )}
+          <Text style={S.headerSub}>
+            {visibleStudents.length} תלמידים
+            {classRow?.grade ? ` · שכבה ${classRow.grade}` : ''}
+          </Text>
         </View>
         {/* Add student button */}
         <TouchableOpacity
@@ -765,6 +767,7 @@ export default function ClassDetailScreen() {
         visible={deedPickerVisible}
         className={className}
         studentCount={visibleStudents.length}
+        deeds={deeds}
         onClose={() => setDeedPickerVisible(false)}
         onConfirm={handleClassDeed}
       />
@@ -773,6 +776,8 @@ export default function ClassDetailScreen() {
       <GiveCreditSheet
         visible={!!giveCreditStudent}
         student={giveCreditStudent}
+        deeds={deeds}
+        userId={user?.id ?? ''}
         onClose={() => setGiveCreditStudent(null)}
         onSuccess={(studentId, amount) => {
           setGiveCreditStudent(null);
@@ -790,6 +795,7 @@ export default function ClassDetailScreen() {
         student={historyStudent}
         events={creditEvents}
         currentUserId={user?.id ?? ''}
+        isAdmin={isAdmin}
         onClose={() => setHistoryStudent(null)}
         onDeleted={refetch}
       />
