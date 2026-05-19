@@ -308,7 +308,7 @@ export default function TeacherHome() {
                   return (
                     <TouchableOpacity
                       key={item.class.id}
-                      onPress={() => router.push(`/teacher/${item.class.id}`)}
+                      onPress={() => router.push(`/teacher/class/${item.class.id}`)}
                       accessibilityRole="button"
                       accessibilityLabel={`כיתה ${item.class.name}`}
                       activeOpacity={0.85}
