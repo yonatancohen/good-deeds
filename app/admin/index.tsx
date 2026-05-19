@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
   Platform, StyleSheet, Image, ActivityIndicator, Alert,
@@ -55,7 +55,7 @@ interface MenuTile {
 
 const MENU: MenuTile[] = [
   { Icon: Building2,     label: 'כיתות',        description: 'הוספה, עריכה ומחיקה של כיתות',             route: '/admin/classes',     iconBg: Colors.secondary, iconColor: '#ffffff' },
-  { Icon: GraduationCap, label: 'תלמידים',      description: 'צפייה, הוספה ומחיקה של תלמידים לפי כיתה',    route: '/admin/students',    iconBg: '#6366F1',        iconColor: '#ffffff' },
+  { Icon: GraduationCap, label: 'כיתות ותלמידים', description: 'צפייה, הוספה ומחיקה של תלמידים לפי כיתה', route: '/admin/students',    iconBg: '#6366F1',        iconColor: '#ffffff' },
   { Icon: UserCheck,     label: 'מורים',         description: 'ניהול מורים והזמנת מורים חדשים',             route: '/admin/teachers',    iconBg: Colors.salmon,    iconColor: '#ffffff' },
   { Icon: BookOpen,      label: 'מעשים טובים',  description: 'ניהול רשימת המעשים הטובים ושוויהם',          route: '/admin/deeds',       iconBg: Colors.accent,    iconColor: '#ffffff' },
   { Icon: Gift,          label: 'פרסים',         description: 'ניהול רשימת הפרסים שכיתה יכולה לזכות בהם',   route: '/admin/gifts',       iconBg: Colors.success,   iconColor: '#ffffff' },
@@ -227,8 +227,21 @@ export default function AdminHomeScreen() {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [fulfillingId, setFulfillingId] = useState<string | null>(null);
+  const [splitHeight, setSplitHeight] = useState(0);
+  const mainColumnRef = useRef<View>(null);
 
-  const menuCols = isDesktop ? 3 : 2;
+  const syncSplitHeight = useCallback((height?: number) => {
+    if (height != null && height > 0) {
+      setSplitHeight(Math.round(height));
+      return;
+    }
+    mainColumnRef.current?.measure((_x, _y, _w, h) => {
+      const next = Math.round(h);
+      if (next > 0) setSplitHeight(next);
+    });
+  }, []);
+
+  const menuCols = isDesktop ? 4 : 2;
   const contentMaxW = isLarge ? 1200 : 960;
 
   const loadDashboard = useCallback(async () => {
@@ -369,6 +382,13 @@ export default function AdminHomeScreen() {
     };
   }, [loadDashboard]);
 
+  useLayoutEffect(() => {
+    if (!isLarge) return;
+    syncSplitHeight();
+    const t = setTimeout(syncSplitHeight, 50);
+    return () => clearTimeout(t);
+  }, [isLarge, pendingLoading, statsLoading, pendingRedemptions.length, syncSplitHeight]);
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace('/auth/login');
@@ -433,9 +453,9 @@ export default function AdminHomeScreen() {
     );
   }
 
-  function renderPending() {
+  function renderPending(compact?: boolean) {
     return (
-      <View style={S.section}>
+      <View style={[S.section, compact && S.sectionCompact]}>
         <View style={S.sectionHeader}>
           <View style={S.sectionTitleRow}>
             <AlertCircle size={20} color={Colors.success} />
@@ -479,7 +499,7 @@ export default function AdminHomeScreen() {
 
   function renderMenuGrid(compact?: boolean) {
     return (
-      <View style={S.section}>
+      <View style={[S.section, compact && S.sectionLast]}>
         <Text style={[S.sectionTitle, S.sectionTitleStandalone]}>ניהול מערכת</Text>
         <View style={[S.grid, isDesktop && { gap: 18 }]}>
           {menuRows.map((row, i) => (
@@ -506,6 +526,28 @@ export default function AdminHomeScreen() {
     );
   }
 
+  function renderActivityTimeline() {
+    return (
+      <View style={S.activityTimeline}>
+        {activity.map((item, idx) => (
+          <View key={item.id} style={S.timelineRow}>
+            <View style={S.timelineRail}>
+              <View style={[S.timelineDot, { backgroundColor: ACTIVITY_ICON_BG[item.tone] }]}>
+                <Plus size={14} color={ACTIVITY_DOT[item.tone]} />
+              </View>
+              {idx < activity.length - 1 && <View style={S.timelineLine} />}
+            </View>
+            <View style={S.timelineContent}>
+              <Text style={S.timelineText}>{item.text}</Text>
+              {item.sub ? <Text style={S.timelineSub}>{item.sub}</Text> : null}
+              <Text style={S.timelineTime}>{moment(item.created_at).fromNow()}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
   function renderActivityLog(sidebar?: boolean) {
     return (
       <View style={[S.activityPanel, sidebar && S.activityPanelSidebar]}>
@@ -526,23 +568,14 @@ export default function AdminHomeScreen() {
         ) : activity.length === 0 ? (
           <Text style={S.activityEmpty}>אין פעילות להצגה עדיין</Text>
         ) : sidebar ? (
-          <View style={S.activityTimeline}>
-            {activity.map((item, idx) => (
-              <View key={item.id} style={S.timelineRow}>
-                <View style={S.timelineRail}>
-                  <View style={[S.timelineDot, { backgroundColor: ACTIVITY_ICON_BG[item.tone] }]}>
-                    <Plus size={14} color={ACTIVITY_DOT[item.tone]} />
-                  </View>
-                  {idx < activity.length - 1 && <View style={S.timelineLine} />}
-                </View>
-                <View style={S.timelineContent}>
-                  <Text style={S.timelineText}>{item.text}</Text>
-                  {item.sub ? <Text style={S.timelineSub}>{item.sub}</Text> : null}
-                  <Text style={S.timelineTime}>{moment(item.created_at).fromNow()}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
+          <ScrollView
+            style={S.activityTimelineScroll}
+            contentContainerStyle={S.activityTimelineScrollContent}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+          >
+            {renderActivityTimeline()}
+          </ScrollView>
         ) : (
           <View style={S.activityList}>
             {activity.map((item) => (
@@ -644,14 +677,22 @@ export default function AdminHomeScreen() {
         {renderStats()}
 
         {isLarge ? (
-          <View style={S.desktopSplit}>
-            <View style={S.desktopMain}>
-              {renderPending()}
-              {renderMenuGrid(true)}
-              {renderPublicLink()}
+          <>
+            <View style={S.desktopSplit}>
+              <View
+                ref={mainColumnRef}
+                style={S.desktopMain}
+                onLayout={(e) => syncSplitHeight(e.nativeEvent.layout.height)}
+              >
+                {renderPending(true)}
+                {renderMenuGrid(true)}
+              </View>
+              <View style={[S.desktopSidebar, splitHeight > 0 && { height: splitHeight }]}>
+                {renderActivityLog(true)}
+              </View>
             </View>
-            {renderActivityLog(true)}
-          </View>
+            {renderPublicLink()}
+          </>
         ) : (
           <>
             {renderPending()}
@@ -800,6 +841,8 @@ const S = StyleSheet.create({
 
   // ── Sections ──
   section: { marginBottom: 28 },
+  sectionCompact: { marginBottom: 20 },
+  sectionLast: { marginBottom: 0 },
   sectionHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -954,12 +997,17 @@ const S = StyleSheet.create({
     borderColor: Colors.border,
     padding: 16,
     marginBottom: 24,
+    flexDirection: 'column',
+    overflow: 'hidden',
     ...shadow('#785900', 0, 8, 0.05, 4),
   },
   activityPanelSidebar: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     marginBottom: 0,
-    flex: 1,
-    minWidth: 280,
   },
   activityHeader: {
     flexDirection: 'row-reverse',
@@ -1018,6 +1066,8 @@ const S = StyleSheet.create({
   } as any,
 
   // Timeline (desktop sidebar)
+  activityTimelineScroll: { flex: 1, minHeight: 0 },
+  activityTimelineScrollContent: { flexGrow: 1 },
   activityTimeline: { gap: 0 },
   timelineRow: {
     flexDirection: 'row-reverse',
@@ -1075,10 +1125,16 @@ const S = StyleSheet.create({
     alignItems: 'flex-start',
   },
   desktopMain: { flex: 2, minWidth: 0 },
+  desktopSidebar: {
+    flex: 1,
+    minWidth: 280,
+    position: 'relative',
+    overflow: 'hidden',
+  },
 
   // ── Public link ──
   publicLink: {
-    marginTop: 4,
+    marginTop: 20,
     backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: 20,
     borderWidth: 2,

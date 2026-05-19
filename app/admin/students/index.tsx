@@ -105,8 +105,24 @@ export default function AdminStudentsScreen() {
   const [saving, setSaving] = useState(false);
 
   const loadClasses = useCallback(async () => {
+    setLoading(true);
+
+    const settingsRes = await supabase
+      .from('settings')
+      .select('current_year')
+      .limit(1)
+      .maybeSingle();
+    const schoolYear = settingsRes.data?.current_year ?? null;
+
+    let classesQuery = supabase
+      .from('classes')
+      .select('*')
+      .is('deleted_at', null)
+      .order('name');
+    if (schoolYear) classesQuery = classesQuery.eq('year', schoolYear);
+
     const [classesRes, studentsRes] = await Promise.all([
-      supabase.from('classes').select('*').is('deleted_at', null).order('name'),
+      classesQuery,
       supabase.from('students').select('class_id'),
     ]);
     if (!classesRes.error) setClasses(classesRes.data ?? []);
@@ -126,9 +142,7 @@ export default function AdminStudentsScreen() {
     }, [loadClasses]),
   );
 
-  const visibleClasses = classes.filter((c) =>
-    currentYear ? c.year === currentYear : true,
-  );
+  const visibleClasses = classes;
 
   function openManual(cls: ClassRow) {
     setSelectedClass(cls);
@@ -192,7 +206,7 @@ export default function AdminStudentsScreen() {
             >
               <ChevronRight size={20} color={Colors.primaryDark} />
             </TouchableOpacity>
-            <Text style={AS.headerTitle} accessibilityRole="header">תלמידים</Text>
+            <Text style={AS.headerTitle} accessibilityRole="header">כיתות ותלמידים</Text>
           </View>
         </View>
       </View>
@@ -205,7 +219,11 @@ export default function AdminStudentsScreen() {
             {visibleClasses.length === 0 ? (
               <View style={AS.emptyWrap}>
                 <Text style={AS.emptyTitle}>אין כיתות</Text>
-                <Text style={AS.emptyHint}>הוסף כיתות בדף הכיתות תחילה.</Text>
+                <Text style={AS.emptyHint}>
+                  {currentYear
+                    ? `אין כיתות לשנת לימודים ${currentYear}. הוסף כיתות בדף הכיתות.`
+                    : 'הוסף כיתות בדף הכיתות תחילה.'}
+                </Text>
               </View>
             ) : (
               visibleClasses.map((cls) => {

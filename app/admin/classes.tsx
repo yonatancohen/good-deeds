@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { useSettings } from '@/hooks/useSettings';
 import { safeBack } from '@/lib/navigation';
 import type { Tables } from '@/types/supabase';
 import { getClassColorScheme } from '@/lib/classColors';
@@ -109,6 +110,8 @@ export default function AdminClassesScreen() {
   const { listPad, pageContent } = useAdminLayout();
   const { t } = useTranslation();
   const router = useRouter();
+  const { settings } = useSettings();
+  const currentYear = settings?.current_year ?? '';
   const [classes, setClasses]       = useState<ClassRow[]>([]);
   const [loading, setLoading]       = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -118,7 +121,6 @@ export default function AdminClassesScreen() {
 
   const [selGrade, setSelGrade] = useState('');
   const [selNum,   setSelNum]   = useState('');
-  const [selYear,  setSelYear]  = useState(schoolYears[0]);
   const [saving,   setSaving]   = useState(false);
 
   const previewName = buildName(selGrade, selNum);
@@ -127,12 +129,11 @@ export default function AdminClassesScreen() {
   // ── Bulk state ──
   const EMPTY_COUNTS = useMemo(() => Object.fromEntries(GRADES.map(g => [g, 0])), []);
   const [bulkVisible,  setBulkVisible]  = useState(false);
-  const [bulkYear,     setBulkYear]     = useState(schoolYears[0]);
   const [bulkCounts,   setBulkCounts]   = useState<Record<string, number>>(EMPTY_COUNTS);
   const [bulkCreating, setBulkCreating] = useState(false);
   const [uploadClass, setUploadClass] = useState<ClassRow | null>(null);
 
-  const bulkEffectiveYear = bulkYear;
+  const bulkEffectiveYear = currentYear || schoolYears[0];
 
   const bulkPreview = useMemo(() => {
     const existingNames = new Set(
@@ -152,34 +153,33 @@ export default function AdminClassesScreen() {
   const bulkNewCount  = bulkPreview.filter(p => p.status === 'new').length;
   const bulkSkipCount = bulkPreview.filter(p => p.status === 'skip').length;
 
-  // Group by year, sort by grade then number within each group
-  const groupedClasses = useMemo(() => {
-    const sorted = [...classes].sort((a, b) => {
+  const sortedClasses = useMemo(() => {
+    return [...classes].sort((a, b) => {
       const gi = (c: ClassRow) => GRADES.indexOf(c.grade ?? c.name.charAt(0));
       const gd = gi(a) - gi(b);
       if (gd !== 0) return gd;
       return parseInt(parseClassName(a.name).num || '0') - parseInt(parseClassName(b.name).num || '0');
     });
-    const map = new Map<string, ClassRow[]>();
-    for (const cls of sorted) {
-      const y = cls.year ?? 'ללא שנה';
-      if (!map.has(y)) map.set(y, []);
-      map.get(y)!.push(cls);
-    }
-    const yearOrder = [...schoolYears].reverse().concat('ללא שנה');
-    return Array.from(map.entries()).sort(([ya], [yb]) => {
-      const ia = yearOrder.indexOf(ya);
-      const ib = yearOrder.indexOf(yb);
-      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-    });
-  }, [classes, schoolYears]);
+  }, [classes]);
 
   const loadClasses = useCallback(async () => {
-    const { data, error } = await supabase
+    setLoading(true);
+
+    const settingsRes = await supabase
+      .from('settings')
+      .select('current_year')
+      .limit(1)
+      .maybeSingle();
+    const schoolYear = settingsRes.data?.current_year ?? null;
+
+    let classesQuery = supabase
       .from('classes')
       .select('*')
       .is('deleted_at', null)
       .order('name');
+    if (schoolYear) classesQuery = classesQuery.eq('year', schoolYear);
+
+    const { data, error } = await classesQuery;
     if (!error) setClasses(data ?? []);
     setLoading(false);
   }, []);
@@ -188,7 +188,7 @@ export default function AdminClassesScreen() {
 
   function openAdd() {
     setEditingClass(null);
-    setSelGrade(''); setSelNum(''); setSelYear(schoolYears[0]);
+    setSelGrade(''); setSelNum('');
     setModalVisible(true);
   }
 
@@ -197,7 +197,6 @@ export default function AdminClassesScreen() {
     const parsed = parseClassName(cls.name);
     setSelGrade(parsed.grade);
     setSelNum(parsed.num);
-    setSelYear(cls.year ?? schoolYears[0]);
     setModalVisible(true);
   }
 
@@ -207,7 +206,7 @@ export default function AdminClassesScreen() {
     const payload = {
       name:  previewName,
       grade: selGrade,
-      year:  selYear || null,
+      year:  currentYear || bulkEffectiveYear || null,
     };
 
     if (editingClass) {
@@ -267,7 +266,7 @@ export default function AdminClassesScreen() {
           </View>
           <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
             <TouchableOpacity
-              onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); setBulkYear(schoolYears[0]); }}
+              onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); }}
               style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
               accessibilityRole="button" accessibilityLabel="יצירת כיתות בבulk"
             >
@@ -287,44 +286,43 @@ export default function AdminClassesScreen() {
       ) : (
         <ScrollView style={AS.list} contentContainerStyle={listPad}>
           <View style={pageContent}>
-            {classes.length === 0 ? (
+            {sortedClasses.length === 0 ? (
               <View style={AS.emptyWrap}>
                 <View style={AS.emptyIcon}><Building2 size={28} color={Colors.primary} /></View>
                 <Text style={AS.emptyTitle}>אין כיתות עדיין</Text>
-                <Text style={AS.emptyHint}>לחץ על "+ הוספה" כדי להוסיף.</Text>
+                <Text style={AS.emptyHint}>
+                  {currentYear
+                    ? `אין כיתות לשנת לימודים ${currentYear}. לחץ על "+ הוספה" כדי להוסיף.`
+                    : 'לחץ על "+ הוספה" כדי להוסיף.'}
+                </Text>
               </View>
             ) : (
-              groupedClasses.map(([year, yearClasses]) => (
-                <View key={year}>
-                  <Text style={S.yearHeader}>{year}</Text>
-                  {yearClasses.map((cls) => {
-                    const scheme = getClassColorScheme(cls.grade ?? cls.name);
-                    return (
-                    <View key={cls.id} style={AS.row} accessibilityLabel={`כיתה ${cls.name}`}>
-                      <View style={[S.classCircle, { backgroundColor: scheme.bg }]}>
-                        <Text style={[S.classCircleText, { color: scheme.text }]}>
-                          {cls.grade ?? cls.name.charAt(0)}
-                        </Text>
-                      </View>
-                      <View style={AS.rowLeft}>
-                        <Text style={AS.rowTitle}>כיתה {cls.name}</Text>
-                      </View>
-                      <View style={AS.rowActions}>
-                        <TactileIconBtn onPress={() => setUploadClass(cls)} style={AS.iconBtnSecondary} shadowColor="rgba(0,96,172,0.2)" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
-                          <Upload size={16} color={Colors.secondary} />
-                        </TactileIconBtn>
-                        <TactileIconBtn onPress={() => openEdit(cls)} style={AS.iconBtn} accessibilityLabel={`ערוך ${cls.name}`}>
-                          <Pencil size={16} color={Colors.muted} />
-                        </TactileIconBtn>
-                        <TactileIconBtn onPress={() => handleDelete(cls)} style={AS.iconBtnDanger} shadowColor="rgba(186,26,26,0.2)" accessibilityLabel={`מחק ${cls.name}`}>
-                          <Trash2 size={16} color={Colors.danger} />
-                        </TactileIconBtn>
-                      </View>
-                    </View>
-                    );
-                  })}
+              sortedClasses.map((cls) => {
+                const scheme = getClassColorScheme(cls.grade ?? cls.name);
+                return (
+                <View key={cls.id} style={AS.row} accessibilityLabel={`כיתה ${cls.name}`}>
+                  <View style={[S.classCircle, { backgroundColor: scheme.bg }]}>
+                    <Text style={[S.classCircleText, { color: scheme.text }]}>
+                      {cls.grade ?? cls.name.charAt(0)}
+                    </Text>
+                  </View>
+                  <View style={AS.rowLeft}>
+                    <Text style={AS.rowTitle}>כיתה {cls.name}</Text>
+                  </View>
+                  <View style={AS.rowActions}>
+                    <TactileIconBtn onPress={() => setUploadClass(cls)} style={AS.iconBtnSecondary} shadowColor="rgba(0,96,172,0.2)" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
+                      <Upload size={16} color={Colors.secondary} />
+                    </TactileIconBtn>
+                    <TactileIconBtn onPress={() => openEdit(cls)} style={AS.iconBtn} accessibilityLabel={`ערוך ${cls.name}`}>
+                      <Pencil size={16} color={Colors.muted} />
+                    </TactileIconBtn>
+                    <TactileIconBtn onPress={() => handleDelete(cls)} style={AS.iconBtnDanger} shadowColor="rgba(186,26,26,0.2)" accessibilityLabel={`מחק ${cls.name}`}>
+                      <Trash2 size={16} color={Colors.danger} />
+                    </TactileIconBtn>
+                  </View>
                 </View>
-              ))
+                );
+              })
             )}
           </View>
         </ScrollView>
@@ -335,26 +333,11 @@ export default function AdminClassesScreen() {
         <Text style={AS.sheetTitle} accessibilityRole="header">יצירת כיתות מרוכזת</Text>
 
         <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
-          {/* Year */}
-          <Text style={AS.fieldLabel}>שנת לימודים</Text>
-          <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-            {schoolYears.map(yr => {
-              const on = bulkYear === yr;
-              return (
-                <TouchableOpacity
-                  key={yr}
-                  onPress={() => setBulkYear(yr)}
-                  style={[S.pill, on ? S.pillOn : S.pillOff, webPointer]}
-                  accessibilityRole="radio" accessibilityState={{ checked: on }}
-                >
-                  <Text style={[S.pillText, on ? S.pillTextOn : S.pillTextOff]}>{yr}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
           {/* Grade rows */}
-          <Text style={[AS.fieldLabel, { marginBottom: 12 }]}>כמה כיתות בכל שכבה?</Text>
+          <Text style={[AS.fieldLabel, { marginBottom: 12 }]}>
+            כמה כיתות בכל שכבה?
+            {bulkEffectiveYear ? ` (${bulkEffectiveYear})` : ''}
+          </Text>
           {GRADES.map(grade => {
             const count = bulkCounts[grade] ?? 0;
             const scheme = getClassColorScheme(grade);
@@ -433,11 +416,6 @@ export default function AdminClassesScreen() {
               <Text style={AS.fieldHint}>בחר מספר מקבילה</Text>
               <PillGroup options={NUMBERS} value={selNum} onSelect={setSelNum} label="מספר כיתה" />
 
-              {/* Year */}
-              <Text style={[AS.fieldLabel, { marginTop: 16 }]}>שנת לימודים</Text>
-              <Text style={AS.fieldHint}>שנת הלימודים של הכיתה</Text>
-              <PillGroup options={schoolYears} value={selYear} onSelect={setSelYear} label="שנה" />
-
               {/* Preview */}
               {previewName ? (
                 <View style={S.preview}>
@@ -515,14 +493,6 @@ const S = StyleSheet.create({
   },
   previewEmptyText: {
     color: '#94A3B8', fontSize: 13, textAlign: 'center', writingDirection: 'rtl',
-  } as any,
-
-  // Year section header
-  yearHeader: {
-    fontSize: 13, fontWeight: '700', color: Colors.primary,
-    textAlign: 'right', writingDirection: 'rtl',
-    marginBottom: 8, marginTop: 4, paddingHorizontal: 4,
-    fontFamily: 'Baloo2_700Bold',
   } as any,
 
   // Class list row
