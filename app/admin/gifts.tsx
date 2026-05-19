@@ -1,15 +1,16 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  
   ScrollView,
   Alert,
   StyleSheet,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
@@ -22,28 +23,130 @@ import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
+import { useBreakpoint } from '@/lib/responsive';
+import { shadow } from '@/lib/shadow';
 import type { Tables } from '@/types/supabase';
 
 type Gift = Tables<'gifts'>;
 
-const S = StyleSheet.create({
-  infoBanner: {
-    backgroundColor: Colors.primarySurface, borderWidth: 1, borderColor: Colors.primaryLight,
-    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16,
-  },
-  infoBannerText: { color: Colors.primaryDark, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
-  giftIconBox: {
-    width: 48, height: 48, backgroundColor: '#FFEDD5',
-    borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12,
-  },
-  giftName: { fontWeight: '600', fontSize: 15, textAlign: 'right', writingDirection: 'rtl' } as any,
-  giftDesc: { color: '#94a3b8', fontSize: 12, textAlign: 'right', marginTop: 2, writingDirection: 'rtl' } as any,
-  switchWrap: { alignItems: 'center', justifyContent: 'center', marginHorizontal: 4 },
-  rowDivider: { width: 1, height: 28, backgroundColor: '#e2e8f0', marginHorizontal: 4 },
-});
+type GiftScheme = {
+  bg: string;
+  text: string;
+  sub: string;
+  bubble: string;
+  icon: string;
+  thumbOn: string;
+};
+
+const GIFT_SCHEME_ACTIVE: GiftScheme = {
+  bg: '#6BC99A',
+  text: '#ffffff',
+  sub: 'rgba(255,255,255,0.88)',
+  bubble: 'rgba(255,255,255,0.38)',
+  icon: 'rgba(255,255,255,0.28)',
+  thumbOn: Colors.success,
+};
+
+const GIFT_SCHEME_INACTIVE: GiftScheme = {
+  bg: '#fff',
+  text: Colors.muted,
+  sub: '#94a3b8',
+  bubble: Colors.surface,
+  icon: Colors.surface,
+  thumbOn: Colors.primaryDark,
+};
+
+function schemeForGift(isActive: boolean): GiftScheme {
+  return isActive ? GIFT_SCHEME_ACTIVE : GIFT_SCHEME_INACTIVE;
+}
+
+const GRID_GAP = 12;
+const GRID_MAX_W = 960;
+
+function GiftCube({
+  gift,
+  scheme,
+  isDesktop,
+  cubeWidth,
+  onEdit,
+  onDelete,
+  onToggle,
+}: {
+  gift: Gift;
+  scheme: GiftScheme;
+  isDesktop: boolean;
+  cubeWidth?: number;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+}) {
+  return (
+    <View
+      style={[
+        S.cube,
+        cubeWidth != null && { width: cubeWidth },
+        { backgroundColor: scheme.bg },
+        !gift.is_active && S.cubeInactive,
+        isDesktop && S.cubeDesktop,
+      ]}
+      accessibilityLabel={`פרס: ${gift.name}, ${gift.is_active ? 'פעיל' : 'לא פעיל'}`}
+    >
+      <View style={S.cubeTop}>
+        <View style={[S.iconBubble, { backgroundColor: scheme.icon }]}>
+          <GiftIcon size={14} color={scheme.text} />
+        </View>
+        <View style={S.cubeActions}>
+          <TactileIconBtn
+            onPress={onEdit}
+            style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
+            shadowColor="transparent"
+            accessibilityLabel={`ערוך ${gift.name}`}
+          >
+            <Pencil size={14} color={scheme.text} />
+          </TactileIconBtn>
+          <TactileIconBtn
+            onPress={onDelete}
+            style={[S.cubeActionBtn, S.cubeActionDanger]}
+            shadowColor="rgba(186,26,26,0.15)"
+            accessibilityLabel={`מחק ${gift.name}`}
+          >
+            <Trash2 size={14} color={Colors.danger} />
+          </TactileIconBtn>
+        </View>
+      </View>
+
+      <View style={S.cubeBody}>
+        <Text style={[S.cubeName, { color: scheme.text }]} numberOfLines={3}>
+          {gift.name}
+        </Text>
+        {gift.description ? (
+          <Text style={[S.cubeDesc, { color: scheme.sub }]} numberOfLines={2}>
+            {gift.description}
+          </Text>
+        ) : null}
+      </View>
+
+      <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
+        <PrimarySwitch
+          variant={gift.is_active ? 'onColor' : 'default'}
+          thumbOnColor={scheme.thumbOn}
+          value={gift.is_active}
+          onValueChange={onToggle}
+          accessibilityLabel={`${gift.is_active ? 'השבת' : 'הפעל'} ${gift.name}`}
+          accessibilityState={{ checked: gift.is_active }}
+        />
+        <Text style={[S.cubeStatus, { color: scheme.sub }]}>
+          {gift.is_active ? 'פעיל' : 'מושבת'}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export default function AdminGiftsScreen() {
-  const { listPad, pageContent } = useAdminLayout();
+  const { listPad, pageContent, isDesktop } = useAdminLayout();
+  const { isLarge } = useBreakpoint();
+  const { width: screenWidth } = useWindowDimensions();
   const { t } = useTranslation();
   const router = useRouter();
   const [gifts, setGifts] = useState<Gift[]>([]);
@@ -54,12 +157,35 @@ export default function AdminGiftsScreen() {
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const cols = isLarge ? 3 : isDesktop ? 3 : 2;
+  const listPadX = isDesktop ? 48 : 32;
+  const contentWidth = Math.min(screenWidth - listPadX, GRID_MAX_W);
+  const cubeWidth = Math.floor((contentWidth - GRID_GAP * (cols - 1)) / cols);
+
+  const gridStyle = useMemo(
+    () =>
+      Platform.OS === 'web'
+        ? ({
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gap: GRID_GAP,
+            width: '100%',
+            direction: 'rtl',
+          } as object)
+        : { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: GRID_GAP },
+    [cols],
+  );
+
+  const sortedGifts = useMemo(
+    () => [...gifts].sort((a, b) => a.name.localeCompare(b.name, 'he')),
+    [gifts],
+  );
+
   const loadGifts = useCallback(async () => {
     const { data, error } = await supabase
       .from('gifts')
       .select('*')
-      .is('deleted_at', null)
-      .order('name');
+      .is('deleted_at', null);
     if (!error) setGifts(data ?? []);
     setLoading(false);
   }, []);
@@ -134,6 +260,9 @@ export default function AdminGiftsScreen() {
         <ScrollView style={AS.list} contentContainerStyle={listPad}>
           <View style={pageContent}>
             <View style={S.infoBanner}>
+              <View style={S.infoIcon}>
+                <GiftIcon size={18} color={Colors.success} />
+              </View>
               <Text style={S.infoBannerText}>
                 פרסים הם הפרסים שכיתה בוחרת כשמגיעה למטרה.{'\n'}
                 המורה בוחר מהרשימה בעת רישום הפרס.
@@ -147,39 +276,20 @@ export default function AdminGiftsScreen() {
                 <Text style={AS.emptyHint}>לחץ על "+ הוספה" כדי להוסיף.</Text>
               </View>
             ) : (
-              gifts.map((gift) => (
-                <View
-                  key={gift.id}
-                  style={[AS.row, !gift.is_active && { opacity: 0.6 }]}
-                  accessibilityLabel={`מתנה: ${gift.name}, ${gift.is_active ? 'פעילה' : 'לא פעילה'}`}
-                >
-                  {/* Gift icon circle */}
-                  <View style={[AS.rowAvatar, AS.rowAvatarSuccess]}>
-                    <GiftIcon size={22} color={Colors.success} />
-                  </View>
-                  <View style={AS.rowLeft}>
-                    <Text style={[S.giftName, { color: gift.is_active ? Colors.text : '#94a3b8' }]}>{gift.name}</Text>
-                    {gift.description && <Text style={S.giftDesc}>{gift.description}</Text>}
-                  </View>
-                  <View style={S.switchWrap}>
-                    <PrimarySwitch
-                      value={gift.is_active}
-                      onValueChange={() => handleToggleActive(gift)}
-                      accessibilityLabel={`${gift.is_active ? 'השבת' : 'הפעל'} ${gift.name}`}
-                      accessibilityState={{ checked: gift.is_active }}
-                    />
-                  </View>
-                  <View style={S.rowDivider} />
-                  <View style={AS.rowActions}>
-                    <TactileIconBtn onPress={() => openEdit(gift)} style={AS.iconBtn} accessibilityLabel={`ערוך ${gift.name}`}>
-                      <Pencil size={16} color={Colors.muted} />
-                    </TactileIconBtn>
-                    <TactileIconBtn onPress={() => handleDelete(gift)} style={AS.iconBtnDanger} shadowColor="rgba(186,26,26,0.2)" accessibilityLabel={`מחק ${gift.name}`}>
-                      <Trash2 size={16} color={Colors.danger} />
-                    </TactileIconBtn>
-                  </View>
-                </View>
-              ))
+              <View style={[S.grid, gridStyle]}>
+                {sortedGifts.map((gift) => (
+                  <GiftCube
+                    key={gift.id}
+                    gift={gift}
+                    scheme={schemeForGift(gift.is_active)}
+                    isDesktop={isDesktop}
+                    cubeWidth={Platform.OS === 'web' ? undefined : cubeWidth}
+                    onEdit={() => openEdit(gift)}
+                    onDelete={() => handleDelete(gift)}
+                    onToggle={() => handleToggleActive(gift)}
+                  />
+                ))}
+              </View>
             )}
           </View>
         </ScrollView>
@@ -220,3 +330,119 @@ export default function AdminGiftsScreen() {
     </SafeAreaView>
   );
 }
+
+const S = StyleSheet.create({
+  infoBanner: {
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: Colors.successSurface,
+    borderWidth: 1,
+    borderColor: Colors.successLight,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 18,
+  },
+  infoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  infoBannerText: {
+    flex: 1,
+    color: Colors.success,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as any,
+
+  grid: { width: '100%' },
+
+  cube: {
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    minHeight: 168,
+    overflow: 'hidden',
+    ...shadow('#000', 4, 12, 0.14, 6),
+  },
+  cubeDesktop: { minHeight: 180 },
+  cubeInactive: {
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+    opacity: 0.88,
+    ...shadow('#785900', 0, 6, 0.06, 2),
+  },
+
+  cubeTop: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    zIndex: 1,
+  },
+  iconBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cubeActions: { flexDirection: 'row-reverse', gap: 6 },
+  cubeActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cubeActionDanger: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
+
+  cubeBody: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  cubeName: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'Baloo2_700Bold',
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    lineHeight: 26,
+  } as any,
+  cubeDesc: {
+    fontSize: 12,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    lineHeight: 17,
+    marginTop: 6,
+  } as any,
+
+  cubeFooter: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  cubeStatus: {
+    fontSize: 11,
+    fontWeight: '600',
+    writingDirection: 'rtl',
+  } as any,
+});

@@ -9,6 +9,8 @@ import {
   ScrollView,
   Alert,
   StyleSheet,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
@@ -33,15 +35,16 @@ type DeedScheme = {
   sub: string;
   bubble: string;
   icon: string;
+  thumbOn: string;
 };
 
-const DEED_SCHEMES: DeedScheme[] = [
-  { bg: Colors.primary,    text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    bubble: 'rgba(255,255,255,0.45)', icon: 'rgba(255,255,255,0.22)' },
-  { bg: Colors.accent,     text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)' },
-  { bg: Colors.secondary,  text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)' },
-  { bg: Colors.success,    text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)' },
-  { bg: Colors.salmon,     text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)' },
-  { bg: Colors.peach,      text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    bubble: 'rgba(255,255,255,0.45)', icon: 'rgba(255,255,255,0.35)' },
+/** Fixed palette: tier 0 = 1–2 pts … tier 4 = 9–10 pts */
+const AMOUNT_TIER_SCHEMES: DeedScheme[] = [
+  { bg: Colors.peach,      text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    bubble: 'rgba(255,255,255,0.45)', icon: 'rgba(255,255,255,0.35)', thumbOn: Colors.primaryDark },
+  { bg: Colors.secondary,  text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)', thumbOn: '#004578' },
+  { bg: '#6BC99A',          text: '#ffffff',          sub: 'rgba(255,255,255,0.88)', bubble: 'rgba(255,255,255,0.38)', icon: 'rgba(255,255,255,0.28)', thumbOn: Colors.success },
+  { bg: Colors.accent,     text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)', thumbOn: '#C44E1A' },
+  { bg: Colors.primary,    text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    bubble: 'rgba(255,255,255,0.45)', icon: 'rgba(255,255,255,0.22)', thumbOn: Colors.primaryDark },
 ];
 
 const INACTIVE_SCHEME: DeedScheme = {
@@ -50,24 +53,101 @@ const INACTIVE_SCHEME: DeedScheme = {
   sub: '#94a3b8',
   bubble: Colors.surface,
   icon: Colors.surface,
+  thumbOn: Colors.primaryDark,
 };
 
-function schemeForDeed(deed: Deed, index: number): DeedScheme {
-  if (!deed.is_active) return INACTIVE_SCHEME;
-  return DEED_SCHEMES[(deed.amount + index) % DEED_SCHEMES.length];
+function schemeForAmount(amount: number, isActive: boolean): DeedScheme {
+  if (!isActive) return INACTIVE_SCHEME;
+  const tier = Math.min(Math.floor((amount - 1) / 2), AMOUNT_TIER_SCHEMES.length - 1);
+  return AMOUNT_TIER_SCHEMES[tier];
 }
 
-function chunkRows<T>(items: T[], cols: number): T[][] {
-  const rows: T[][] = [];
-  for (let i = 0; i < items.length; i += cols) {
-    rows.push(items.slice(i, i + cols));
-  }
-  return rows;
+function compareDeeds(a: Deed, b: Deed): number {
+  if (a.amount !== b.amount) return a.amount - b.amount;
+  return a.name.localeCompare(b.name, 'he');
+}
+
+const GRID_GAP = 12;
+const GRID_MAX_W = 960;
+
+function DeedCube({
+  deed,
+  scheme,
+  isDesktop,
+  cubeWidth,
+  onEdit,
+  onDelete,
+  onToggle,
+}: {
+  deed: Deed;
+  scheme: DeedScheme;
+  isDesktop: boolean;
+  cubeWidth?: number;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+}) {
+  return (
+    <View
+      style={[
+        S.cube,
+        cubeWidth != null && { width: cubeWidth },
+        { backgroundColor: scheme.bg },
+        !deed.is_active && S.cubeInactive,
+        isDesktop && S.cubeDesktop,
+      ]}
+      accessibilityLabel={`מעשה: ${deed.name}, ערך ${deed.amount}, ${deed.is_active ? 'פעיל' : 'לא פעיל'}`}
+    >
+      <View style={S.cubeTop}>
+        <View style={[S.sparkleBubble, { backgroundColor: scheme.icon }]}>
+          <Sparkles size={14} color={scheme.text} />
+        </View>
+        <View style={S.cubeActions}>
+          <TactileIconBtn
+            onPress={onEdit}
+            style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
+            shadowColor="transparent"
+            accessibilityLabel={`ערוך ${deed.name}`}
+          >
+            <Pencil size={14} color={scheme.text} />
+          </TactileIconBtn>
+          <TactileIconBtn
+            onPress={onDelete}
+            style={[S.cubeActionBtn, S.cubeActionDanger]}
+            shadowColor="rgba(186,26,26,0.15)"
+            accessibilityLabel={`מחק ${deed.name}`}
+          >
+            <Trash2 size={14} color={Colors.danger} />
+          </TactileIconBtn>
+        </View>
+      </View>
+      <View style={S.cubeBody}>
+        <Text style={[S.pointsText, { color: scheme.text }]}>+{deed.amount}</Text>
+        <Text style={[S.cubeName, { color: scheme.text }]} numberOfLines={3}>
+          {deed.name}
+        </Text>
+      </View>
+      <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
+        <PrimarySwitch
+          variant={deed.is_active ? 'onColor' : 'default'}
+          thumbOnColor={scheme.thumbOn}
+          value={deed.is_active}
+          onValueChange={onToggle}
+          accessibilityLabel={`${deed.is_active ? 'השבת' : 'הפעל'} ${deed.name}`}
+          accessibilityState={{ checked: deed.is_active }}
+        />
+        <Text style={[S.cubeStatus, { color: scheme.sub }]}>
+          {deed.is_active ? 'פעיל' : 'מושבת'}
+        </Text>
+      </View>
+    </View>
+  );
 }
 
 export default function AdminDeedsScreen() {
   const { listPad, pageContent, isDesktop } = useAdminLayout();
   const { isLarge } = useBreakpoint();
+  const { width: screenWidth } = useWindowDimensions();
   const { t } = useTranslation();
   const router = useRouter();
   const [deeds, setDeeds] = useState<Deed[]>([]);
@@ -79,14 +159,34 @@ export default function AdminDeedsScreen() {
   const [saving, setSaving] = useState(false);
 
   const cols = isLarge ? 3 : isDesktop ? 3 : 2;
-  const deedRows = useMemo(() => chunkRows(deeds, cols), [deeds, cols]);
+  const listPadX = isDesktop ? 48 : 32;
+  const contentWidth = Math.min(screenWidth - listPadX, GRID_MAX_W);
+  const cubeWidth = Math.floor((contentWidth - GRID_GAP * (cols - 1)) / cols);
+
+  const gridStyle = useMemo(
+    () =>
+      Platform.OS === 'web'
+        ? ({
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gap: GRID_GAP,
+            width: '100%',
+            direction: 'rtl',
+          } as object)
+        : { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: GRID_GAP },
+    [cols],
+  );
+
+  const sortedDeeds = useMemo(
+    () => [...deeds].sort(compareDeeds),
+    [deeds],
+  );
 
   const loadDeeds = useCallback(async () => {
     const { data, error } = await supabase
       .from('deeds')
       .select('*')
-      .is('deleted_at', null)
-      .order('amount', { ascending: false });
+      .is('deleted_at', null);
     if (!error) setDeeds(data ?? []);
     setLoading(false);
   }, []);
@@ -162,7 +262,7 @@ export default function AdminDeedsScreen() {
           <View style={pageContent}>
             <View style={S.infoBanner}>
               <View style={S.infoIcon}>
-                <Sparkles size={18} color={Colors.primaryDark} />
+                <Sparkles size={18} color={Colors.accent} />
               </View>
               <Text style={S.infoBannerText}>
                 מעשים טובים הם הפעולות שהמורה בוחר כשנותן נקודות.{'\n'}
@@ -177,76 +277,18 @@ export default function AdminDeedsScreen() {
                 <Text style={AS.emptyHint}>לחץ על "+ הוספה" כדי להוסיף.</Text>
               </View>
             ) : (
-              <View style={S.grid}>
-                {deedRows.map((row, rowIdx) => (
-                  <View key={rowIdx} style={S.gridRow}>
-                    {row.map((deed, colIdx) => {
-                      const globalIdx = rowIdx * cols + colIdx;
-                      const scheme = schemeForDeed(deed, globalIdx);
-                      return (
-                        <View
-                          key={deed.id}
-                          style={[
-                            S.cube,
-                            { backgroundColor: scheme.bg },
-                            !deed.is_active && S.cubeInactive,
-                            isDesktop && S.cubeDesktop,
-                          ]}
-                          accessibilityLabel={`מעשה: ${deed.name}, ערך ${deed.amount}, ${deed.is_active ? 'פעיל' : 'לא פעיל'}`}
-                        >
-                          <View style={[S.cubeDecor, { backgroundColor: scheme.icon }]} />
-
-                          <View style={S.cubeTop}>
-                            <View style={[S.sparkleBubble, { backgroundColor: scheme.icon }]}>
-                              <Sparkles size={14} color={scheme.text} />
-                            </View>
-                            <View style={S.cubeActions}>
-                              <TactileIconBtn
-                                onPress={() => openEdit(deed)}
-                                style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
-                                shadowColor="transparent"
-                                accessibilityLabel={`ערוך ${deed.name}`}
-                              >
-                                <Pencil size={14} color={scheme.text} />
-                              </TactileIconBtn>
-                              <TactileIconBtn
-                                onPress={() => handleDelete(deed)}
-                                style={[S.cubeActionBtn, S.cubeActionDanger]}
-                                shadowColor="rgba(186,26,26,0.15)"
-                                accessibilityLabel={`מחק ${deed.name}`}
-                              >
-                                <Trash2 size={14} color={Colors.danger} />
-                              </TactileIconBtn>
-                            </View>
-                          </View>
-
-                          <View style={[S.pointsBubble, { backgroundColor: scheme.bubble }]}>
-                            <Text style={[S.pointsText, { color: scheme.text }]}>+{deed.amount}</Text>
-                          </View>
-
-                          <Text style={[S.cubeName, { color: scheme.text }]} numberOfLines={2}>
-                            {deed.name}
-                          </Text>
-
-                          <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
-                            <Text style={[S.cubeStatus, { color: scheme.sub }]}>
-                              {deed.is_active ? 'פעיל' : 'מושבת'}
-                            </Text>
-                            <PrimarySwitch
-                              value={deed.is_active}
-                              onValueChange={() => handleToggleActive(deed)}
-                              accessibilityLabel={`${deed.is_active ? 'השבת' : 'הפעל'} ${deed.name}`}
-                              accessibilityState={{ checked: deed.is_active }}
-                            />
-                          </View>
-                        </View>
-                      );
-                    })}
-                    {row.length < cols &&
-                      Array.from({ length: cols - row.length }).map((_, i) => (
-                        <View key={`pad-${i}`} style={S.cubePad} />
-                      ))}
-                  </View>
+              <View style={[S.grid, gridStyle]}>
+                {sortedDeeds.map((deed) => (
+                  <DeedCube
+                    key={deed.id}
+                    deed={deed}
+                    scheme={schemeForAmount(deed.amount, deed.is_active)}
+                    isDesktop={isDesktop}
+                    cubeWidth={Platform.OS === 'web' ? undefined : cubeWidth}
+                    onEdit={() => openEdit(deed)}
+                    onDelete={() => handleDelete(deed)}
+                    onToggle={() => handleToggleActive(deed)}
+                  />
                 ))}
               </View>
             )}
@@ -301,9 +343,9 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'flex-start',
     gap: 12,
-    backgroundColor: Colors.primarySurface,
+    backgroundColor: '#FFF0EB',
     borderWidth: 1,
-    borderColor: Colors.primaryLight,
+    borderColor: '#FFD4C4',
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -313,25 +355,23 @@ const S = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: '#FFE4D9',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   infoBannerText: {
     flex: 1,
-    color: Colors.primaryDark,
+    color: Colors.accent,
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'right',
     writingDirection: 'rtl',
   } as any,
 
-  grid: { gap: 12 },
-  gridRow: { flexDirection: 'row-reverse', gap: 12 },
+  grid: { width: '100%' },
 
   cube: {
-    flex: 1,
     borderRadius: 22,
     paddingHorizontal: 14,
     paddingTop: 12,
@@ -347,16 +387,6 @@ const S = StyleSheet.create({
     borderStyle: 'dashed',
     opacity: 0.88,
     ...shadow('#785900', 0, 6, 0.06, 2),
-  },
-  cubePad: { flex: 1 },
-
-  cubeDecor: {
-    position: 'absolute',
-    right: -20,
-    top: -20,
-    width: 88,
-    height: 88,
-    borderRadius: 44,
   },
 
   cubeTop: {
@@ -385,30 +415,28 @@ const S = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.92)',
   },
 
-  pointsBubble: {
-    alignSelf: 'center',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
+  cubeBody: {
+    flex: 1,
     justifyContent: 'center',
-    marginBottom: 10,
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 8,
   },
   pointsText: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
+    lineHeight: 38,
   } as any,
-
   cubeName: {
-    flex: 1,
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
     textAlign: 'center',
     writingDirection: 'rtl',
-    lineHeight: 20,
-    marginBottom: 10,
+    lineHeight: 24,
+    marginTop: 4,
   } as any,
 
   cubeFooter: {

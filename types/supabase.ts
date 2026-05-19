@@ -373,7 +373,7 @@ export type Database = {
     }
     Functions: {
       admin_update_teacher: {
-        Args: { p_display_name: string; p_email: string; p_user_id: string }
+        Args: { p_user_id: string; p_display_name: string; p_email: string }
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }

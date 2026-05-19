@@ -8,11 +8,17 @@ import { TouchableOpacity, View, StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/components/ui';
 import { shadow } from '@/lib/shadow';
 
+type PrimarySwitchVariant = 'default' | 'onColor';
+
 interface PrimarySwitchProps {
   value: boolean;
   onValueChange: (v: boolean) => void;
   accessibilityLabel?: string;
   accessibilityState?: { checked?: boolean };
+  /** `onColor` — white track; thumb uses `thumbOnColor` when on */
+  variant?: PrimarySwitchVariant;
+  /** Thumb fill when variant=onColor and switch is on (default: primaryDark) */
+  thumbOnColor?: string;
 }
 
 export default function PrimarySwitch({
@@ -20,7 +26,10 @@ export default function PrimarySwitch({
   onValueChange,
   accessibilityLabel,
   accessibilityState,
+  variant = 'default',
+  thumbOnColor = Colors.primaryDark,
 }: PrimarySwitchProps) {
+  const onColor = variant === 'onColor';
   return (
     <TouchableOpacity
       onPress={() => onValueChange(!value)}
@@ -30,11 +39,20 @@ export default function PrimarySwitch({
       activeOpacity={0.85}
       style={[
         S.track,
-        value ? S.trackOn : S.trackOff,
+        value
+          ? (onColor ? S.trackOnColorOn : S.trackOn)
+          : (onColor ? S.trackOnColorOff : S.trackOff),
         Platform.OS === 'web' && { cursor: 'pointer' } as any,
       ]}
     >
-      <View style={[S.thumb, value ? S.thumbOn : S.thumbOff]} />
+      <View
+        style={[
+          S.thumb,
+          value
+            ? (onColor ? [S.thumbOnColorOn, { backgroundColor: thumbOnColor }] : S.thumbOn)
+            : (onColor ? S.thumbOnColorOff : S.thumbOff),
+        ]}
+      />
     </TouchableOpacity>
   );
 }
@@ -47,18 +65,28 @@ const S = StyleSheet.create({
     paddingHorizontal: 3, paddingVertical: 3,
     justifyContent: 'center',
   },
-  trackOn:  { backgroundColor: '#ffdf9e' },   // primaryLight warm
-  trackOff: { backgroundColor: '#e9e1db' },   // surface-variant warm
+  trackOn:  { backgroundColor: '#ffdf9e' },
+  trackOff: { backgroundColor: '#e9e1db' },
+  trackOnColorOn:  { backgroundColor: 'rgba(255,255,255,0.95)' },
+  trackOnColorOff: { backgroundColor: 'rgba(0,0,0,0.22)' },
   thumb: {
     width: 22, height: 22, borderRadius: 11,
     ...shadow('#000', 1, 2, 0.18, 2),
   },
   thumbOn: {
     backgroundColor: Colors.primary,
-    marginLeft: 22,  // slide right: track(50) - padding(6) - thumb(22) = 22
+    marginLeft: 22,
   },
   thumbOff: {
     backgroundColor: '#fff',
+    marginLeft: 0,
+  },
+  thumbOnColorOn: {
+    backgroundColor: Colors.primaryDark,
+    marginLeft: 22,
+  },
+  thumbOnColorOff: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
     marginLeft: 0,
   },
 });
