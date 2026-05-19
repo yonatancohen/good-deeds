@@ -255,16 +255,6 @@ export default function TeacherHome() {
 
           {/* Action buttons — left side */}
           <View style={S.headerBtns}>
-            {isAdmin && (
-              <TouchableOpacity
-                onPress={() => router.replace('/admin')}
-                style={[S.headerIconBtn, ptr]}
-                accessibilityRole="button"
-                accessibilityLabel="חזור לניהול"
-              >
-                <ShieldCheck size={20} color={Colors.secondary} />
-              </TouchableOpacity>
-            )}
             {user && (
               <TouchableOpacity
                 onPress={handleLogout}
@@ -273,6 +263,16 @@ export default function TeacherHome() {
                 accessibilityLabel="התנתק"
               >
                 <LogOut size={20} color={Colors.muted} />
+              </TouchableOpacity>
+            )}
+            {isAdmin && (
+              <TouchableOpacity
+                onPress={() => router.replace('/admin')}
+                style={[S.headerIconBtn, ptr]}
+                accessibilityRole="button"
+                accessibilityLabel="חזור לניהול"
+              >
+                <ShieldCheck size={20} color={Colors.secondary} />
               </TouchableOpacity>
             )}
           </View>

@@ -37,6 +37,7 @@ import { useClassStudents, CreditEventWithDetails } from '@/hooks/useClassStuden
 import { useDeeds } from '@/hooks/useDeeds';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminLayout } from '@/lib/adminStyles';
 import { confirmAction } from '@/lib/confirm';
 import { supabase } from '@/lib/supabase';
 
@@ -481,6 +482,7 @@ export default function ClassDetailScreen() {
   const { classId } = useLocalSearchParams<{ classId: string }>();
   const { user, isAdmin } = useAuth();          // ← single call, shared below
   const { settings } = useSettings();
+  const { pageContent } = useAdminLayout();
   const { deeds } = useDeeds();                  // ← single call, passed to sheets
 
   // Fetch only this one class (not all classes)
@@ -643,33 +645,35 @@ export default function ClassDetailScreen() {
     <SafeAreaView style={S.screen}>
 
       {/* ── Header ── */}
-      <View style={S.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="חזור"
-          style={[S.backBtn, ptr]}
-        >
-          <ChevronRight size={20} color={Colors.primaryDark} />
-        </TouchableOpacity>
-        <View style={S.headerTitleWrap}>
-          <Text style={S.headerTitle} accessibilityRole="header">
-            כיתה {className}
-          </Text>
-          <Text style={S.headerSub}>
-            {visibleStudents.length} תלמידים
-            {classRow?.grade ? ` · שכבה ${classRow.grade}` : ''}
-          </Text>
+      <View style={S.headerBar}>
+        <View style={[S.header, pageContent]}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="חזור"
+            style={[S.backBtn, ptr]}
+          >
+            <ChevronRight size={20} color={Colors.primaryDark} />
+          </TouchableOpacity>
+          <View style={S.headerTitleWrap}>
+            <Text style={S.headerTitle} accessibilityRole="header">
+              כיתה {className}
+            </Text>
+            <Text style={S.headerSub}>
+              {visibleStudents.length} תלמידים
+              {classRow?.grade ? ` · שכבה ${classRow.grade}` : ''}
+            </Text>
+          </View>
+          {/* Add student button */}
+          <TouchableOpacity
+            onPress={openAddStudent}
+            accessibilityRole="button"
+            accessibilityLabel="הוסף תלמיד"
+            style={[S.headerAddBtn, ptr]}
+          >
+            <UserPlus size={18} color={Colors.primaryDark} />
+          </TouchableOpacity>
         </View>
-        {/* Add student button */}
-        <TouchableOpacity
-          onPress={openAddStudent}
-          accessibilityRole="button"
-          accessibilityLabel="הוסף תלמיד"
-          style={[S.headerAddBtn, ptr]}
-        >
-          <UserPlus size={18} color={Colors.primaryDark} />
-        </TouchableOpacity>
       </View>
 
       {/* ── Scrollable content ── */}
@@ -678,6 +682,7 @@ export default function ClassDetailScreen() {
         contentContainerStyle={S.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+      <View style={pageContent}>
 
         {/* ── 1. PomPom Jar ── */}
         <View style={S.jarSection}>
@@ -760,6 +765,7 @@ export default function ClassDetailScreen() {
 
         {/* Bottom padding */}
         <View style={{ height: 32 }} />
+      </View>{/* /pageContent */}
       </ScrollView>
 
       {/* ── Class Deed Picker Sheet ── */}
@@ -875,15 +881,17 @@ const S = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg },
 
   // ── Header ──
+  headerBar: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
   header: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
     gap: 10,
   },
   backBtn: {
