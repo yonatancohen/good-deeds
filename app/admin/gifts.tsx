@@ -122,7 +122,7 @@ export default function AdminGiftsScreen() {
             <Text style={AS.headerTitle} accessibilityRole="header">{t('gifts')}</Text>
           </View>
           <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף פרס">
-            <Plus size={15} color="#fff" />
+            <Plus size={15} color={Colors.primaryDark} />
             <Text style={AS.addBtnText}>הוספה</Text>
           </TouchableOpacity>
         </View>

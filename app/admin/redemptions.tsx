@@ -209,7 +209,7 @@ export default function AdminRedemptionsScreen() {
             <Text style={AS.headerTitle} accessibilityRole="header">{t('redemptions')}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalVisible(true)} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="רשום מתנה לכיתה">
-            <Plus size={15} color="#fff" />
+            <Plus size={15} color={Colors.primaryDark} />
             <Text style={AS.addBtnText}>הוספה</Text>
           </TouchableOpacity>
         </View>

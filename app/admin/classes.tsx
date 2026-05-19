@@ -272,7 +272,7 @@ export default function AdminClassesScreen() {
               <Text style={AS.addBtnText}>הוספה חכמה</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף כיתה חדשה">
-              <Plus size={15} color="#fff" />
+              <Plus size={15} color={Colors.primaryDark} />
               <Text style={AS.addBtnText}>הוספה</Text>
             </TouchableOpacity>
           </View>

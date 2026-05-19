@@ -135,7 +135,7 @@ export default function AdminDeedsScreen() {
             <Text style={AS.headerTitle} accessibilityRole="header">{t('deeds')}</Text>
           </View>
           <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מעשה חדש">
-            <Plus size={15} color="#fff" />
+            <Plus size={15} color={Colors.primaryDark} />
             <Text style={AS.addBtnText}>הוספה</Text>
           </TouchableOpacity>
         </View>

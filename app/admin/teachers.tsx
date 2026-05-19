@@ -391,7 +391,7 @@ export default function AdminTeachersScreen() {
               <Text style={AS.addBtnText}>CSV</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setInviteVisible(true)} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מורה חדש">
-              <Plus size={15} color="#fff" />
+              <Plus size={15} color={Colors.primaryDark} />
               <Text style={AS.addBtnText}>הוספה</Text>
             </TouchableOpacity>
           </View>
