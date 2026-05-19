@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  Platform, StyleSheet, Image,
+  Platform, StyleSheet, Image, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -10,6 +10,8 @@ import {
   Settings, Globe, LogOut, Users, ChevronLeft,
   GraduationCap, ClipboardList,
 } from 'lucide-react-native';
+import moment from 'moment';
+import 'moment/locale/he';
 import '@/lib/i18n';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
@@ -17,6 +19,20 @@ import { supabase } from '@/lib/supabase';
 import { Colors } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
+import { AS } from '@/lib/adminStyles';
+import type { Tables } from '@/types/supabase';
+
+moment.locale('he');
+
+type ClassRow = Tables<'classes'>;
+type GiftRow = Tables<'gifts'>;
+type PendingRedemption = {
+  id: string;
+  redeemed_at: string;
+  note: string | null;
+  classes: ClassRow | null;
+  gifts: GiftRow | null;
+};
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -55,9 +71,34 @@ export default function AdminHomeScreen() {
   const { settings, refresh } = useSettings();
   const { isDesktop } = useBreakpoint();
 
+  const [pendingRedemptions, setPendingRedemptions] = useState<PendingRedemption[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(true);
+
   const cols = isDesktop ? 3 : 2;
 
-  useFocusEffect(useCallback(() => { refresh(); }, []));
+  const loadPendingRedemptions = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('redemption_rounds')
+      .select('id, redeemed_at, note, classes(*), gifts(*)')
+      .eq('fulfilled', false)
+      .order('redeemed_at', { ascending: false })
+      .limit(50);
+
+    if (!error) {
+      const rows = (data ?? []) as PendingRedemption[];
+      setPendingRedemptions(rows.filter((r) => r.classes && !r.classes.deleted_at));
+    }
+    setPendingLoading(false);
+  }, []);
+
+  // Empty deps: refresh from useSettings is recreated each render; including it loops forever.
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+      setPendingLoading(true);
+      loadPendingRedemptions();
+    }, []),
+  );
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -131,6 +172,92 @@ export default function AdminHomeScreen() {
               </View>
             </View>
           </View>
+
+          {/* Pending gifts — assigned to classes, not yet fulfilled */}
+          {pendingLoading ? (
+            <ActivityIndicator
+              size="small"
+              color={Colors.primary}
+              style={{ marginBottom: 16 }}
+              accessibilityLabel="טוען מתנות ממתינות"
+            />
+          ) : (
+            <View style={S.pendingSection} accessibilityRole="summary">
+              <View style={S.pendingHeader}>
+                {pendingRedemptions.length > 0 && (
+                  <View style={S.pendingCountBadge}>
+                    <Text style={S.pendingCountText}>{pendingRedemptions.length}</Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={S.pendingTitle}>מתנות שטרם מומשו</Text>
+                  <Text style={S.pendingSub}>
+                    {pendingRedemptions.length > 0
+                      ? 'כיתות שבחרו פרס וממתינות למסירה בפועל'
+                      : 'מעקב אחר פרסים שטרם נמסרו לכיתות'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => router.push('/admin/redemptions' as any)}
+                  style={[S.pendingLink, pointer]}
+                  accessibilityRole="link"
+                  accessibilityLabel="פתח את כל המתנות לכיתה"
+                >
+                  <Text style={S.pendingLinkText}>הכל</Text>
+                  <ChevronLeft size={14} color={Colors.primaryDark} />
+                </TouchableOpacity>
+              </View>
+
+              {pendingRedemptions.length > 0 ? (
+                <View style={S.pendingList}>
+                  {pendingRedemptions.map((r) => (
+                    <TouchableOpacity
+                      key={r.id}
+                      onPress={() => router.push('/admin/redemptions' as any)}
+                      style={[S.pendingRow, pointer]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`כיתה ${r.classes?.name ?? ''}, מתנה ${r.gifts?.name ?? 'ללא שם'}, ממתין למימוש`}
+                    >
+                      <View style={S.pendingRowIcon}>
+                        <Trophy size={18} color={Colors.accent} />
+                      </View>
+                      <View style={S.pendingRowBody}>
+                        <Text style={S.pendingRowClass} numberOfLines={1}>
+                          כיתה {r.classes?.name ?? '—'}
+                        </Text>
+                        {r.gifts?.name ? (
+                          <Text style={S.pendingRowGift} numberOfLines={1}>
+                            {r.gifts.name}
+                          </Text>
+                        ) : null}
+                        {r.note ? (
+                          <Text style={S.pendingRowNote} numberOfLines={1}>{r.note}</Text>
+                        ) : null}
+                      </View>
+                      <View style={S.pendingRowMeta}>
+                        <View style={S.pendingStatusBadge}>
+                          <Text style={S.pendingStatusText}>ממתין</Text>
+                        </View>
+                        <Text style={S.pendingRowDate}>
+                          {moment(r.redeemed_at).format('DD/MM/YY')}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={S.pendingEmpty}>
+                  <View style={[AS.emptyIcon, { backgroundColor: '#FFEDD5' }]}>
+                    <Trophy size={28} color={Colors.accent} />
+                  </View>
+                  <Text style={AS.emptyTitle}>אין מתנות למימוש</Text>
+                  <Text style={AS.emptyHint}>
+                    כשכיתה תירשם לפרס — היא תופיע כאן למעקב.
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Grid */}
           <View style={S.grid}>
@@ -246,6 +373,133 @@ const S = StyleSheet.create({
   } as any,
   avatarShadow: { width: 75, height: 75, borderRadius: 38, ...shadow(Colors.primary, 8, 16, 0.45, 12) },
   avatarClip:   { width: 75, height: 75, borderRadius: 38, overflow: 'hidden' },
+
+  // ── Pending redemptions ──
+  pendingSection: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
+    ...shadow('#D97706', 3, 10, 0.12, 4),
+  },
+  pendingHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 12,
+  },
+  pendingCountBadge: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  pendingCountText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'Baloo2_700Bold',
+  } as any,
+  pendingTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#92400E',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    fontFamily: 'Baloo2_700Bold',
+  } as any,
+  pendingSub: {
+    fontSize: 12,
+    color: '#B45309',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    marginTop: 2,
+  } as any,
+  pendingLink: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  pendingLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primaryDark,
+    writingDirection: 'rtl',
+  } as any,
+  pendingList: { gap: 8 },
+  pendingEmpty: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 14,
+  },
+  pendingRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  pendingRowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FFEDD5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingRowBody: { flex: 1, alignItems: 'flex-end' },
+  pendingRowClass: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.text,
+    writingDirection: 'rtl',
+    textAlign: 'right',
+  } as any,
+  pendingRowGift: {
+    fontSize: 13,
+    color: '#64748b',
+    writingDirection: 'rtl',
+    textAlign: 'right',
+    marginTop: 2,
+  } as any,
+  pendingRowNote: {
+    fontSize: 11,
+    color: '#94a3b8',
+    writingDirection: 'rtl',
+    textAlign: 'right',
+    marginTop: 2,
+  } as any,
+  pendingRowMeta: { alignItems: 'flex-start', gap: 4 },
+  pendingStatusBadge: {
+    backgroundColor: '#FFEDD5',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  pendingStatusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#9A3412',
+    writingDirection: 'rtl',
+  } as any,
+  pendingRowDate: {
+    fontSize: 11,
+    color: '#94a3b8',
+    writingDirection: 'rtl',
+  } as any,
 
   // ── Grid ──
   grid:    { gap: 14 },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/supabase';
 
@@ -16,7 +16,7 @@ export function useSettings(): UseSettingsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function fetchSettings() {
+  const fetchSettings = useCallback(async () => {
     const { data, error: err } = await supabase
       .from('settings')
       .select('*')
@@ -29,7 +29,7 @@ export function useSettings(): UseSettingsResult {
       setSettings(data);
     }
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
