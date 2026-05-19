@@ -53,7 +53,7 @@ const S = StyleSheet.create({
     top: -60, right: -60,
     ...(Platform.OS === 'web'
       ? ({
-          background: 'radial-gradient(circle, rgba(255,193,7,0.18) 0%, transparent 70%)',
+          backgroundImage: 'radial-gradient(circle, rgba(255,193,7,0.18) 0%, transparent 70%)',
         } as any)
       : {}),
   },
@@ -62,7 +62,7 @@ const S = StyleSheet.create({
     bottom: -80, left: -80,
     ...(Platform.OS === 'web'
       ? ({
-          background: 'radial-gradient(circle, rgba(124,225,123,0.15) 0%, transparent 70%)',
+          backgroundImage: 'radial-gradient(circle, rgba(124,225,123,0.15) 0%, transparent 70%)',
         } as any)
       : {}),
   },

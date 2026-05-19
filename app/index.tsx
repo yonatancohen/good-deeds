@@ -5,9 +5,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
   Platform,
-  StatusBar,
   StyleSheet,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -16,16 +14,31 @@ import {
   Trophy, Users, ChevronDown, ChevronUp, Star, LogIn,
 } from 'lucide-react-native';
 import '@/lib/i18n';
-import { usePublicData, ClassWithProgress, StudentWithCredits, PendingRedemption } from '@/hooks/usePublicData';
-import moment from 'moment';
-import 'moment/locale/he';
-
-moment.locale('he');
+import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
 import { Skeleton, Colors } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
+import { getClassColorScheme } from '@/lib/classColors';
 
 const webPtr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
+const CARD_DEPTH = '#5b4300';
+const MAX_CONTENT_W = 900;
+
+function cardDepthStyle(pressed: boolean, hovered: boolean): object {
+  if (Platform.OS === 'web') {
+    const transition = { transition: 'box-shadow 0.22s ease, transform 0.22s ease' } as any;
+    if (pressed) return { ...transition, boxShadow: '0 1px 0 #5b4300' };
+    if (hovered) {
+      return {
+        ...transition,
+        boxShadow: '0 14px 32px rgba(91,67,0,0.14), 0 6px 0 #5b4300',
+      };
+    }
+    return { ...transition, boxShadow: '0 5px 0 #5b4300' };
+  }
+  if (pressed) return shadow(CARD_DEPTH, 1, 6, 0.14, 3);
+  return shadow(CARD_DEPTH, 5, 14, 0.2, 8);
+}
 
 // ── Pompom jar ────────────────────────────────────────────────────────────────
 const POMPOM_COLORS = ['#EF4444','#F97316','#EAB308','#22C55E','#3B82F6','#8B5CF6','#EC4899','#06B6D4'];
@@ -38,10 +51,10 @@ function PompomJar({ value, max }: { value: number; max: number }) {
   return (
     <View style={{ alignItems: 'center', gap: 2 }}>
       {/* Lid */}
-      <View style={{ width: 26, height: 5, backgroundColor: '#CBD5E1', borderRadius: 3 }} />
+      <View style={{ width: 26, height: 5, backgroundColor: Colors.border, borderRadius: 3 }} />
       {/* Jar body */}
       <View style={{
-        width: 34, height: 44, borderWidth: 2, borderColor: '#CBD5E1',
+        width: 34, height: 44, borderWidth: 2, borderColor: Colors.border,
         borderRadius: 6, overflow: 'hidden', backgroundColor: Colors.primarySurface,
         justifyContent: 'flex-end',
       }}>
@@ -90,51 +103,75 @@ function StudentPill({ s }: { s: StudentWithCredits }) {
   );
 }
 
-// ── Pending redemption card ─────────────────────────────────────────────────────
-function PendingCard({ item }: { item: PendingRedemption }) {
-  return (
-    <View style={S.pendingCard} accessibilityLabel={`פרס ממתין: ${item.class.name}`}>
-      {item.gift?.image_url ? (
-        <Image source={{ uri: item.gift.image_url }} style={S.pendingImg} resizeMode="cover" />
-      ) : (
-        <View style={[S.pendingImg, S.pendingImgPlaceholder]}>
-          <Trophy size={22} color={Colors.accent} />
-        </View>
-      )}
-      <Text style={S.pendingClass} numberOfLines={1}>{item.class.name}</Text>
-      {item.gift?.name && (
-        <Text style={S.pendingGift} numberOfLines={1}>{item.gift.name}</Text>
-      )}
-      <Text style={S.pendingDate}>{moment(item.redeemed_at).format('DD/MM/YY')}</Text>
-    </View>
-  );
-}
-
 // ── Class card ─────────────────────────────────────────────────────────────────
 function ClassCard({ item }: { item: ClassWithProgress }) {
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const pct = item.goal > 0 ? Math.round((item.total / item.goal) * 100) : 0;
+  const liftY = pressed ? 4 : hovered ? -4 : 0;
+  const scheme = getClassColorScheme(item.class.grade || item.class.name);
+
+  const hoverProps =
+    Platform.OS === 'web'
+      ? ({
+          onMouseEnter: () => setHovered(true),
+          onMouseLeave: () => {
+            setHovered(false);
+            setPressed(false);
+          },
+        } as const)
+      : {};
+
+  function onPressIn() {
+    setPressed(true);
+  }
+
+  function onPressOut() {
+    setPressed(false);
+  }
 
   return (
-    <View style={S.card}>
+    <View style={S.cardOuterShell} {...hoverProps}>
+      <View
+        style={[
+          S.cardLift,
+          cardDepthStyle(pressed, hovered),
+          { transform: [{ translateY: liftY }] },
+        ]}
+      >
+      <View style={S.card}>
       <TouchableOpacity
         onPress={() => setOpen(v => !v)}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
         accessibilityRole="button"
         accessibilityLabel={`כיתה ${item.class.name}, ${item.total} מתוך ${item.goal} נקודות`}
         accessibilityState={{ expanded: open }}
         style={[S.cardTop, webPtr]}
-        activeOpacity={0.7}
+        activeOpacity={1}
       >
         <View style={S.cardTopLeft}>
-          <Text style={S.cardName}>{item.class.name}</Text>
-          {item.class.grade ? (
-            <View style={S.gradeTag}>
-              <Text style={S.gradeTagText}>{item.class.grade}</Text>
-            </View>
-          ) : null}
-          {item.pendingCount > 0 && (
-            <View style={S.pendingBadge}>
-              <Text style={S.pendingBadgeText}>{item.pendingCount} ממתינים</Text>
+          <View
+            style={[S.classCircle, { backgroundColor: scheme.bg }]}
+            accessibilityLabel={`כיתה ${item.class.name}`}
+          >
+            <Text
+              style={[S.classCircleText, { color: scheme.text }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {item.class.name}
+            </Text>
+          </View>
+          {item.prizesWonCount > 0 && (
+            <View style={S.prizesWonBadge}>
+              <Text style={S.prizesWonBadgeText}>
+                {item.prizesWonCount === 1
+                  ? 'זכו כבר בפרס אחד!'
+                  : `זכו כבר ב-${item.prizesWonCount} פרסים!`}
+              </Text>
             </View>
           )}
         </View>
@@ -179,6 +216,8 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
           )}
         </View>
       )}
+      </View>
+      </View>
     </View>
   );
 }
@@ -186,13 +225,14 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 function CardSkeleton() {
   return (
+    <View style={S.cardOuterShell}>
+    <View style={[S.cardLift, cardDepthStyle(false, false)]}>
     <View style={S.card}>
 
       {/* mirrors cardTop — row-reverse: name+grade on right, points on left */}
       <View style={S.cardTop}>
-        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8, flex: 1 }}>
-          <Skeleton width={88} height={20} />
-          <Skeleton width={40} height={18} style={{ borderRadius: 6 }} />
+        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flex: 1 }}>
+          <Skeleton width={52} height={52} style={{ borderRadius: 26 }} />
         </View>
         <Skeleton width={52} height={15} />
       </View>
@@ -215,6 +255,8 @@ function CardSkeleton() {
       </View>
 
     </View>
+    </View>
+    </View>
   );
 }
 
@@ -222,64 +264,50 @@ function CardSkeleton() {
 export default function PublicScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data, pendingRedemptions, settings, loading, error } = usePublicData();
+  const { data, settings, loading, error } = usePublicData();
   const { isDesktop } = useBreakpoint();
 
-  const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
+  const centreContent = isDesktop ? S.centreContent : undefined;
 
   return (
-    <SafeAreaView style={[S.screen, { paddingTop: statusBarHeight }, isDesktop && { backgroundColor: 'transparent' }]}>
-      <View style={[{ flex: 1 }, isDesktop && { alignSelf: 'center', width: '100%', maxWidth: 900, backgroundColor: '#fff' }]}>
+    <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
 
-        {/* ── Header ── */}
-        <View style={S.header}>
-          <View style={S.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={S.schoolName} accessibilityRole="header">
-                {settings?.school_name ?? t('appName')}
-              </Text>
-              {settings?.current_year ? (
-                <Text style={S.schoolYear}>שנת לימודים {settings.current_year}</Text>
-              ) : null}
-            </View>
-            <View style={S.trophyBox}>
-              <Trophy size={22} color={Colors.accent} />
-            </View>
+      {/* ── Header (full-bleed bar, like teacher) ── */}
+      <View style={S.headerBar}>
+        <View style={[S.headerInner, centreContent]}>
+          <View style={S.headerText}>
+            <Text style={S.headerTitle} accessibilityRole="header">
+              {settings?.school_name ?? t('appName')}
+            </Text>
+            {settings?.current_year ? (
+              <Text style={S.headerSub}>שנת לימודים {settings.current_year}</Text>
+            ) : null}
+          </View>
+          <View style={S.trophyBox}>
+            <Trophy size={22} color={Colors.primaryDark} />
           </View>
         </View>
+      </View>
 
-        {/* ── Hero Banner ── */}
-        <View style={S.hero}>
-          {/* Decorative pom-pom blobs */}
+      {/* ── Hero (full-bleed yellow strip) ── */}
+      <View style={S.hero}>
+        <View style={[S.heroInner, centreContent]}>
           <View style={[S.blob, { width: 130, height: 130, top: -45, right: -35 }]} />
-          <View style={[S.blob, { width: 80,  height: 80,  bottom: -30, left: -20, opacity: 0.12 }]} />
-          <View style={[S.blob, { width: 52,  height: 52,  top: 16,  left: 50,  opacity: 0.10 }]} />
-          <View style={[S.blob, { width: 38,  height: 38,  bottom: 18, right: 90, opacity: 0.14 }]} />
+          <View style={[S.blob, { width: 80, height: 80, bottom: -30, left: -20, opacity: 0.12 }]} />
+          <View style={[S.blob, { width: 52, height: 52, top: 16, left: 50, opacity: 0.10 }]} />
+          <View style={[S.blob, { width: 38, height: 38, bottom: 18, right: 90, opacity: 0.14 }]} />
           <Text style={S.heroTitle}>✨ תפסתי אותך בטוב</Text>
           <Text style={S.heroSub}>ביחד אוספים פונפונים ומגיעים למטרה 🎉</Text>
         </View>
+      </View>
 
-        {/* ── Class cards list ── */}
+      {/* ── Scrollable content ── */}
+      <View style={[S.page, centreContent]}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={[S.listContent, isDesktop && { padding: 20 }]}
+          contentContainerStyle={S.listContent}
           showsVerticalScrollIndicator={false}
         >
-          {!loading && !error && pendingRedemptions.length > 0 && (
-            <View style={S.pendingSection}>
-              <Text style={S.pendingSectionTitle}>פרסים ממתינים למימוש</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={S.pendingScroll}
-              >
-                {pendingRedemptions.map((p) => (
-                  <PendingCard key={p.id} item={p} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
           <View style={isDesktop ? S.grid : undefined}>
 
             {loading && Array.from({ length: 6 }, (_, i) => (
@@ -307,19 +335,19 @@ export default function PublicScreen() {
 
           </View>
         </ScrollView>
-
-        {/* ── Staff login — fixed bottom ── */}
-        <TouchableOpacity
-          onPress={() => router.push('/auth/login')}
-          accessibilityRole="link"
-          accessibilityLabel="כניסה לצוות בית הספר"
-          style={[S.staffLink, webPtr]}
-        >
-          <LogIn size={12} color="#94A3B8" />
-          <Text style={S.staffLinkText}>כניסה לצוות בית הספר</Text>
-        </TouchableOpacity>
-
       </View>
+
+      {/* ── Staff login — full-bleed footer strip ── */}
+      <TouchableOpacity
+        onPress={() => router.push('/auth/login')}
+        accessibilityRole="link"
+        accessibilityLabel="כניסה לצוות בית הספר"
+        style={[S.staffLink, webPtr]}
+      >
+        <LogIn size={12} color={Colors.outline} />
+        <Text style={S.staffLinkText}>כניסה לצוות בית הספר</Text>
+      </TouchableOpacity>
+
     </SafeAreaView>
   );
 }
@@ -327,117 +355,86 @@ export default function PublicScreen() {
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
-
-  // Header
-  header: {
-    paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16,
-    backgroundColor: Colors.card,
-  },
-  headerRow: {
-    flexDirection: 'row-reverse', alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  schoolName: {
-    fontSize: 20, fontWeight: '700', color: Colors.text,
-    textAlign: 'right', fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
+  page: { flex: 1, backgroundColor: Colors.bg },
+  centreContent: {
+    maxWidth: MAX_CONTENT_W,
+    alignSelf: 'center',
+    width: '100%',
   } as any,
-  schoolYear: {
-    color: '#94A3B8', fontSize: 13, textAlign: 'right',
-    marginTop: 4, writingDirection: 'rtl',
+
+  // Header — matches teacher screen
+  headerBar: {
+    backgroundColor: Colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  headerInner: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
+  },
+  headerText: { flex: 1, alignItems: 'flex-end' },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+    textAlign: 'right',
+    fontFamily: 'Baloo2_700Bold',
+    writingDirection: 'rtl',
+  } as any,
+  headerSub: {
+    color: Colors.muted,
+    fontSize: 12,
+    textAlign: 'right',
+    marginTop: 1,
+    writingDirection: 'rtl',
   } as any,
   trophyBox: {
-    width: 44, height: 44, backgroundColor: '#FFF7ED',
-    borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12,
+    width: 44,
+    height: 44,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
   },
 
-  // Hero banner
+  // Hero — full-bleed strip; text constrained via heroInner
   hero: {
     backgroundColor: Colors.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(120,89,0,0.12)',
+    overflow: 'hidden',
+  },
+  heroInner: {
+    width: '100%',
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 28,
-    overflow: 'hidden',
     alignItems: 'flex-end',
+    position: 'relative',
   },
   blob: {
     position: 'absolute',
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
   heroTitle: {
-    fontSize: 26, fontWeight: '700', color: '#fff',
-    fontFamily: 'Baloo2_700Bold', textAlign: 'right', writingDirection: 'rtl',
-  } as any,
-  heroSub: {
-    fontSize: 13, color: 'rgba(255,255,255,0.80)',
-    textAlign: 'right', marginTop: 6, writingDirection: 'rtl',
-  } as any,
-
-  pendingSection: {
-    marginBottom: 16,
-    backgroundColor: '#FFF7ED',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#FED7AA',
-    paddingVertical: 14,
-    paddingRight: 16,
-  },
-  pendingSectionTitle: {
-    fontSize: 14,
+    fontSize: 26,
     fontWeight: '700',
-    color: '#9A3412',
+    color: Colors.primaryDark,
+    fontFamily: 'Baloo2_700Bold',
     textAlign: 'right',
     writingDirection: 'rtl',
-    marginBottom: 10,
-    fontFamily: 'Baloo2_700Bold',
   } as any,
-  pendingScroll: { flexDirection: 'row-reverse', gap: 10, paddingLeft: 16 },
-  pendingCard: {
-    width: 120,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#FED7AA',
-    alignItems: 'center',
-  },
-  pendingImg: { width: 56, height: 56, borderRadius: 12, marginBottom: 8 },
-  pendingImgPlaceholder: {
-    backgroundColor: '#FFF7ED',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pendingClass: {
+  heroSub: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    writingDirection: 'rtl',
-  } as any,
-  pendingGift: {
-    fontSize: 11,
-    color: '#64748B',
-    textAlign: 'center',
-    marginTop: 2,
-    writingDirection: 'rtl',
-  } as any,
-  pendingDate: {
-    fontSize: 10,
-    color: '#94A3B8',
-    marginTop: 4,
-    writingDirection: 'rtl',
-  } as any,
-  pendingBadge: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginTop: 4,
-  },
-  pendingBadgeText: {
-    color: '#B45309',
-    fontSize: 11,
-    fontWeight: '700',
+    color: Colors.muted,
+    textAlign: 'right',
+    marginTop: 6,
     writingDirection: 'rtl',
   } as any,
 
@@ -446,35 +443,74 @@ const S = StyleSheet.create({
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: 16,
+    gap: 18,
   } as any,
 
-  // Card
+  // Card — static shell catches hover; inner layer lifts + shadow
+  cardOuterShell: {
+    marginBottom: 14,
+    paddingBottom: 6,
+  },
+  cardLift: {
+    borderRadius: 20,
+  },
   card: {
-    backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1,
-    borderColor: Colors.border, marginBottom: 12, overflow: 'hidden',
-    ...shadow('#785900', 2, 8, 0.06, 3),
+    backgroundColor: Colors.card,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    overflow: 'hidden',
   },
   cardTop: {
     flexDirection: 'row-reverse', alignItems: 'center',
     justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
   },
-  cardTopLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, flex: 1 },
-  cardName: {
-    fontSize: 17, fontWeight: '700', color: '#0F172A',
-    fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
-  } as any,
-  gradeTag: {
-    backgroundColor: Colors.surface, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2,
+  cardTopLeft: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flex: 1, flexWrap: 'wrap',
   },
-  gradeTagText: { color: Colors.muted, fontSize: 12, fontWeight: '600' } as any,
+  classCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    flexShrink: 0,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
+    ...shadow('#785900', 3, 8, 0.22, 4),
+  },
+  classCircleText: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Baloo2_700Bold',
+    textAlign: 'center',
+    writingDirection: 'rtl',
+  } as any,
   cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardPoints: { color: '#64748B', fontSize: 14, fontWeight: '600' } as any,
+  cardPoints: { color: Colors.muted, fontSize: 14, fontWeight: '600' } as any,
   goalBadge: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 4,
-    backgroundColor: '#FFF7ED', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: Colors.primarySurface, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: Colors.border,
   },
   goalBadgeText: { color: Colors.accent, fontSize: 12, fontWeight: '700' } as any,
+  prizesWonBadge: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  prizesWonBadgeText: {
+    color: Colors.primaryDark,
+    fontSize: 11,
+    fontWeight: '700',
+    writingDirection: 'rtl',
+    textAlign: 'right',
+  } as any,
 
   // Progress
   cardProg: {
@@ -488,20 +524,20 @@ const S = StyleSheet.create({
   },
   cardProgPct: { color: Colors.primary, fontSize: 12, fontWeight: '700' } as any,
   cardProgHint: {
-    color: '#94A3B8', fontSize: 12, textAlign: 'right', writingDirection: 'rtl',
+    color: Colors.outline, fontSize: 12, textAlign: 'right', writingDirection: 'rtl',
   } as any,
 
   // Students
   studentsWrap: {
     padding: 16, paddingTop: 12,
     borderTopWidth: 1, borderTopColor: Colors.border,
-    backgroundColor: Colors.primarySurface,
+    backgroundColor: Colors.surface,
   },
   noStudentsRow: {
     flexDirection: 'row-reverse', alignItems: 'center',
     justifyContent: 'center', paddingVertical: 8, gap: 6,
   },
-  noStudentsText: { color: '#94A3B8', fontSize: 13, writingDirection: 'rtl' } as any,
+  noStudentsText: { color: Colors.outline, fontSize: 13, writingDirection: 'rtl' } as any,
   pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
     flexDirection: 'row-reverse', alignItems: 'center',
@@ -512,7 +548,7 @@ const S = StyleSheet.create({
     backgroundColor: Colors.primary, borderRadius: 6,
     paddingHorizontal: 7, paddingVertical: 2,
   },
-  pillBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' } as any,
+  pillBadgeText: { color: Colors.primaryDark, fontSize: 11, fontWeight: '700' } as any,
   pillName: {
     color: Colors.primaryDark, fontSize: 13, fontWeight: '600',
     writingDirection: 'rtl', fontFamily: 'Nunito_600SemiBold',
@@ -525,24 +561,32 @@ const S = StyleSheet.create({
     borderRadius: 16, alignItems: 'center', justifyContent: 'center',
   },
   emptyText: {
-    color: '#94A3B8', fontSize: 15, fontWeight: '700',
+    color: Colors.muted, fontSize: 15, fontWeight: '700',
     textAlign: 'center', writingDirection: 'rtl', fontFamily: 'Baloo2_700Bold',
   } as any,
 
   // Error
   errorCard: {
-    backgroundColor: '#FEF2F2', borderRadius: 12, padding: 16,
-    borderWidth: 1, borderColor: '#FECACA',
+    backgroundColor: Colors.dangerLight,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.danger,
   },
-  errorText: { color: '#DC2626', fontSize: 14, textAlign: 'center', writingDirection: 'rtl' } as any,
+  errorText: {
+    color: Colors.danger, fontSize: 14, textAlign: 'center', writingDirection: 'rtl',
+  } as any,
 
   // Staff link — fixed bottom
   staffLink: {
-    flexDirection: 'row-reverse', alignItems: 'center',
-    justifyContent: 'center', gap: 5,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
     paddingVertical: 18,
-    borderTopWidth: 1, borderTopColor: Colors.border,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
     backgroundColor: Colors.card,
   },
-  staffLinkText: { color: '#64748B', fontSize: 13, writingDirection: 'rtl' } as any,
+  staffLinkText: { color: Colors.muted, fontSize: 13, writingDirection: 'rtl' } as any,
 });

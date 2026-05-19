@@ -6,15 +6,7 @@ type ClassRow = Tables<'classes'>;
 type StudentRow = Tables<'students'>;
 type CreditEvent = Tables<'credit_events'>;
 type RedemptionRound = Tables<'redemption_rounds'>;
-type Gift = Tables<'gifts'>;
 type Settings = Tables<'settings'>;
-
-export interface PendingRedemption {
-  id: string;
-  redeemed_at: string;
-  class: ClassRow;
-  gift: Gift | null;
-}
 
 export interface StudentWithCredits {
   id: string;
@@ -34,13 +26,12 @@ export interface ClassWithProgress {
   goalReached: boolean;
   /** Timestamp of the last redemption for this class, if any */
   lastRedemption: string | null;
-  /** Unfulfilled redemption rounds for this class */
-  pendingCount: number;
+  /** Total redemption rounds recorded for this class (prizes won) */
+  prizesWonCount: number;
 }
 
 interface UsePublicData {
   data: ClassWithProgress[];
-  pendingRedemptions: PendingRedemption[];
   settings: Settings | null;
   loading: boolean;
   error: string | null;
@@ -48,7 +39,6 @@ interface UsePublicData {
 
 export function usePublicData(): UsePublicData {
   const [data, setData] = useState<ClassWithProgress[]>([]);
-  const [pendingRedemptions, setPendingRedemptions] = useState<PendingRedemption[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +53,6 @@ export function usePublicData(): UsePublicData {
         creditsRes,
         classCreditsRes,
         redemptionsRes,
-        pendingRes,
       ] = await Promise.all([
         supabase.from('settings').select('*').limit(1).maybeSingle(),
         supabase.from('classes').select('*').is('deleted_at', null).order('name'),
@@ -71,11 +60,6 @@ export function usePublicData(): UsePublicData {
         supabase.from('credit_events').select('student_id, amount, created_at'),
         supabase.from('class_credit_events').select('class_id, amount, created_at'),
         supabase.from('redemption_rounds').select('class_id, redeemed_at').order('redeemed_at', { ascending: false }),
-        supabase
-          .from('redemption_rounds')
-          .select('id, redeemed_at, classes(*), gifts(*)')
-          .eq('fulfilled', false)
-          .order('redeemed_at', { ascending: false }),
       ]);
 
       if (settingsRes.error) throw settingsRes.error;
@@ -84,7 +68,6 @@ export function usePublicData(): UsePublicData {
       if (creditsRes.error) throw creditsRes.error;
       if (classCreditsRes.error) throw classCreditsRes.error;
       if (redemptionsRes.error) throw redemptionsRes.error;
-      if (pendingRes.error) throw pendingRes.error;
 
       const fetchedSettings = settingsRes.data;
       const classes: ClassRow[] = classesRes.data ?? [];
@@ -94,31 +77,15 @@ export function usePublicData(): UsePublicData {
         classCreditsRes.data ?? [];
       const redemptions: Pick<RedemptionRound, 'class_id' | 'redeemed_at'>[] = redemptionsRes.data ?? [];
 
-      type PendingRow = {
-        id: string;
-        redeemed_at: string;
-        classes: ClassRow | null;
-        gifts: Gift | null;
-      };
-      const pendingRows = (pendingRes.data ?? []) as unknown as PendingRow[];
-      const pending: PendingRedemption[] = pendingRows
-        .filter((r) => r.classes)
-        .map((r) => ({
-          id: r.id,
-          redeemed_at: r.redeemed_at,
-          class: r.classes!,
-          gift: r.gifts,
-        }));
+      const goal = fetchedSettings?.global_goal ?? 100;
 
-      const pendingCountByClass = new Map<string, number>();
-      for (const p of pending) {
-        pendingCountByClass.set(
-          p.class.id,
-          (pendingCountByClass.get(p.class.id) ?? 0) + 1,
+      const prizesWonByClass = new Map<string, number>();
+      for (const r of redemptions) {
+        prizesWonByClass.set(
+          r.class_id,
+          (prizesWonByClass.get(r.class_id) ?? 0) + 1,
         );
       }
-
-      const goal = fetchedSettings?.global_goal ?? 100;
 
       // Build a map: class_id → last redemption timestamp (or null)
       const lastRedemptionByClass = new Map<string, string>();
@@ -195,13 +162,12 @@ export function usePublicData(): UsePublicData {
           goal,
           goalReached: total >= goal,
           lastRedemption,
-          pendingCount: pendingCountByClass.get(cls.id) ?? 0,
+          prizesWonCount: prizesWonByClass.get(cls.id) ?? 0,
         };
       });
 
       setSettings(fetchedSettings);
       setData(result);
-      setPendingRedemptions(pending);
       setError(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת נתונים');
@@ -229,5 +195,5 @@ export function usePublicData(): UsePublicData {
     };
   }, [load]);
 
-  return { data, pendingRedemptions, settings, loading, error };
+  return { data, settings, loading, error };
 }
