@@ -16,18 +16,16 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import * as DocumentPicker from 'expo-document-picker';
-import Papa from 'papaparse';
-import { supabase } from '@/lib/supabase';
+import {
+  parseCsvText,
+  previewStudents,
+  insertStudents,
+  type PreviewStudent,
+} from '@/lib/studentImport';
 import { safeBack } from '@/lib/navigation';
 import { FolderOpen, CheckCircle2, ChevronRight } from 'lucide-react-native';
 import { Colors } from '@/components/ui';
 import { AS, webPointer } from '@/lib/adminStyles';
-
-interface ParsedStudent {
-  first_name: string;
-  last_name: string;
-  status: 'new' | 'skip';
-}
 
 const S = StyleSheet.create({
   // ── Done screen ──
@@ -143,7 +141,7 @@ export default function UploadScreen() {
   const router = useRouter();
   const { classId } = useLocalSearchParams<{ classId: string }>();
 
-  const [preview, setPreview]         = useState<ParsedStudent[] | null>(null);
+  const [preview, setPreview]         = useState<PreviewStudent[] | null>(null);
   const [importing, setImporting]     = useState(false);
   const [done, setDone]               = useState(false);
   const [importedCount, setImportedCount] = useState(0);
@@ -159,49 +157,26 @@ export default function UploadScreen() {
     if (result.canceled || !result.assets?.[0]) return;
 
     const file = result.assets[0];
-    const text = await fetch(file.uri).then((r) => r.text());
+    try {
+      const text = await fetch(file.uri).then((r) => r.text());
+      const normalized = await parseCsvText(text);
 
-    Papa.parse<Record<string, string>>(text, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data;
+      if (normalized.length === 0) {
+        setPickError('לא נמצאו שורות תקינות בקובץ');
+        return;
+      }
 
-        if (!rows[0]?.first_name && !rows[0]?.['שם פרטי']) {
-          setPickError('הקובץ חייב לכלול עמודות first_name ו-last_name (או שם פרטי ושם משפחה)');
-          return;
-        }
-
-        const normalized = rows.map((r) => ({
-          first_name: (r.first_name ?? r['שם פרטי'] ?? '').trim(),
-          last_name:  (r.last_name  ?? r['שם משפחה'] ?? '').trim(),
-        })).filter((r) => r.first_name && r.last_name);
-
-        if (normalized.length === 0) { setPickError('לא נמצאו שורות תקינות בקובץ'); return; }
-
-        const { data: existing } = await supabase.from('students')
-          .select('first_name, last_name').eq('class_id', classId);
-
-        const existingSet = new Set((existing ?? []).map((s) => `${s.first_name.trim()}|${s.last_name.trim()}`));
-
-        const parsed: ParsedStudent[] = normalized.map((r) => ({
-          first_name: r.first_name,
-          last_name:  r.last_name,
-          status: existingSet.has(`${r.first_name}|${r.last_name}`) ? 'skip' : 'new',
-        }));
-
-        setPreview(parsed);
-      },
-      error: (err: Error) => { setPickError(`שגיאה בפענוח הקובץ: ${err.message}`); },
-    });
+      const parsed = await previewStudents(classId!, normalized);
+      setPreview(parsed);
+    } catch (err: unknown) {
+      setPickError(`שגיאה בפענוח הקובץ: ${err instanceof Error ? err.message : 'שגיאה'}`);
+    }
   }
 
   async function handleImport() {
     if (!preview || !classId) return;
 
-    const toInsert = preview
-      .filter((r) => r.status === 'new')
-      .map((r) => ({ class_id: classId, first_name: r.first_name, last_name: r.last_name }));
+    const toInsert = preview.filter((r) => r.status === 'new');
 
     if (toInsert.length === 0) {
       Alert.alert('אין תלמידים חדשים', 'כל התלמידים בקובץ כבר קיימים בכיתה');
@@ -209,13 +184,13 @@ export default function UploadScreen() {
     }
 
     setImporting(true);
-    const { error } = await supabase.from('students').insert(toInsert);
+    const { count, error } = await insertStudents(classId, toInsert);
     setImporting(false);
 
     if (error) {
-      Alert.alert('שגיאת ייבוא', error.message);
+      Alert.alert('שגיאת ייבוא', error);
     } else {
-      setImportedCount(toInsert.length);
+      setImportedCount(count);
       setDone(true);
     }
   }

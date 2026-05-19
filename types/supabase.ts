@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_credit_events: {
+        Row: {
+          amount: number
+          class_id: string
+          created_at: string
+          given_by: string | null
+          id: string
+          note: string | null
+        }
+        Insert: {
+          amount: number
+          class_id: string
+          created_at?: string
+          given_by?: string | null
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          amount?: number
+          class_id?: string
+          created_at?: string
+          given_by?: string | null
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_credit_events_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_credit_events_given_by_fkey"
+            columns: ["given_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           created_at: string
@@ -153,6 +195,9 @@ export type Database = {
       redemption_rounds: {
         Row: {
           class_id: string
+          fulfilled: boolean
+          fulfilled_at: string | null
+          fulfilled_by: string | null
           gift_id: string | null
           id: string
           marked_by: string
@@ -161,6 +206,9 @@ export type Database = {
         }
         Insert: {
           class_id: string
+          fulfilled?: boolean
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
           gift_id?: string | null
           id?: string
           marked_by: string
@@ -169,6 +217,9 @@ export type Database = {
         }
         Update: {
           class_id?: string
+          fulfilled?: boolean
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
           gift_id?: string | null
           id?: string
           marked_by?: string
@@ -181,6 +232,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemption_rounds_fulfilled_by_fkey"
+            columns: ["fulfilled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -314,6 +372,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_update_teacher: {
+        Args: { p_display_name: string; p_email: string; p_user_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
     }

@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback } from 'react';
-import { UserCheck, Trash2, Plus, ChevronRight, FileUp } from 'lucide-react-native';
+import { UserCheck, Trash2, Plus, ChevronRight, FileUp, Pencil } from 'lucide-react-native';
 import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { shadow } from '@/lib/shadow';
@@ -27,13 +27,6 @@ import Papa from 'papaparse';
 import type { Tables } from '@/types/supabase';
 
 type UserRow = Tables<'users'>;
-type ClassRow = Tables<'classes'>;
-
-interface TeacherWithClasses {
-  user: UserRow;
-  classIds: string[];
-}
-
 interface ParsedTeacher {
   display_name: string;
   email: string;
@@ -64,42 +57,6 @@ const S = StyleSheet.create({
   teacherName: { fontSize: 15, fontWeight: '700', color: Colors.text, textAlign: 'right', writingDirection: 'rtl' } as any,
   teacherEmail: { color: '#94a3b8', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginTop: 1 } as any,
   teacherActions: { flexDirection: 'row-reverse', gap: 6 },
-  assignBtn: {
-    backgroundColor: Colors.surface, borderRadius: 14, paddingHorizontal: 12, height: 44,
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-  },
-  assignBtnText: { color: Colors.muted, fontSize: 12, fontWeight: '600' } as any,
-  classChipRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 },
-  classChip: {
-    backgroundColor: Colors.primaryLight, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
-  },
-  classChipText: { color: Colors.primary, fontSize: 12, fontWeight: '600' } as any,
-  noClass: { color: '#94a3b8', fontSize: 12, writingDirection: 'rtl' } as any,
-  assignSub: { color: '#94a3b8', fontSize: 13, textAlign: 'right', marginBottom: 4, writingDirection: 'rtl' } as any,
-  assignHint: { color: '#64748b', fontSize: 12, textAlign: 'right', marginBottom: 12, writingDirection: 'rtl' } as any,
-  classRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8, borderRadius: 12, borderWidth: 1, minHeight: 44,
-  },
-  classRowActive:   { backgroundColor: Colors.primaryLight, borderColor: Colors.primary },
-  classRowInactive: { backgroundColor: '#fff', borderColor: Colors.border },
-  classRowText: { fontWeight: '600', fontSize: 14, writingDirection: 'rtl' } as any,
-  classRowTextActive:   { color: Colors.primary },
-  classRowTextInactive: { color: '#334155' },
-  checkbox: {
-    width: 20, height: 20, borderRadius: 4, borderWidth: 2, alignItems: 'center', justifyContent: 'center',
-  },
-  checkboxActive:   { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  checkboxInactive: { borderColor: '#cbd5e1' },
-  checkmark: { color: '#fff', fontSize: 11, fontWeight: '700' } as any,
-  selectAllRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12, marginBottom: 10,
-    borderRadius: 12, borderWidth: 1.5, borderColor: Colors.primary,
-    backgroundColor: Colors.primaryLight,
-  },
-  selectAllText:       { fontWeight: '700', fontSize: 14, color: Colors.primary, writingDirection: 'rtl' } as any,
-  selectAllTextActive: { color: Colors.primary },
 
   // CSV import
   csvPickBtn: {
@@ -159,8 +116,7 @@ export default function AdminTeachersScreen() {
   const { listPad, pageContent } = useAdminLayout();
   const { t } = useTranslation();
   const router = useRouter();
-  const [teachers, setTeachers] = useState<TeacherWithClasses[]>([]);
-  const [classes, setClasses]   = useState<ClassRow[]>([]);
+  const [teachers, setTeachers] = useState<UserRow[]>([]);
   const [loading, setLoading]   = useState(true);
 
   const [inviteVisible, setInviteVisible] = useState(false);
@@ -168,32 +124,27 @@ export default function AdminTeachersScreen() {
   const [inviteName, setInviteName]       = useState('');
   const [inviting, setInviting] = useState(false);
 
+  const [editVisible, setEditVisible] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState<UserRow | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+
   // CSV import
   const [csvVisible,    setCsvVisible]    = useState(false);
   const [csvPreview,    setCsvPreview]    = useState<ParsedTeacher[] | null>(null);
   const [csvPickError,  setCsvPickError]  = useState<string | null>(null);
   const [csvImporting,  setCsvImporting]  = useState(false);
 
-  const [assignTeacher, setAssignTeacher] = useState<UserRow | null>(null);
-  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set());
-  const [assigning, setAssigning] = useState(false);
-
   const loadData = useCallback(async () => {
-    const [usersRes, classesRes, accessRes] = await Promise.all([
-      supabase.from('users').select('*').eq('role', 'teacher').is('deleted_at', null).order('display_name'),
-      supabase.from('classes').select('*').is('deleted_at', null).order('name'),
-      supabase.from('user_class_access').select('*'),
-    ]);
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'teacher')
+      .is('deleted_at', null)
+      .order('display_name');
 
-    if (!usersRes.error && !classesRes.error && !accessRes.error) {
-      const accessMap = new Map<string, string[]>();
-      for (const a of (accessRes.data ?? [])) {
-        if (!accessMap.has(a.user_id)) accessMap.set(a.user_id, []);
-        accessMap.get(a.user_id)!.push(a.class_id);
-      }
-      setTeachers((usersRes.data ?? []).map((u) => ({ user: u, classIds: accessMap.get(u.id) ?? [] })));
-      setClasses(classesRes.data ?? []);
-    }
+    if (!error) setTeachers(data ?? []);
     setLoading(false);
   }, []);
 
@@ -317,43 +268,37 @@ export default function AdminTeachersScreen() {
     }
   }
 
-  function openAssign(teacher: UserRow, currentClassIds: string[]) {
-    setAssignTeacher(teacher);
-    setSelectedClasses(new Set(currentClassIds));
+  function openEdit(teacher: UserRow) {
+    setEditingTeacher(teacher);
+    setEditName(teacher.display_name);
+    setEditEmail(teacher.email);
+    setEditVisible(true);
   }
 
-  async function handleSaveAssignment() {
-    if (!assignTeacher) return;
-    setAssigning(true);
-    const { error: delError } = await supabase.from('user_class_access').delete().eq('user_id', assignTeacher.id);
-    if (delError) { setAssigning(false); Alert.alert('שגיאה', delError.message); return; }
-
-    if (selectedClasses.size > 0) {
-      const inserts = Array.from(selectedClasses).map((cid) => ({ user_id: assignTeacher.id, class_id: cid }));
-      const { error: insError } = await supabase.from('user_class_access').insert(inserts);
-      if (insError) { setAssigning(false); Alert.alert('שגיאה', insError.message); return; }
+  async function handleSaveEdit() {
+    if (!editingTeacher) return;
+    if (!editName.trim() || !editEmail.trim()) {
+      Alert.alert('שגיאה', 'יש למלא שם ואימייל');
+      return;
     }
-
-    setAssigning(false);
-    setAssignTeacher(null);
-    loadData();
-  }
-
-  function toggleClass(classId: string) {
-    setSelectedClasses((prev) => {
-      const next = new Set(prev);
-      if (next.has(classId)) next.delete(classId);
-      else next.add(classId);
-      return next;
+    setEditSaving(true);
+    const { error } = await supabase.rpc('admin_update_teacher', {
+      p_user_id: editingTeacher.id,
+      p_display_name: editName.trim(),
+      p_email: editEmail.trim().toLowerCase(),
     });
-  }
-
-  function toggleAllClasses() {
-    if (selectedClasses.size === classes.length) {
-      setSelectedClasses(new Set());
-    } else {
-      setSelectedClasses(new Set(classes.map((c) => c.id)));
+    setEditSaving(false);
+    if (error) {
+      const msg =
+        error.message.includes('email already in use') ? 'כתובת האימייל כבר בשימוש' :
+        error.message.includes('invalid email') ? 'כתובת אימייל לא תקינה' :
+        error.message;
+      Alert.alert('שגיאה', msg);
+      return;
     }
+    setEditVisible(false);
+    setEditingTeacher(null);
+    loadData();
   }
 
   async function handleDeleteTeacher(teacher: UserRow) {
@@ -410,11 +355,9 @@ export default function AdminTeachersScreen() {
                 <Text style={AS.emptyHint}>לחץ על "+ הוספה" כדי להוסיף.</Text>
               </View>
             ) : (
-              teachers.map(({ user }) => {
-                return (
+              teachers.map((user) => (
                   <View key={user.id} style={S.teacherCard} accessibilityLabel={`מורה: ${user.display_name}`}>
                     <View style={S.teacherTop}>
-                      {/* Initials avatar */}
                       <View style={S.teacherAvatar}>
                         <Text style={S.teacherAvatarText}>
                           {user.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
@@ -426,6 +369,13 @@ export default function AdminTeachersScreen() {
                       </View>
                       <View style={S.teacherActions}>
                         <TactileIconBtn
+                          onPress={() => openEdit(user)}
+                          style={AS.iconBtn}
+                          accessibilityLabel={`ערוך ${user.display_name}`}
+                        >
+                          <Pencil size={16} color={Colors.muted} />
+                        </TactileIconBtn>
+                        <TactileIconBtn
                           onPress={() => handleDeleteTeacher(user)}
                           style={AS.iconBtnDanger}
                           shadowColor="rgba(186,26,26,0.2)"
@@ -436,12 +386,64 @@ export default function AdminTeachersScreen() {
                       </View>
                     </View>
                   </View>
-                );
-              })
+              ))
             )}
           </View>
         </ScrollView>
       )}
+
+      {/* Edit Teacher Sheet */}
+      <AdminSheet visible={editVisible} onClose={() => setEditVisible(false)}>
+        <Text style={AS.sheetTitle} accessibilityRole="header">
+          {editingTeacher ? `ערוך — ${editingTeacher.display_name}` : 'ערוך מורה'}
+        </Text>
+
+        <Text style={AS.fieldLabel}>שם המורה</Text>
+        <Text style={AS.fieldHint}>שם התצוגה במערכת</Text>
+        <TextInput
+          value={editName}
+          onChangeText={setEditName}
+          placeholder="דנה כהן"
+          placeholderTextColor="#94a3b8"
+          textAlign="right"
+          style={AS.input}
+          accessibilityLabel="שם המורה"
+        />
+
+        <Text style={AS.fieldLabel}>{t('email')}</Text>
+        <Text style={AS.fieldHint}>כתובת ההתחברות של המורה</Text>
+        <TextInput
+          value={editEmail}
+          onChangeText={setEditEmail}
+          placeholder="dana@school.com"
+          placeholderTextColor="#94a3b8"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          textAlign="right"
+          style={[AS.input, { marginBottom: 20 }]}
+          accessibilityLabel="אימייל"
+        />
+
+        <View style={AS.sheetBtns}>
+          <TouchableOpacity
+            onPress={handleSaveEdit}
+            disabled={editSaving || !editName.trim() || !editEmail.trim()}
+            style={[(editSaving || !editName.trim() || !editEmail.trim()) ? AS.saveBtnDisabled : AS.saveBtn, webPointer]}
+            accessibilityRole="button"
+            accessibilityLabel="שמור שינויים"
+          >
+            {editSaving ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>{t('save')}</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setEditVisible(false)}
+            style={[AS.cancelBtn, webPointer]}
+            accessibilityRole="button"
+            accessibilityLabel="ביטול"
+          >
+            <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
+          </TouchableOpacity>
+        </View>
+      </AdminSheet>
 
       {/* Invite Sheet */}
       <AdminSheet visible={inviteVisible} onClose={() => setInviteVisible(false)}>
@@ -583,64 +585,6 @@ export default function AdminTeachersScreen() {
         </ScrollView>
       </AdminSheet>
 
-      {/* Class Assignment Sheet */}
-      <AdminSheet visible={!!assignTeacher} onClose={() => setAssignTeacher(null)} maxHeightFraction={0.8}>
-        <Text style={AS.sheetTitle} accessibilityRole="header">שיוך כיתות</Text>
-        <Text style={S.assignSub}>{assignTeacher?.display_name} — בחר כיתות</Text>
-        <Text style={S.assignHint}>המורה יוכל לתת נקודות לתלמידי הכיתות שנבחרו</Text>
-
-        {/* Select all toggle */}
-        {classes.length > 0 && (() => {
-          const allSelected = selectedClasses.size === classes.length;
-          return (
-            <TouchableOpacity
-              onPress={toggleAllClasses}
-              style={[S.selectAllRow, webPointer]}
-              accessibilityRole="button"
-              accessibilityLabel={allSelected ? 'בטל בחירת הכל' : 'בחר הכל'}
-            >
-              <Text style={[S.selectAllText, allSelected && S.selectAllTextActive]}>
-                {allSelected ? 'בטל בחירת הכל' : 'בחר הכל'}
-              </Text>
-              <View style={[S.checkbox, allSelected ? S.checkboxActive : S.checkboxInactive]}>
-                {allSelected && <Text style={S.checkmark}>✓</Text>}
-              </View>
-            </TouchableOpacity>
-          );
-        })()}
-
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {classes.map((cls) => {
-            const checked = selectedClasses.has(cls.id);
-            return (
-              <TouchableOpacity
-                key={cls.id}
-                onPress={() => toggleClass(cls.id)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked }}
-                accessibilityLabel={`${cls.name}${checked ? ' — מסומן' : ''}`}
-                style={[S.classRow, checked ? S.classRowActive : S.classRowInactive, webPointer]}
-              >
-                <Text style={[S.classRowText, checked ? S.classRowTextActive : S.classRowTextInactive]}>
-                  {cls.name}
-                </Text>
-                <View style={[S.checkbox, checked ? S.checkboxActive : S.checkboxInactive]}>
-                  {checked && <Text style={S.checkmark}>✓</Text>}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        <View style={[AS.sheetBtns, { marginTop: 16 }]}>
-          <TouchableOpacity onPress={handleSaveAssignment} disabled={assigning} style={[assigning ? AS.saveBtnDisabled : AS.saveBtn, webPointer]} accessibilityRole="button" accessibilityLabel="שמור שיוך">
-            {assigning ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>{t('save')}</Text>}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setAssignTeacher(null)} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
-            <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
-          </TouchableOpacity>
-        </View>
-      </AdminSheet>
     </SafeAreaView>
   );
 }

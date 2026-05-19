@@ -63,17 +63,22 @@ export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
       const classIds = visibleClasses.map((c) => c.id);
 
       // ── Step 2: get students + redemptions in parallel ───────────────────────
-      const [studentsRes, redemptionsRes] = await Promise.all([
+      const [studentsRes, redemptionsRes, classCreditsRes] = await Promise.all([
         supabase.from('students').select('id, class_id').in('class_id', classIds),
         supabase
           .from('redemption_rounds')
           .select('class_id, redeemed_at')
           .in('class_id', classIds)
           .order('redeemed_at', { ascending: false }),
+        supabase
+          .from('class_credit_events')
+          .select('class_id, amount, created_at')
+          .in('class_id', classIds),
       ]);
 
       if (studentsRes.error) throw studentsRes.error;
       if (redemptionsRes.error) throw redemptionsRes.error;
+      if (classCreditsRes.error) throw classCreditsRes.error;
 
       // student → class lookup
       const studentToClass = new Map<string, string>();
@@ -112,6 +117,15 @@ export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
         }
       }
 
+      for (const cc of classCreditsRes.data ?? []) {
+        const cutoff = lastRedemption.get(cc.class_id);
+        if (cutoff && cc.created_at <= cutoff) continue;
+        creditsByClass.set(
+          cc.class_id,
+          (creditsByClass.get(cc.class_id) ?? 0) + cc.amount,
+        );
+      }
+
       // ── Step 4: assemble result ──────────────────────────────────────────────
       const result: TeacherClassWithProgress[] = visibleClasses.map((c, i) => ({
         class: c,
@@ -134,9 +148,9 @@ export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
 
     const channel = supabase
       .channel(`teacher-classes-progress-${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_class_access' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_events' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'class_credit_events' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_rounds' }, load)
       .subscribe();
 

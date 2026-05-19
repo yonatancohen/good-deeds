@@ -28,6 +28,8 @@ export interface StudentWithCredits {
 interface UseClassStudents {
   students: StudentWithCredits[];
   creditEvents: CreditEventWithDetails[];
+  /** Sum of class_credit_events since last redemption (not attributed to students) */
+  classLevelCredits: number;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -40,6 +42,7 @@ interface UseClassStudents {
 export function useClassStudents(classId: string | null): UseClassStudents {
   const [students, setStudents] = useState<StudentWithCredits[]>([]);
   const [creditEvents, setCreditEvents] = useState<CreditEventWithDetails[]>([]);
+  const [classLevelCredits, setClassLevelCredits] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Only show the loading spinner on the very first fetch for a given classId.
@@ -50,6 +53,7 @@ export function useClassStudents(classId: string | null): UseClassStudents {
     if (!classId) {
       setStudents([]);
       setCreditEvents([]);
+      setClassLevelCredits(0);
       hasData.current = false;
       return;
     }
@@ -73,9 +77,28 @@ export function useClassStudents(classId: string | null): UseClassStudents {
       const lastRedemptionAt: string | null =
         redemptionsRes.data?.[0]?.redeemed_at ?? null;
 
+      // Class-level credits since last redemption
+      let classCreditsQuery = supabase
+        .from('class_credit_events')
+        .select('amount, created_at')
+        .eq('class_id', classId);
+
+      if (lastRedemptionAt) {
+        classCreditsQuery = classCreditsQuery.gt('created_at', lastRedemptionAt);
+      }
+
+      const classCreditsRes = await classCreditsQuery;
+      if (classCreditsRes.error) throw classCreditsRes.error;
+
+      const classCreditsTotal = (classCreditsRes.data ?? []).reduce(
+        (sum, e) => sum + e.amount,
+        0,
+      );
+
       if (classStudents.length === 0) {
         setStudents([]);
         setCreditEvents([]);
+        setClassLevelCredits(classCreditsTotal);
         setLoading(false);
         return;
       }
@@ -152,6 +175,7 @@ export function useClassStudents(classId: string | null): UseClassStudents {
 
       setStudents(studentsWithCredits);
       setCreditEvents(events);
+      setClassLevelCredits(classCreditsTotal);
       hasData.current = true;
       setError(null);
     } catch (err: unknown) {
@@ -170,6 +194,7 @@ export function useClassStudents(classId: string | null): UseClassStudents {
     const channel = supabase
       .channel(`class-students-${classId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_events' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'class_credit_events' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_rounds' }, load)
       .subscribe();
@@ -179,5 +204,5 @@ export function useClassStudents(classId: string | null): UseClassStudents {
     };
   }, [load, classId]);
 
-  return { students, creditEvents, loading, error, refetch: load };
+  return { students, creditEvents, classLevelCredits, loading, error, refetch: load };
 }

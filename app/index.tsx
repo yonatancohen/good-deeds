@@ -5,7 +5,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-
+  Image,
   Platform,
   StatusBar,
   StyleSheet,
@@ -16,7 +16,11 @@ import {
   Trophy, Users, ChevronDown, ChevronUp, Star, LogIn,
 } from 'lucide-react-native';
 import '@/lib/i18n';
-import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
+import { usePublicData, ClassWithProgress, StudentWithCredits, PendingRedemption } from '@/hooks/usePublicData';
+import moment from 'moment';
+import 'moment/locale/he';
+
+moment.locale('he');
 import { Skeleton, Colors } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
@@ -86,6 +90,26 @@ function StudentPill({ s }: { s: StudentWithCredits }) {
   );
 }
 
+// ── Pending redemption card ─────────────────────────────────────────────────────
+function PendingCard({ item }: { item: PendingRedemption }) {
+  return (
+    <View style={S.pendingCard} accessibilityLabel={`פרס ממתין: ${item.class.name}`}>
+      {item.gift?.image_url ? (
+        <Image source={{ uri: item.gift.image_url }} style={S.pendingImg} resizeMode="cover" />
+      ) : (
+        <View style={[S.pendingImg, S.pendingImgPlaceholder]}>
+          <Trophy size={22} color={Colors.accent} />
+        </View>
+      )}
+      <Text style={S.pendingClass} numberOfLines={1}>{item.class.name}</Text>
+      {item.gift?.name && (
+        <Text style={S.pendingGift} numberOfLines={1}>{item.gift.name}</Text>
+      )}
+      <Text style={S.pendingDate}>{moment(item.redeemed_at).format('DD/MM/YY')}</Text>
+    </View>
+  );
+}
+
 // ── Class card ─────────────────────────────────────────────────────────────────
 function ClassCard({ item }: { item: ClassWithProgress }) {
   const [open, setOpen] = useState(false);
@@ -108,6 +132,11 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
               <Text style={S.gradeTagText}>{item.class.grade}</Text>
             </View>
           ) : null}
+          {item.pendingCount > 0 && (
+            <View style={S.pendingBadge}>
+              <Text style={S.pendingBadgeText}>{item.pendingCount} ממתינים</Text>
+            </View>
+          )}
         </View>
 
         <View style={S.cardTopRight}>
@@ -193,7 +222,7 @@ function CardSkeleton() {
 export default function PublicScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data, settings, loading, error } = usePublicData();
+  const { data, pendingRedemptions, settings, loading, error } = usePublicData();
   const { isDesktop } = useBreakpoint();
 
   const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
@@ -236,6 +265,21 @@ export default function PublicScreen() {
           contentContainerStyle={[S.listContent, isDesktop && { padding: 20 }]}
           showsVerticalScrollIndicator={false}
         >
+          {!loading && !error && pendingRedemptions.length > 0 && (
+            <View style={S.pendingSection}>
+              <Text style={S.pendingSectionTitle}>פרסים ממתינים למימוש</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={S.pendingScroll}
+              >
+                {pendingRedemptions.map((p) => (
+                  <PendingCard key={p.id} item={p} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           <View style={isDesktop ? S.grid : undefined}>
 
             {loading && Array.from({ length: 6 }, (_, i) => (
@@ -327,6 +371,74 @@ const S = StyleSheet.create({
   heroSub: {
     fontSize: 13, color: 'rgba(255,255,255,0.80)',
     textAlign: 'right', marginTop: 6, writingDirection: 'rtl',
+  } as any,
+
+  pendingSection: {
+    marginBottom: 16,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    paddingVertical: 14,
+    paddingRight: 16,
+  },
+  pendingSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#9A3412',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    marginBottom: 10,
+    fontFamily: 'Baloo2_700Bold',
+  } as any,
+  pendingScroll: { flexDirection: 'row-reverse', gap: 10, paddingLeft: 16 },
+  pendingCard: {
+    width: 120,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    alignItems: 'center',
+  },
+  pendingImg: { width: 56, height: 56, borderRadius: 12, marginBottom: 8 },
+  pendingImgPlaceholder: {
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingClass: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
+    writingDirection: 'rtl',
+  } as any,
+  pendingGift: {
+    fontSize: 11,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 2,
+    writingDirection: 'rtl',
+  } as any,
+  pendingDate: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 4,
+    writingDirection: 'rtl',
+  } as any,
+  pendingBadge: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 4,
+  },
+  pendingBadgeText: {
+    color: '#B45309',
+    fontSize: 11,
+    fontWeight: '700',
+    writingDirection: 'rtl',
   } as any,
 
   // List

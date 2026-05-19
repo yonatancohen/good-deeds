@@ -312,6 +312,115 @@ function GiveCreditSheet({ visible, student, deeds, userId, onClose, onSuccess }
   );
 }
 
+// ── Class-wide credit (1–10 points, no per-student attribution) ─────────────
+
+interface ClassCreditSheetProps {
+  visible: boolean;
+  className: string;
+  userId: string;
+  classId: string;
+  onClose: () => void;
+  onSuccess: (amount: number) => void;
+}
+
+function ClassCreditSheet({
+  visible,
+  className,
+  userId,
+  classId,
+  onClose,
+  onSuccess,
+}: ClassCreditSheetProps) {
+  const [amount, setAmount] = useState<number | null>(null);
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!amount) return;
+    setSubmitting(true);
+    const { error } = await supabase.from('class_credit_events').insert({
+      class_id: classId,
+      amount,
+      note: note.trim() || null,
+      given_by: userId,
+    });
+    setSubmitting(false);
+    if (error) {
+      Alert.alert('שגיאה', error.message);
+    } else {
+      setAmount(null);
+      setNote('');
+      onSuccess(amount);
+    }
+  }
+
+  function handleClose() {
+    setAmount(null);
+    setNote('');
+    onClose();
+  }
+
+  const canConfirm = !!amount && !submitting;
+
+  return (
+    <AdminSheet visible={visible} onClose={handleClose}>
+      <Text style={S.sheetTitle} accessibilityRole="header">זיכוי לכל הכיתה</Text>
+      <Text style={S.sheetSub}>כיתה {className} — הנקודות יתווספו לסך הכיתה</Text>
+
+      <Text style={S.sectionLabel}>כמות נקודות</Text>
+      <View style={S.amountRow}>
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+          const active = amount === n;
+          return (
+            <TouchableOpacity
+              key={n}
+              onPress={() => setAmount(n)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active }}
+              accessibilityLabel={`${n} נקודות`}
+              style={[S.amountBtn, active ? S.amountBtnActive : S.amountBtnInactive, ptr]}
+            >
+              <Text style={[S.amountBtnText, active && S.amountBtnTextActive]}>{n}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <Text style={[S.sectionLabel, { marginTop: 8 }]}>הערה (אופציונלי)</Text>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder="לדוגמה: עזרה בניקיון הכיתה"
+        placeholderTextColor="#94a3b8"
+        textAlign="right"
+        multiline
+        numberOfLines={2}
+        style={S.noteInput}
+        accessibilityLabel="הערה"
+      />
+
+      <View style={[AS.sheetBtns, { marginTop: 4 }]}>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={!canConfirm}
+          accessibilityRole="button"
+          accessibilityLabel="אשר זיכוי לכיתה"
+          style={[canConfirm ? AS.saveBtn : AS.saveBtnDisabled, ptr]}
+        >
+          {submitting ? (
+            <ActivityIndicator color={Colors.primaryDark} />
+          ) : (
+            <Text style={AS.saveBtnText}>אשר</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleClose} style={[AS.cancelBtn, ptr]} accessibilityRole="button" accessibilityLabel="ביטול">
+          <Text style={AS.cancelBtnText}>ביטול</Text>
+        </TouchableOpacity>
+      </View>
+    </AdminSheet>
+  );
+}
+
 // ── History Sheet (per student) ───────────────────────────────────────────────
 
 interface HistorySheetProps {
@@ -497,6 +606,7 @@ export default function ClassDetailScreen() {
   const {
     students,
     creditEvents,
+    classLevelCredits,
     loading: studentsLoading,
     error: studentsError,
     refetch,
@@ -508,9 +618,11 @@ export default function ClassDetailScreen() {
   const [deletedStudentIds,      setDeletedStudentIds]      = useState<Set<string>>(new Set());
   const [locallyAddedStudents,   setLocallyAddedStudents]   = useState<Array<{ student: StudentRow; credits: number }>>([]);
   const [localCreditAdjustments, setLocalCreditAdjustments] = useState<Record<string, number>>({});
+  const [localClassCredits, setLocalClassCredits] = useState(0);
 
   // Sheet visibility
   const [deedPickerVisible,  setDeedPickerVisible]  = useState(false);
+  const [classCreditVisible, setClassCreditVisible] = useState(false);
   const [giveCreditStudent,  setGiveCreditStudent]  = useState<StudentRow | null>(null);
   const [historyStudent,     setHistoryStudent]     = useState<StudentRow | null>(null);
   const [studentSheetVisible,setStudentSheetVisible]= useState(false);
@@ -535,8 +647,9 @@ export default function ClassDetailScreen() {
       })),
   ], [students, locallyAddedStudents, deletedStudentIds, localCreditAdjustments]);
 
-  const classTotal  = visibleStudents.reduce((sum, s) => sum + s.credits, 0);
-  const cappedTotal = Math.min(classTotal, goal);
+  const studentTotal = visibleStudents.reduce((sum, s) => sum + s.credits, 0);
+  const classTotal   = studentTotal + classLevelCredits + localClassCredits;
+  const cappedTotal  = Math.min(classTotal, goal);
 
   // ── Class-wide deed: insert credit_events for every student ──────────────
   const handleClassDeed = useCallback(async (deed: DeedRow) => {
@@ -696,17 +809,28 @@ export default function ClassDetailScreen() {
           )}
         </View>
 
-        {/* ── 2. "הוסף נקודות לכיתה" CTA ── */}
-        <TouchableOpacity
-          onPress={() => setDeedPickerVisible(true)}
-          accessibilityRole="button"
-          accessibilityLabel="הוסף נקודות לכל תלמידי הכיתה"
-          style={[S.classCtaBtn, ptr]}
-          disabled={visibleStudents.length === 0}
-        >
-          <Plus size={18} color={Colors.primaryDark} />
-          <Text style={S.classCtaBtnText}>הוסף נקודות לכיתה</Text>
-        </TouchableOpacity>
+        {/* ── 2. Class credit CTAs ── */}
+        <View style={S.classCtaRow}>
+          <TouchableOpacity
+            onPress={() => setDeedPickerVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="הוסף נקודות לכל תלמידי הכיתה"
+            style={[S.classCtaBtn, S.classCtaBtnHalf, ptr]}
+            disabled={visibleStudents.length === 0}
+          >
+            <Plus size={18} color={Colors.primaryDark} />
+            <Text style={S.classCtaBtnText}>נקודות לכל תלמיד</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setClassCreditVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="זיכוי לכל הכיתה"
+            style={[S.classCtaBtnAlt, S.classCtaBtnHalf, ptr]}
+          >
+            <Plus size={18} color="#fff" />
+            <Text style={S.classCtaBtnAltText}>זיכוי לכל הכיתה</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* ── 3. Student list ── */}
         <View style={S.studentsSection}>
@@ -768,6 +892,19 @@ export default function ClassDetailScreen() {
         <View style={{ height: 32 }} />
       </View>{/* /pageContent */}
       </ScrollView>
+
+      <ClassCreditSheet
+        visible={classCreditVisible}
+        className={className}
+        userId={user?.id ?? ''}
+        classId={classId}
+        onClose={() => setClassCreditVisible(false)}
+        onSuccess={(amt) => {
+          setClassCreditVisible(false);
+          setLocalClassCredits((prev) => prev + amt);
+          refetch();
+        }}
+      />
 
       {/* ── Class Deed Picker Sheet ── */}
       <DeedPickerSheet
@@ -946,29 +1083,69 @@ const S = StyleSheet.create({
     writingDirection: 'rtl',
   } as any,
 
-  // ── Class CTA button ──
-  classCtaBtn: {
+  classCtaRow: {
     flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: 10,
     marginHorizontal: 16,
     marginTop: 20,
     marginBottom: 8,
+  },
+  classCtaBtnHalf: { flex: 1 },
+  classCtaBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: Colors.primary,
-    borderRadius: 999,
-    paddingVertical: 16,
-    minHeight: 56,
+    borderRadius: 16,
+    paddingVertical: 14,
+    minHeight: 52,
     ...shadow(Colors.primaryDark, 4, 0, 1, 4),
     ...(Platform.OS === 'web' ? ({ boxShadow: '0 5px 0 #5b4300' } as any) : {}),
   },
   classCtaBtnText: {
     color: Colors.primaryDark,
     fontWeight: '700',
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: 'Baloo2_700Bold',
     writingDirection: 'rtl',
   } as any,
+  classCtaBtnAlt: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.secondary,
+    borderRadius: 16,
+    paddingVertical: 14,
+    minHeight: 52,
+    ...shadow('#1e3a5f', 4, 0, 1, 4),
+  },
+  classCtaBtnAltText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+    fontFamily: 'Baloo2_700Bold',
+    writingDirection: 'rtl',
+  } as any,
+  amountRow: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  amountBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  amountBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  amountBtnInactive: { backgroundColor: '#fff', borderColor: Colors.border },
+  amountBtnText: { fontWeight: '700', fontSize: 16, color: '#334155' } as any,
+  amountBtnTextActive: { color: Colors.primaryDark },
 
   // ── Students section ──
   studentsSection: {

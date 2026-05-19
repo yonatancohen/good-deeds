@@ -4,12 +4,9 @@ import type { Tables } from '@/types/supabase';
 import { useAuth } from './useAuth';
 
 type ClassRow = Tables<'classes'>;
-type UserClassAccess = Tables<'user_class_access'>;
 
 export interface TeacherClass {
   class: ClassRow;
-  /** Is this class explicitly assigned to the teacher? */
-  isAssigned: boolean;
   /** Number of students in this class */
   studentCount: number;
 }
@@ -21,11 +18,10 @@ interface UseTeacherClasses {
 }
 
 /**
- * For admin: returns all classes (all marked assigned).
- * For teacher: returns all classes, with isAssigned=true for their own classes (pinned).
+ * Returns all classes for teachers and admins (no user_class_access filter).
  */
 export function useTeacherClasses(): UseTeacherClasses {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [classes, setClasses] = useState<TeacherClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,41 +30,21 @@ export function useTeacherClasses(): UseTeacherClasses {
     if (!user) return;
 
     try {
-      const [classesRes, accessRes, studentsRes] = await Promise.all([
+      const [classesRes, studentsRes] = await Promise.all([
         supabase.from('classes').select('*').is('deleted_at', null).order('name'),
-        isAdmin
-          ? Promise.resolve({ data: null as UserClassAccess[] | null, error: null })
-          : supabase
-              .from('user_class_access')
-              .select('class_id')
-              .eq('user_id', user.id),
         supabase.from('students').select('class_id'),
       ]);
 
       if (classesRes.error) throw classesRes.error;
-      if (accessRes.error) throw accessRes.error;
-
-      const assignedIds = new Set(
-        isAdmin
-          ? (classesRes.data ?? []).map((c) => c.id)
-          : (accessRes.data ?? []).map((a) => a.class_id),
-      );
+      if (studentsRes.error) throw studentsRes.error;
 
       const counts: Record<string, number> = {};
       for (const s of studentsRes.data ?? []) {
         counts[s.class_id] = (counts[s.class_id] || 0) + 1;
       }
 
-      const allClasses = classesRes.data ?? [];
-
-      // For teachers: only show assigned classes. For admin: show all.
-      const visibleClasses = isAdmin
-        ? allClasses
-        : allClasses.filter((c) => assignedIds.has(c.id));
-
-      const result: TeacherClass[] = visibleClasses.map((c) => ({
+      const result: TeacherClass[] = (classesRes.data ?? []).map((c) => ({
         class: c,
-        isAssigned: true,
         studentCount: counts[c.id] ?? 0,
       }));
 
@@ -81,15 +57,15 @@ export function useTeacherClasses(): UseTeacherClasses {
     } finally {
       setLoading(false);
     }
-  }, [user, isAdmin]);
+  }, [user]);
 
   useEffect(() => {
     load();
 
     const channel = supabase
       .channel(`teacher-classes-${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_class_access' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, load)
       .subscribe();
 
     return () => {

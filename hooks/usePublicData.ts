@@ -6,7 +6,15 @@ type ClassRow = Tables<'classes'>;
 type StudentRow = Tables<'students'>;
 type CreditEvent = Tables<'credit_events'>;
 type RedemptionRound = Tables<'redemption_rounds'>;
+type Gift = Tables<'gifts'>;
 type Settings = Tables<'settings'>;
+
+export interface PendingRedemption {
+  id: string;
+  redeemed_at: string;
+  class: ClassRow;
+  gift: Gift | null;
+}
 
 export interface StudentWithCredits {
   id: string;
@@ -26,10 +34,13 @@ export interface ClassWithProgress {
   goalReached: boolean;
   /** Timestamp of the last redemption for this class, if any */
   lastRedemption: string | null;
+  /** Unfulfilled redemption rounds for this class */
+  pendingCount: number;
 }
 
 interface UsePublicData {
   data: ClassWithProgress[];
+  pendingRedemptions: PendingRedemption[];
   settings: Settings | null;
   loading: boolean;
   error: string | null;
@@ -37,6 +48,7 @@ interface UsePublicData {
 
 export function usePublicData(): UsePublicData {
   const [data, setData] = useState<ClassWithProgress[]>([]);
+  const [pendingRedemptions, setPendingRedemptions] = useState<PendingRedemption[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,26 +61,62 @@ export function usePublicData(): UsePublicData {
         classesRes,
         studentsRes,
         creditsRes,
+        classCreditsRes,
         redemptionsRes,
+        pendingRes,
       ] = await Promise.all([
         supabase.from('settings').select('*').limit(1).maybeSingle(),
         supabase.from('classes').select('*').is('deleted_at', null).order('name'),
         supabase.from('students').select('*'),
         supabase.from('credit_events').select('student_id, amount, created_at'),
+        supabase.from('class_credit_events').select('class_id, amount, created_at'),
         supabase.from('redemption_rounds').select('class_id, redeemed_at').order('redeemed_at', { ascending: false }),
+        supabase
+          .from('redemption_rounds')
+          .select('id, redeemed_at, classes(*), gifts(*)')
+          .eq('fulfilled', false)
+          .order('redeemed_at', { ascending: false }),
       ]);
 
       if (settingsRes.error) throw settingsRes.error;
       if (classesRes.error) throw classesRes.error;
       if (studentsRes.error) throw studentsRes.error;
       if (creditsRes.error) throw creditsRes.error;
+      if (classCreditsRes.error) throw classCreditsRes.error;
       if (redemptionsRes.error) throw redemptionsRes.error;
+      if (pendingRes.error) throw pendingRes.error;
 
       const fetchedSettings = settingsRes.data;
       const classes: ClassRow[] = classesRes.data ?? [];
       const students: StudentRow[] = studentsRes.data ?? [];
       const credits: Pick<CreditEvent, 'student_id' | 'amount' | 'created_at'>[] = creditsRes.data ?? [];
+      const classCredits: { class_id: string; amount: number; created_at: string }[] =
+        classCreditsRes.data ?? [];
       const redemptions: Pick<RedemptionRound, 'class_id' | 'redeemed_at'>[] = redemptionsRes.data ?? [];
+
+      type PendingRow = {
+        id: string;
+        redeemed_at: string;
+        classes: ClassRow | null;
+        gifts: Gift | null;
+      };
+      const pendingRows = (pendingRes.data ?? []) as unknown as PendingRow[];
+      const pending: PendingRedemption[] = pendingRows
+        .filter((r) => r.classes)
+        .map((r) => ({
+          id: r.id,
+          redeemed_at: r.redeemed_at,
+          class: r.classes!,
+          gift: r.gifts,
+        }));
+
+      const pendingCountByClass = new Map<string, number>();
+      for (const p of pending) {
+        pendingCountByClass.set(
+          p.class.id,
+          (pendingCountByClass.get(p.class.id) ?? 0) + 1,
+        );
+      }
 
       const goal = fetchedSettings?.global_goal ?? 100;
 
@@ -100,6 +148,17 @@ export function usePublicData(): UsePublicData {
         );
       }
 
+      // Class-level credits since last redemption
+      const classLevelCredits = new Map<string, number>();
+      for (const cc of classCredits) {
+        const lastRedemption = lastRedemptionByClass.get(cc.class_id) ?? null;
+        if (lastRedemption && cc.created_at <= lastRedemption) continue;
+        classLevelCredits.set(
+          cc.class_id,
+          (classLevelCredits.get(cc.class_id) ?? 0) + cc.amount,
+        );
+      }
+
       // Build students grouped by class
       const studentsByClass = new Map<string, StudentWithCredits[]>();
       for (const s of students) {
@@ -123,7 +182,9 @@ export function usePublicData(): UsePublicData {
       // Assemble final data
       const result: ClassWithProgress[] = classes.map((cls) => {
         const classStudents = studentsByClass.get(cls.id) ?? [];
-        const total = classStudents.reduce((sum, s) => sum + s.credits, 0);
+        const studentTotal = classStudents.reduce((sum, s) => sum + s.credits, 0);
+        const classExtra = classLevelCredits.get(cls.id) ?? 0;
+        const total = studentTotal + classExtra;
         const cappedTotal = Math.min(total, goal);
         const lastRedemption = lastRedemptionByClass.get(cls.id) ?? null;
 
@@ -134,11 +195,13 @@ export function usePublicData(): UsePublicData {
           goal,
           goalReached: total >= goal,
           lastRedemption,
+          pendingCount: pendingCountByClass.get(cls.id) ?? 0,
         };
       });
 
       setSettings(fetchedSettings);
       setData(result);
+      setPendingRedemptions(pending);
       setError(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת נתונים');
@@ -154,6 +217,7 @@ export function usePublicData(): UsePublicData {
     const channel = supabase
       .channel(`public-page-realtime-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_events' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'class_credit_events' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_rounds' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, load)
@@ -165,5 +229,5 @@ export function usePublicData(): UsePublicData {
     };
   }, [load]);
 
-  return { data, settings, loading, error };
+  return { data, pendingRedemptions, settings, loading, error };
 }

@@ -29,27 +29,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { useTeacherClassesWithProgress } from '@/hooks/useTeacherClassesWithProgress';
 import '@/lib/i18n';
-
-// ── 6-colour palette from design system ──────────────────────────────────────
-// Each entry: card background + appropriate foreground for text/icons.
-const CLASS_COLORS = [
-  { bg: Colors.accent,     text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', track: 'rgba(255,255,255,0.28)', fill: 'rgba(255,255,255,0.88)' }, // א coral
-  { bg: Colors.secondary,  text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', track: 'rgba(255,255,255,0.28)', fill: 'rgba(255,255,255,0.88)' }, // ב blue
-  { bg: Colors.success,    text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', track: 'rgba(255,255,255,0.28)', fill: 'rgba(255,255,255,0.88)' }, // ג green
-  { bg: Colors.primary,    text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    track: 'rgba(120,89,0,0.20)',    fill: 'rgba(120,89,0,0.70)'     }, // ד amber
-  { bg: Colors.salmon,     text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    track: 'rgba(120,89,0,0.20)',    fill: 'rgba(120,89,0,0.70)'     }, // ה salmon
-  { bg: Colors.peach,      text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    track: 'rgba(120,89,0,0.20)',    fill: 'rgba(120,89,0,0.70)'     }, // ו peach
-] as const;
-
-/** First Hebrew letter found → stable 0-based index into CLASS_COLORS */
-const HEB_ALPHA = 'אבגדהוזחטיכלמנסעפצקרשת';
-function hebrewColorIndex(name: string): number {
-  for (const ch of name) {
-    const i = HEB_ALPHA.indexOf(ch);
-    if (i >= 0) return i % CLASS_COLORS.length;
-  }
-  return 0;
-}
+import { CLASS_COLORS, hebrewColorIndex } from '@/lib/classColors';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const MAX_CONTENT_W = 960;
@@ -300,8 +280,8 @@ export default function TeacherHome() {
               <View style={S.emptyIcon}>
                 <ClipboardList size={28} color={Colors.primaryDark} />
               </View>
-              <Text style={S.emptyTitle}>אין כיתות משויכות</Text>
-              <Text style={S.emptyHint}>פנה/י למנהל המערכת כדי לקבל גישה לכיתות</Text>
+              <Text style={S.emptyTitle}>אין כיתות עדיין</Text>
+              <Text style={S.emptyHint}>פנה/י למנהל המערכת להוספת כיתות</Text>
             </View>
 
           ) : (

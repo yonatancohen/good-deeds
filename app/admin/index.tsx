@@ -8,6 +8,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import {
   Building2, UserCheck, BookOpen, Gift, Trophy,
   Settings, Globe, LogOut, Users, ChevronLeft,
+  GraduationCap, ClipboardList,
 } from 'lucide-react-native';
 import '@/lib/i18n';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,10 +38,12 @@ interface MenuTile {
 // All 6 palette colours, one per section — white text for dark bgs, primaryDark for light.
 const MENU: MenuTile[] = [
   { Icon: Building2, label: 'כיתות',       description: 'הוספה, עריכה ומחיקה של כיתות',              route: '/admin/classes',     tileBg: Colors.secondary, tileText: '#ffffff',          tileSub: 'rgba(255,255,255,0.72)' },
+  { Icon: GraduationCap, label: 'תלמידים', description: 'הוספת תלמידים ב-CSV או ידנית לכל כיתה',     route: '/admin/students',    tileBg: '#6366F1',        tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: UserCheck, label: 'מורים',        description: 'ניהול מורים והזמנת מורים חדשים',            route: '/admin/teachers',    tileBg: Colors.salmon,    tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: BookOpen,  label: 'מעשים טובים', description: 'ניהול רשימת המעשים הטובים ושוויהם',         route: '/admin/deeds',       tileBg: Colors.accent,    tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: Gift,      label: 'פרסים',        description: 'ניהול רשימת הפרסים שכיתה יכולה לזכות בהם',  route: '/admin/gifts',       tileBg: Colors.success,   tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: Trophy,    label: 'מתנות לכיתה',  description: 'רישום מתנה לכיתה שהגיעה למטרה',              route: '/admin/redemptions', tileBg: Colors.primary,   tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
+  { Icon: ClipboardList, label: 'יומן זיכויים', description: 'צפייה, עריכה ומחיקה של כל הזיכויים',   route: '/admin/credit-log',  tileBg: '#0EA5E9',        tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: Settings,  label: 'הגדרות',       description: 'שם בית הספר, שנת לימודים ומטרת נקודות',     route: '/admin/settings',    tileBg: Colors.peach,     tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
 ];
 

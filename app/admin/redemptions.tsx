@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Trophy, Gift as GiftIcon, ChevronRight, Plus, Trash2, AlertTriangle } from 'lucide-react-native';
+import { Trophy, Gift as GiftIcon, ChevronRight, Plus, Trash2, AlertTriangle, Check } from 'lucide-react-native';
 import { confirmAction } from '@/lib/confirm';
 import { Colors } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
@@ -102,7 +102,35 @@ const S = StyleSheet.create({
     fontSize: 11, color: '#94a3b8', textAlign: 'right', writingDirection: 'rtl',
     paddingHorizontal: 4, marginBottom: 8,
   } as any,
+  filterRow: {
+    flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16,
+  },
+  filterChip: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5,
+  },
+  filterChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  filterChipInactive: { backgroundColor: '#fff', borderColor: Colors.border },
+  filterChipText: { fontSize: 13, fontWeight: '600', writingDirection: 'rtl' } as any,
+  statusBadge: {
+    borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3,
+  },
+  statusFulfilled: { backgroundColor: '#D1FAE5' },
+  statusPending: { backgroundColor: '#FFEDD5' },
+  statusText: { fontSize: 11, fontWeight: '700', writingDirection: 'rtl' } as any,
+  fulfillRow: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginTop: 10,
+    paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9',
+  },
+  fulfillBtn: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg,
+  },
+  fulfillBtnDone: { backgroundColor: '#ECFDF5', borderColor: '#6EE7B7' },
+  fulfillBtnText: { fontSize: 13, fontWeight: '600', color: '#334155', writingDirection: 'rtl' } as any,
 });
+
+type FulfillFilter = 'unfulfilled' | 'fulfilled' | 'all';
 
 export default function AdminRedemptionsScreen() {
   const { listPad, pageContent } = useAdminLayout();
@@ -123,6 +151,8 @@ export default function AdminRedemptionsScreen() {
   const [note, setNote]   = useState('');
   const [saving, setSaving]       = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [fulfillFilter, setFulfillFilter] = useState<FulfillFilter>('unfulfilled');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Classes available in the picker: current year only (deleted_at filtered at DB level)
   const pickerClasses = useMemo(() =>
@@ -132,16 +162,39 @@ export default function AdminRedemptionsScreen() {
     [classes, currentYear],
   );
 
+  const filteredRedemptions = useMemo(() => {
+    if (fulfillFilter === 'all') return redemptions;
+    if (fulfillFilter === 'fulfilled') return redemptions.filter((r) => r.fulfilled);
+    return redemptions.filter((r) => !r.fulfilled);
+  }, [redemptions, fulfillFilter]);
+
   // Redemptions grouped by class year (insertion order = newest first due to DESC sort)
   const groupedRedemptions = useMemo(() => {
     const map = new Map<string, RedemptionRound[]>();
-    for (const r of redemptions) {
+    for (const r of filteredRedemptions) {
       const year = r.classes?.year ?? 'ללא שנה';
       if (!map.has(year)) map.set(year, []);
       map.get(year)!.push(r);
     }
     return Array.from(map.entries());
-  }, [redemptions]);
+  }, [filteredRedemptions]);
+
+  async function handleToggleFulfilled(r: RedemptionRound) {
+    if (!user) return;
+    setTogglingId(r.id);
+    const nextFulfilled = !r.fulfilled;
+    const { error } = await supabase
+      .from('redemption_rounds')
+      .update({
+        fulfilled: nextFulfilled,
+        fulfilled_at: nextFulfilled ? new Date().toISOString() : null,
+        fulfilled_by: nextFulfilled ? user.id : null,
+      })
+      .eq('id', r.id);
+    setTogglingId(null);
+    if (error) Alert.alert('שגיאה', error.message);
+    else loadData();
+  }
 
   const loadData = useCallback(async () => {
     const [classesRes, giftsRes, redemptionsRes] = await Promise.all([
@@ -223,15 +276,41 @@ export default function AdminRedemptionsScreen() {
             <View style={S.infoBanner}>
               <Text style={S.infoBannerText}>
                 כשכיתה מגיעה למטרה ובוחרת מתנה — לחץ "רשום מתנה".{'\n'}
-                הנקודות של הכיתה יתאפסו אוטומטית.
+                הנקודות של הכיתה יתאפסו אוטומטית. סמן "מומש" כשהפרס נמסר בפועל.
               </Text>
             </View>
 
-            {redemptions.length === 0 ? (
+            <View style={S.filterRow}>
+              {([
+                ['unfulfilled', 'שטרם מומשו'],
+                ['fulfilled', 'מומשו'],
+                ['all', 'הכל'],
+              ] as const).map(([key, label]) => {
+                const active = fulfillFilter === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setFulfillFilter(key)}
+                    style={[S.filterChip, active ? S.filterChipActive : S.filterChipInactive, webPointer]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={label}
+                  >
+                    <Text style={[S.filterChipText, { color: active ? '#fff' : '#334155' }]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {filteredRedemptions.length === 0 ? (
               <View style={AS.emptyWrap}>
                 <View style={[AS.emptyIcon, { backgroundColor: '#FFEDD5' }]}><Trophy size={28} color={Colors.accent} /></View>
-                <Text style={AS.emptyTitle}>אין מתנות לכיתה עדיין</Text>
-                <Text style={AS.emptyHint}>לחץ על "+ הוספה" כדי להוסיף.</Text>
+                <Text style={AS.emptyTitle}>
+                  {redemptions.length === 0 ? 'אין מתנות לכיתה עדיין' : 'אין רשומות בפילטר זה'}
+                </Text>
+                <Text style={AS.emptyHint}>
+                  {redemptions.length === 0 ? 'לחץ על "+ הוספה" כדי להוסיף.' : 'נסה פילטר אחר.'}
+                </Text>
               </View>
             ) : (
               groupedRedemptions.map(([year, rows]) => (
@@ -247,7 +326,14 @@ export default function AdminRedemptionsScreen() {
                       accessibilityLabel={`מתנה לכיתה ${r.classes?.name ?? ''}, ${moment(r.redeemed_at).format('DD/MM/YY')}`}
                     >
                       <View style={S.redemptionTop}>
-                        <Text style={S.redemptionClass}>כיתה {r.classes?.name ?? '—'}</Text>
+                        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                          <Text style={S.redemptionClass}>כיתה {r.classes?.name ?? '—'}</Text>
+                          <View style={[S.statusBadge, r.fulfilled ? S.statusFulfilled : S.statusPending, { marginTop: 6 }]}>
+                            <Text style={[S.statusText, { color: r.fulfilled ? '#065f46' : '#9A3412' }]}>
+                              {r.fulfilled ? 'מומש' : 'ממתין'}
+                            </Text>
+                          </View>
+                        </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={S.redemptionDate}>{moment(r.redeemed_at).format('DD/MM/YYYY')}</Text>
                           <TouchableOpacity
@@ -270,6 +356,34 @@ export default function AdminRedemptionsScreen() {
                       )}
                       {r.note && <Text style={S.redemptionNote}>{r.note}</Text>}
                       <Text style={S.redemptionTime}>{moment(r.redeemed_at).fromNow()}</Text>
+                      <View style={S.fulfillRow}>
+                        <TouchableOpacity
+                          onPress={() => handleToggleFulfilled(r)}
+                          disabled={togglingId === r.id}
+                          style={[S.fulfillBtn, r.fulfilled && S.fulfillBtnDone, webPointer]}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: r.fulfilled }}
+                          accessibilityLabel={r.fulfilled ? 'בטל סימון מומש' : 'סמן כמומש'}
+                        >
+                          {togglingId === r.id ? (
+                            <ActivityIndicator size="small" color={Colors.primary} />
+                          ) : (
+                            <>
+                              <View style={{
+                                width: 18, height: 18, borderRadius: 4, borderWidth: 2,
+                                borderColor: r.fulfilled ? Colors.success : '#cbd5e1',
+                                backgroundColor: r.fulfilled ? Colors.success : 'transparent',
+                                alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                {r.fulfilled && <Check size={12} color="#fff" />}
+                              </View>
+                              <Text style={S.fulfillBtnText}>
+                                {r.fulfilled ? 'מומש — לחץ לביטול' : 'סמן כמומש'}
+                              </Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))}
                 </View>

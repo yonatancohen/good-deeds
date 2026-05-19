@@ -15,6 +15,7 @@ import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { safeBack } from '@/lib/navigation';
 import type { Tables } from '@/types/supabase';
+import { getClassColorScheme } from '@/lib/classColors';
 
 type ClassRow = Tables<'classes'>;
 
@@ -294,11 +295,14 @@ export default function AdminClassesScreen() {
               groupedClasses.map(([year, yearClasses]) => (
                 <View key={year}>
                   <Text style={S.yearHeader}>{year}</Text>
-                  {yearClasses.map((cls) => (
+                  {yearClasses.map((cls) => {
+                    const scheme = getClassColorScheme(cls.grade ?? cls.name);
+                    return (
                     <View key={cls.id} style={AS.row} accessibilityLabel={`כיתה ${cls.name}`}>
-                      {/* Grade circle avatar */}
-                      <View style={S.classCircle}>
-                        <Text style={S.classCircleText}>{cls.grade ?? cls.name.charAt(0)}</Text>
+                      <View style={[S.classCircle, { backgroundColor: scheme.bg }]}>
+                        <Text style={[S.classCircleText, { color: scheme.text }]}>
+                          {cls.grade ?? cls.name.charAt(0)}
+                        </Text>
                       </View>
                       <View style={AS.rowLeft}>
                         <Text style={AS.rowTitle}>כיתה {cls.name}</Text>
@@ -315,7 +319,8 @@ export default function AdminClassesScreen() {
                         </TactileIconBtn>
                       </View>
                     </View>
-                  ))}
+                    );
+                  })}
                 </View>
               ))
             )}
@@ -350,13 +355,14 @@ export default function AdminClassesScreen() {
           <Text style={[AS.fieldLabel, { marginBottom: 12 }]}>כמה כיתות בכל שכבה?</Text>
           {GRADES.map(grade => {
             const count = bulkCounts[grade] ?? 0;
+            const scheme = getClassColorScheme(grade);
             const names = count > 0
               ? Array.from({ length: count }, (_, i) => buildName(grade, String(i + 1))).join(', ')
               : '—';
             return (
               <View key={grade} style={S.gradeRow}>
-                <View style={S.gradeCircle}>
-                  <Text style={S.gradeCircleText}>{grade}׳</Text>
+                <View style={[S.gradeCircle, { backgroundColor: scheme.bg }]}>
+                  <Text style={[S.gradeCircleText, { color: scheme.text }]}>{grade}׳</Text>
                 </View>
                 <Text style={S.gradeNamesText} numberOfLines={1}>{names}</Text>
                 <Stepper value={count} onChange={v => setBulkCounts(prev => ({ ...prev, [grade]: v }))} />
@@ -510,12 +516,11 @@ const S = StyleSheet.create({
   // Class list row
   classCircle: {
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
     marginLeft: 12,
   },
   classCircleText: {
-    color: Colors.primaryDark, fontSize: 18, fontWeight: '700',
+    fontSize: 18, fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
   } as any,
 
@@ -537,10 +542,10 @@ const S = StyleSheet.create({
   },
   gradeCircle: {
     width: 38, height: 38, borderRadius: 10,
-    backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
   gradeCircleText: {
-    color: Colors.primary, fontSize: 16, fontWeight: '700', fontFamily: 'Baloo2_700Bold',
+    fontSize: 16, fontWeight: '700', fontFamily: 'Baloo2_700Bold',
   } as any,
   gradeNamesText: {
     flex: 1, color: '#64748b', fontSize: 13, textAlign: 'right', writingDirection: 'rtl',
