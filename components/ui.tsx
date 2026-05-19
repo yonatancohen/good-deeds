@@ -1,29 +1,17 @@
 /**
- * Shared UI components — built from UI/UX Pro Max design system
- * Uses React Native StyleSheet.create for reliable cross-platform rendering.
- * NativeWind className is intentionally NOT used here due to react-native-web
- * 0.21.2 incompatibility with react-native-css-interop's $$css approach.
- *
- * Design tokens:
- *   Primary:    indigo-600  (#4F46E5)
- *   Accent/CTA: orange-500  (#F97316)
- *   Success:    emerald-500 (#10B981)
- *   Background: slate-50    (#F8FAFC)
- *   Card:       white
- *   Text:       slate-900   (#0F172A)
- *   Muted:      slate-600   (#475569)
- *   Border:     slate-200   (#E2E8F0)
- *
- * Typography: Baloo2_700Bold (headings), Nunito_400Regular / Nunito_600SemiBold (body)
+ * Shared UI components — "Cheerful Encouragement" design system
+ * Palette & tokens: lib/colors.ts
+ * Typography: Baloo2_700Bold (headings), system sans-serif (body)
  * Touch targets: minimum 44×44px on all interactive elements
  * Icons: lucide-react-native — NO emoji icons in UI
  */
 
-import React from 'react';
+import React, { useRef } from 'react';
 import {
+  Animated,
+  TouchableOpacity,
   View,
   Text,
-  TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
   ViewStyle,
@@ -32,87 +20,81 @@ import {
 } from 'react-native';
 import { shadow } from '@/lib/shadow';
 
-// ── Colour constants ──────────────────────────────────────────────────────────
-export const Colors = {
-  primary: '#4F46E5',
-  primaryLight: '#EEF2FF',
-  accent: '#F97316',
-  accentLight: '#FFF7ED',
-  success: '#10B981',
-  successLight: '#ECFDF5',
-  danger: '#EF4444',
-  dangerLight: '#FEF2F2',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  muted: '#475569',
-  border: '#E2E8F0',
-};
+// ── Color tokens — re-exported for backward compatibility ─────────────────────
+export { Colors } from '@/lib/colors';
+import { Colors } from '@/lib/colors';
+
+const USE_ND = Platform.OS !== 'web';
 
 const S = StyleSheet.create({
   // ── Button ────────────────────────────────────────────────────────────────
   btnBase: {
-    borderRadius: 14,
+    borderRadius: 999,           // pill
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    paddingVertical: 15,
-    paddingHorizontal: 24,
-    minHeight: 52,
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    minHeight: 54,
     flexDirection: 'row' as const,
+    gap: 8,
   },
-  btnFull: { flex: 1 },
-  btnPrimary: { backgroundColor: Colors.primary },
-  btnPrimaryDisabled: { backgroundColor: '#a5b4fc' },
-  btnSecondary: { backgroundColor: '#f1f5f9' },
-  btnDanger: { backgroundColor: Colors.danger },
-  btnDangerDisabled: { backgroundColor: '#fca5a5' },
-  btnGhost: { backgroundColor: 'transparent' },
+  btnFull: { alignSelf: 'stretch' as const },
 
-  btnTextPrimary: { color: '#fff', fontWeight: '700' as const, fontSize: 16 },
-  btnTextSecondary: { color: '#334155', fontWeight: '600' as const, fontSize: 16 },
-  btnTextDanger: { color: '#fff', fontWeight: '700' as const, fontSize: 16 },
-  btnTextGhost: { color: Colors.primary, fontWeight: '600' as const, fontSize: 16 },
+  // Backgrounds
+  btnPrimary:         { backgroundColor: Colors.primary },
+  btnPrimaryDisabled: { backgroundColor: '#ffe082' },
+  btnSecondary:       { backgroundColor: '#f5ede2' },
+  btnDanger:          { backgroundColor: Colors.danger },
+  btnDangerDisabled:  { backgroundColor: '#ffb4ab' },
+  btnGhost:           { backgroundColor: 'transparent' },
+
+  // Text
+  btnTextPrimary:   { color: Colors.primaryDark, fontWeight: '700' as const, fontSize: 17, fontFamily: 'Baloo2_700Bold' } as any,
+  btnTextPrimaryOff:{ color: '#a08000',           fontWeight: '700' as const, fontSize: 17, fontFamily: 'Baloo2_700Bold' } as any,
+  btnTextSecondary: { color: Colors.muted,         fontWeight: '700' as const, fontSize: 17, fontFamily: 'Baloo2_700Bold' } as any,
+  btnTextDanger:    { color: '#fff',               fontWeight: '700' as const, fontSize: 17, fontFamily: 'Baloo2_700Bold' } as any,
+  btnTextGhost:     { color: Colors.primaryDark,   fontWeight: '600' as const, fontSize: 16, fontFamily: 'Baloo2_700Bold' } as any,
 
   // ── Card ──────────────────────────────────────────────────────────────────
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
-    ...shadow('#000', 2, 8, 0.07, 3),
+    borderColor: Colors.border,
+    ...shadow('#785900', 2, 12, 0.07, 3),
   },
 
   // ── Badge ─────────────────────────────────────────────────────────────────
   badge: {
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 4,
     alignSelf: 'flex-start' as const,
   },
   badgePrimary: { backgroundColor: Colors.primaryLight },
-  badgeSuccess: { backgroundColor: '#d1fae5' },
-  badgeWarning: { backgroundColor: '#fef3c7' },
-  badgeMuted: { backgroundColor: '#f1f5f9' },
-  badgeAccent: { backgroundColor: Colors.accentLight },
+  badgeSuccess: { backgroundColor: Colors.successLight },
+  badgeWarning: { backgroundColor: '#ffdf9e' },
+  badgeMuted:   { backgroundColor: Colors.surfaceDim },
+  badgeAccent:  { backgroundColor: Colors.peach },
 
-  badgeTextPrimary: { color: '#4338ca', fontSize: 12, fontWeight: '600' as const },
-  badgeTextSuccess: { color: '#065f46', fontSize: 12, fontWeight: '600' as const },
-  badgeTextWarning: { color: '#92400e', fontSize: 12, fontWeight: '600' as const },
-  badgeTextMuted: { color: '#64748b', fontSize: 12, fontWeight: '600' as const },
-  badgeTextAccent: { color: '#c2410c', fontSize: 12, fontWeight: '600' as const },
+  badgeTextPrimary: { color: Colors.primaryDark,  fontSize: 12, fontWeight: '600' as const },
+  badgeTextSuccess: { color: Colors.success,       fontSize: 12, fontWeight: '600' as const },
+  badgeTextWarning: { color: '#5b4300',            fontSize: 12, fontWeight: '600' as const },
+  badgeTextMuted:   { color: Colors.muted,         fontSize: 12, fontWeight: '600' as const },
+  badgeTextAccent:  { color: '#7a3400',            fontSize: 12, fontWeight: '600' as const },
 
   // ── Progress bar ──────────────────────────────────────────────────────────
   progressTrack: {
     borderRadius: 999,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: Colors.surfaceDim,   // warm #e1d9ce
     overflow: 'hidden' as const,
   },
-  progressFill: { height: '100%' as any, borderRadius: 999 },
-  progressNormal: { backgroundColor: '#6366f1' },
-  progressDone: { backgroundColor: Colors.success },
+  progressFill:   { height: '100%' as any, borderRadius: 999 },
+  progressNormal: { backgroundColor: Colors.primary },   // yellow
+  progressDone:   { backgroundColor: Colors.successLight }, // green
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
-  skeleton: { backgroundColor: '#e2e8f0' },
+  skeleton: { backgroundColor: Colors.surfaceDim },
 
   // ── ScreenHeader ─────────────────────────────────────────────────────────
   header: {
@@ -131,7 +113,7 @@ const S = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700' as const,
-    color: Colors.text,
+    color: Colors.primaryDark,          // warm amber title
     textAlign: 'right' as const,
   },
   headerSub: {
@@ -145,7 +127,7 @@ const S = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700' as const,
-    color: '#94a3b8',
+    color: Colors.outline,
     textAlign: 'right' as const,
     letterSpacing: 0.8,
     marginBottom: 6,
@@ -155,8 +137,8 @@ const S = StyleSheet.create({
   // ── EmptyState ────────────────────────────────────────────────────────────
   emptyWrap: { alignItems: 'center' as const, paddingVertical: 64, paddingHorizontal: 24 },
   emptyIcon: {
-    width: 64, height: 64, borderRadius: 16,
-    backgroundColor: '#f1f5f9',
+    width: 64, height: 64, borderRadius: 20,
+    backgroundColor: Colors.primaryLight,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     marginBottom: 16,
@@ -173,7 +155,7 @@ const S = StyleSheet.create({
   // ── SheetHandle ───────────────────────────────────────────────────────────
   handle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#cbd5e1',
+    backgroundColor: Colors.border,
     alignSelf: 'center' as const,
     marginBottom: 16,
   },
@@ -182,18 +164,18 @@ const S = StyleSheet.create({
   formField: { marginBottom: 20 },
   formLabel: {
     fontSize: 14, fontWeight: '600' as const,
-    color: '#1e293b', textAlign: 'right' as const, marginBottom: 2,
+    color: Colors.primaryDark, textAlign: 'right' as const, marginBottom: 2,
   },
   formRequired: { color: Colors.danger },
   formHint: {
-    fontSize: 11, color: '#94a3b8',
+    fontSize: 11, color: Colors.muted,
     textAlign: 'right' as const, marginBottom: 8, lineHeight: 16,
   },
 
   // ── IconButton ────────────────────────────────────────────────────────────
-  iconBtnGhost: { backgroundColor: 'transparent' },
-  iconBtnMuted: { backgroundColor: '#f1f5f9' },
-  iconBtnDanger: { backgroundColor: '#fef2f2' },
+  iconBtnGhost:  { backgroundColor: 'transparent' },
+  iconBtnMuted:  { backgroundColor: '#f5ede2' },
+  iconBtnDanger: { backgroundColor: Colors.dangerLight },
 });
 
 // ── Button ────────────────────────────────────────────────────────────────────
@@ -220,6 +202,22 @@ export function Button({
   fullWidth = true,
 }: ButtonProps) {
   const isOff = disabled || loading;
+  const pressScale = useRef(new Animated.Value(1)).current;
+
+  function handlePressIn() {
+    Animated.spring(pressScale, {
+      toValue: 0.96,
+      useNativeDriver: USE_ND,
+      tension: 400, friction: 20,
+    }).start();
+  }
+  function handlePressOut() {
+    Animated.spring(pressScale, {
+      toValue: 1,
+      useNativeDriver: USE_ND,
+      tension: 300, friction: 18,
+    }).start();
+  }
 
   const bg: ViewStyle =
     variant === 'primary'   ? (isOff ? S.btnPrimaryDisabled : S.btnPrimary) :
@@ -228,29 +226,46 @@ export function Button({
                                S.btnGhost;
 
   const textStyle: TextStyle =
-    variant === 'primary'   ? S.btnTextPrimary   :
+    variant === 'primary'   ? (isOff ? S.btnTextPrimaryOff : S.btnTextPrimary) :
     variant === 'secondary' ? S.btnTextSecondary :
     variant === 'danger'    ? S.btnTextDanger    :
                                S.btnTextGhost;
 
   const spinnerColor =
-    variant === 'secondary' || variant === 'ghost' ? Colors.primary : '#fff';
+    variant === 'secondary' || variant === 'ghost' ? Colors.primaryDark : Colors.primaryDark;
+
+  // 3D shadow for primary on web
+  const primaryShadow = variant === 'primary' && !isOff && Platform.OS === 'web'
+    ? { boxShadow: '0 5px 0 #5b4300' } as any
+    : {};
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={isOff ? undefined : onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isOff}
+      activeOpacity={1}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isOff }}
-      style={[S.btnBase, bg, fullWidth && S.btnFull, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
+      style={[fullWidth && S.btnFull, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
     >
-      {loading ? (
-        <ActivityIndicator color={spinnerColor} />
-      ) : (
-        <Text style={[textStyle, { writingDirection: 'rtl' }]}>{label}</Text>
-      )}
+      <Animated.View
+        style={[
+          S.btnBase,
+          bg,
+          primaryShadow,
+          { transform: [{ scale: pressScale }] },
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={spinnerColor} />
+        ) : (
+          <Text style={[textStyle, { writingDirection: 'rtl' }]}>{label}</Text>
+        )}
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -297,15 +312,22 @@ export function IconButton({
 
 interface CardProps {
   children: React.ReactNode;
-  /** @deprecated Pass style prop instead */
-  className?: string;
   style?: ViewStyle;
   accessibilityLabel?: string;
+  glass?: boolean;
 }
 
-export function Card({ children, style, accessibilityLabel }: CardProps) {
+export function Card({ children, style, accessibilityLabel, glass }: CardProps) {
+  const glassStyle: ViewStyle = glass ? {
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderColor: 'rgba(255,255,255,0.5)',
+    ...(Platform.OS === 'web'
+      ? ({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } as any)
+      : {}),
+  } : {};
+
   return (
-    <View style={[S.card, style]} accessibilityLabel={accessibilityLabel}>
+    <View style={[S.card, glassStyle, style]} accessibilityLabel={accessibilityLabel}>
       {children}
     </View>
   );
@@ -350,9 +372,19 @@ interface ProgressBarProps {
   accessibilityLabel?: string;
 }
 
-export function ProgressBar({ value, max, height = 12, accessibilityLabel }: ProgressBarProps) {
+export function ProgressBar({ value, max, height = 10, accessibilityLabel }: ProgressBarProps) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const reached = pct >= 100;
+
+  // Web: liquid shimmer via inline CSS animation (keyframe injected in injectWebCSS.web.ts)
+  const liquidStyle = Platform.OS === 'web' && !reached
+    ? ({
+        backgroundImage: 'linear-gradient(90deg, #ffc107 0%, #fabd00 40%, #ffdf9e 70%, #ffc107 100%)',
+        backgroundSize: '200% 100%',
+        animation: 'liquidFlow 2s linear infinite',
+        backgroundColor: undefined,
+      } as any)
+    : {};
 
   return (
     <View
@@ -365,6 +397,7 @@ export function ProgressBar({ value, max, height = 12, accessibilityLabel }: Pro
         style={[
           S.progressFill,
           reached ? S.progressDone : S.progressNormal,
+          liquidStyle,
           { width: `${pct}%` as any },
         ]}
       />
@@ -378,7 +411,6 @@ interface SkeletonProps {
   width?: number | string;
   height?: number;
   rounded?: boolean;
-  className?: string;
   style?: ViewStyle;
 }
 
@@ -473,7 +505,6 @@ export function FormField({ label, hint, required, children }: FormFieldProps) {
     <View style={S.formField}>
       <Text style={[S.formLabel, { writingDirection: 'rtl' }]}>
         {label}
-        {/* required indicator removed — mandatory fields are self-evident from context */}
       </Text>
       {hint && (
         <Text style={[S.formHint, { writingDirection: 'rtl' }]}>{hint}</Text>
@@ -483,16 +514,26 @@ export function FormField({ label, hint, required, children }: FormFieldProps) {
   );
 }
 
-// ── inputClass (kept for backward compat – use inputStyle in new code) ────────
+// ── Input style helpers ────────────────────────────────────────────────────────
 
+/** @deprecated use inputStyle below */
 export const inputClass =
   'bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 text-base';
 
+/** Shared pill-shaped input style — use for TextInput */
 export const inputStyle: ViewStyle = {
-  backgroundColor: '#f8fafc',
-  borderWidth: 1,
-  borderColor: Colors.border,
-  borderRadius: 12,
-  paddingHorizontal: 16,
+  backgroundColor: '#f4ece7',     // surface-container warm
+  borderWidth: 2,
+  borderColor: '#e9e1db',         // surface-variant warm
+  borderRadius: 999,              // pill
+  paddingHorizontal: 18,
   paddingVertical: 14,
+};
+
+/** Focus override — spread over inputStyle when field is focused */
+export const inputFocusStyle: ViewStyle = {
+  borderColor: Colors.primary,    // yellow
+  ...(Platform.OS === 'web'
+    ? ({ boxShadow: '0 0 0 4px rgba(255,193,7,0.2)' } as any)
+    : {}),
 };

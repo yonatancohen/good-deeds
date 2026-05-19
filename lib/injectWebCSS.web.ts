@@ -3,6 +3,13 @@
 
 let injected = false;
 
+const ANIMATIONS = `
+@keyframes liquidFlow {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+`;
+
 export function injectWebCSS(): void {
   if (typeof document === 'undefined' || injected) return;
   injected = true;
@@ -10,7 +17,7 @@ export function injectWebCSS(): void {
   if (existing) return;
   const style = document.createElement('style');
   style.id = 'app-tailwind';
-  style.textContent = CSS;
+  style.textContent = ANIMATIONS + CSS;
   document.head.appendChild(style);
 }
 

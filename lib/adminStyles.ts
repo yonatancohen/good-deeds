@@ -1,78 +1,78 @@
 /**
- * Shared StyleSheet for all admin screens.
+ * Shared StyleSheet for all admin screens — "Cheerful Encouragement" design system.
  * Bypasses NativeWind className to ensure reliable web rendering.
  */
 import { StyleSheet, Platform } from 'react-native';
-import { Colors } from '@/components/ui';
+import { Colors } from '@/lib/colors';
 import { shadow } from '@/lib/shadow';
 import { useBreakpoint } from '@/lib/responsive';
 
-/**
- * Call at the top of any admin screen to get desktop-responsive layout helpers.
- *
- * Usage:
- *   const { isDesktop, listPad, pageContent } = useAdminLayout();
- *
- *   <ScrollView contentContainerStyle={listPad}>
- *     <View style={pageContent}>
- *       {rows}
- *     </View>
- *   </ScrollView>
- */
 export function useAdminLayout() {
   const { isDesktop } = useBreakpoint();
   return {
     isDesktop,
-    /** contentContainerStyle for the main ScrollView */
     listPad: isDesktop
       ? { padding: 24, paddingBottom: 40 }
       : { padding: 16 },
-    /** wrap list rows in this to cap width + centre on desktop */
     pageContent: isDesktop
       ? { maxWidth: 960, alignSelf: 'center' as const, width: '100%' as const }
       : undefined,
   };
 }
 
+// 3D shadow for CTA buttons (web only)
+const btn3dShadow = Platform.OS === 'web'
+  ? ({ boxShadow: '0 5px 0 #5b4300' } as any)
+  : {};
+
 export const AS = StyleSheet.create({
-  // ── Screen ──
+  // ── Screen ───────────────────────────────────────────────────────────────
   screen:   { flex: 1, backgroundColor: Colors.bg },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg },
 
-  // ── Header bar ──
+  // ── Header bar ───────────────────────────────────────────────────────────
   header: {
     paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
-    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.border,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
   },
   headerLeft: { flexDirection: 'row-reverse', alignItems: 'center' },
   backBtn: {
     width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#f1f5f9', marginLeft: 12,
+    backgroundColor: '#f5ede2', marginLeft: 12,
   },
   headerTitle: {
-    fontSize: 17, fontWeight: '700', color: Colors.text,
+    fontSize: 17, fontWeight: '700', color: Colors.primaryDark,
     fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
 
-  // ── Primary action button (in header) ──
+  // ── Primary action button (header "+") ───────────────────────────────────
   addBtn: {
-    backgroundColor: Colors.primary, borderRadius: 12, height: 44,
-    paddingHorizontal: 16, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.primary,
+    borderRadius: 999,                  // pill
+    height: 44,
+    paddingHorizontal: 18,
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    ...btn3dShadow,
   },
-  addBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 } as any,
+  addBtnText: { color: Colors.primaryDark, fontWeight: '700', fontSize: 14, fontFamily: 'Baloo2_700Bold' } as any,
 
-  // ── List ──
+  // ── List ──────────────────────────────────────────────────────────────────
   list: { flex: 1 },
 
-  // ── List row card ──
+  // ── List row card ─────────────────────────────────────────────────────────
   row: {
-    backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 16, paddingVertical: 16,
     marginBottom: 12,
-    ...shadow('#64748b', 2, 8, 0.08, 3),
+    ...shadow('#785900', 2, 10, 0.06, 3),
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
   },
-  rowLeft: { flex: 1, marginLeft: 12 },
+  rowLeft:  { flex: 1, marginLeft: 12 },
   rowTitle: {
     fontSize: 15, fontWeight: '700', color: Colors.text,
     textAlign: 'right', fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
@@ -80,81 +80,114 @@ export const AS = StyleSheet.create({
   rowSub: {
     fontSize: 12, color: Colors.muted, textAlign: 'right', marginTop: 2, writingDirection: 'rtl',
   } as any,
-  rowMeta: { flexDirection: 'row-reverse', gap: 8, marginTop: 2 },
+  rowMeta:    { flexDirection: 'row-reverse', gap: 8, marginTop: 2 },
   rowActions: { flexDirection: 'row-reverse', gap: 8 },
   iconBtn: {
     width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#f5ede2',
   },
   iconBtnDanger: {
     width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Colors.dangerLight,
   },
 
-  // ── Empty state ──
-  emptyWrap: { alignItems: 'center', paddingVertical: 64 },
+  // ── Empty state ───────────────────────────────────────────────────────────
+  emptyWrap:  { alignItems: 'center', paddingVertical: 64 },
   emptyIcon: {
     width: 64, height: 64, backgroundColor: Colors.primaryLight,
-    borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+    borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
   emptyTitle: {
     color: Colors.muted, fontWeight: '700', fontSize: 16, textAlign: 'center',
     fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
   emptyHint: {
-    color: '#94a3b8', fontSize: 13, textAlign: 'center', marginTop: 4, writingDirection: 'rtl',
+    color: Colors.outline, fontSize: 13, textAlign: 'center', marginTop: 4, writingDirection: 'rtl',
   } as any,
 
-  // ── Modal / Bottom sheet ──
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  // ── Modal / Bottom sheet ──────────────────────────────────────────────────
+  overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   kvoidEnd: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40,
   },
   sheetHandle: {
-    width: 40, height: 4, backgroundColor: '#cbd5e1', borderRadius: 2,
+    width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2,
     alignSelf: 'center', marginBottom: 16,
   },
   sheetTitle: {
-    fontSize: 17, fontWeight: '700', color: Colors.text,
+    fontSize: 17, fontWeight: '700', color: Colors.primaryDark,
     textAlign: 'right', marginBottom: 20,
     fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
+
+  // ── Form fields ───────────────────────────────────────────────────────────
   fieldLabel: {
-    fontSize: 14, fontWeight: '600', color: '#334155',
+    fontSize: 14, fontWeight: '600', color: Colors.primaryDark,
     textAlign: 'right', marginBottom: 4, writingDirection: 'rtl',
   } as any,
   fieldHint: {
-    fontSize: 12, color: '#94a3b8',
+    fontSize: 12, color: Colors.muted,
     textAlign: 'right', marginBottom: 8, writingDirection: 'rtl',
   } as any,
+
+  // Pill-shaped inputs to match Stitch design
   input: {
-    backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
-    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
-    color: Colors.text, fontSize: 16, textAlign: 'right', marginBottom: 16,
-    fontFamily: 'Nunito_400Regular', writingDirection: 'rtl',
+    backgroundColor: '#f4ece7',         // surface-container warm
+    borderWidth: 2,
+    borderColor: '#e9e1db',             // surface-variant warm
+    borderRadius: 999,                  // pill
+    paddingHorizontal: 18, paddingVertical: 14,
+    color: Colors.text, fontSize: 16, textAlign: 'right',
+    marginBottom: 16, writingDirection: 'rtl',
   } as any,
   inputSmall: {
-    backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
-    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: '#f4ece7',
+    borderWidth: 2,
+    borderColor: '#e9e1db',
+    borderRadius: 999,
+    paddingHorizontal: 18, paddingVertical: 14,
     color: Colors.text, fontSize: 16, textAlign: 'right',
-    fontFamily: 'Nunito_400Regular', writingDirection: 'rtl',
+    writingDirection: 'rtl',
   } as any,
+  inputFocused: {
+    borderColor: Colors.primary,
+    ...(Platform.OS === 'web'
+      ? ({ boxShadow: '0 0 0 4px rgba(255,193,7,0.2)' } as any)
+      : {}),
+  },
 
-  // ── Sheet buttons ──
+  // ── Sheet buttons ─────────────────────────────────────────────────────────
   sheetBtns: { flexDirection: 'row-reverse', gap: 12, marginTop: 4 },
   saveBtn: {
-    flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary,
+    flex: 1, paddingVertical: 16,
+    borderRadius: 999,              // pill
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    ...btn3dShadow,
   },
   saveBtnDisabled: {
-    flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#a5b4fc',
+    flex: 1, paddingVertical: 16,
+    borderRadius: 999,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#ffe082',
   },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 16, fontFamily: 'Baloo2_700Bold', textAlign: 'center' } as any,
+  saveBtnText: {
+    color: Colors.primaryDark, fontWeight: '700', fontSize: 16,
+    fontFamily: 'Baloo2_700Bold', textAlign: 'center',
+  } as any,
   cancelBtn: {
-    flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9',
+    flex: 1, paddingVertical: 16,
+    borderRadius: 999,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#f5ede2',
   },
-  cancelBtnText: { color: '#475569', fontWeight: '700', fontSize: 16, fontFamily: 'Baloo2_700Bold', textAlign: 'center' } as any,
+  cancelBtnText: {
+    color: Colors.muted, fontWeight: '700', fontSize: 16,
+    fontFamily: 'Baloo2_700Bold', textAlign: 'center',
+  } as any,
 });
 
 /** Cursor pointer for web interactive elements */

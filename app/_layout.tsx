@@ -31,14 +31,14 @@ export default function RootLayout() {
   // Block render until fonts ready (avoids FOUT)
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8FAFC' }} />
+      <View style={{ flex: 1, backgroundColor: '#fff8f2' }} />
     );
   }
 
   return (
     <SafeAreaProvider>
       <ConfirmProvider>
-        <View style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? '#E8EDF2' : '#F8FAFC' }}>
+        <View style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? '#f0e8df' : '#fff8f2' }}>
           <Stack screenOptions={{ headerShown: false }} />
         </View>
       </ConfirmProvider>

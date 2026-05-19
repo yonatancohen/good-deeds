@@ -6,7 +6,6 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
-  
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -25,20 +24,57 @@ import { shadow } from '@/lib/shadow';
 
 type Tab = 'password' | 'magic';
 
+// ── Background blob (web: CSS radial gradient; native: tinted circle) ─────────
+function BlobDecoration() {
+  if (Platform.OS !== 'web') return null;
+  return (
+    <>
+      <View style={[S.blob, S.blobTopRight]} />
+      <View style={[S.blob, S.blobBottomLeft]} />
+    </>
+  );
+}
 
 const S = StyleSheet.create({
-  screen:   { flex: 1, backgroundColor: Colors.bg },
-  kvoid:    { flex: 1 },
-  content:  { paddingHorizontal: 24, paddingTop: 72, paddingBottom: 48 },
+  screen: { flex: 1, backgroundColor: Colors.bg },
+  kvoid:  { flex: 1 },
+  content: { paddingHorizontal: 24, paddingTop: 72, paddingBottom: 48 },
 
-  // ── Logo ──
+  // ── Background blobs (web only) ─────────────────────────────────────────
+  blob: {
+    position: 'absolute',
+    borderRadius: 999,
+    ...(Platform.OS === 'web'
+      ? undefined
+      : { display: 'none' as any }),
+  },
+  blobTopRight: {
+    width: 200, height: 200,
+    top: -60, right: -60,
+    ...(Platform.OS === 'web'
+      ? ({
+          background: 'radial-gradient(circle, rgba(255,193,7,0.18) 0%, transparent 70%)',
+        } as any)
+      : {}),
+  },
+  blobBottomLeft: {
+    width: 240, height: 240,
+    bottom: -80, left: -80,
+    ...(Platform.OS === 'web'
+      ? ({
+          background: 'radial-gradient(circle, rgba(124,225,123,0.15) 0%, transparent 70%)',
+        } as any)
+      : {}),
+  },
+
+  // ── Logo ──────────────────────────────────────────────────────────────────
   logoWrap: { alignItems: 'center', marginBottom: 36 },
   logoShadow: {
     width: 106, height: 106,
     borderRadius: 53,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 18,
-    ...shadow(Colors.primary, 10, 20, 0.45, 14),
+    ...shadow(Colors.primary, 10, 24, 0.5, 14),
   },
   logoBox: {
     width: 100, height: 100,
@@ -46,88 +82,93 @@ const S = StyleSheet.create({
     overflow: 'hidden',
   },
   appName: {
-    fontSize: 28, fontWeight: '700', color: Colors.text,
-    marginBottom: 4, textAlign: 'center',
+    fontSize: 28, fontWeight: '700', color: Colors.primaryDark,
+    marginBottom: 6, textAlign: 'center',
     fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
   appSub: {
-    color: '#94a3b8', fontSize: 14, textAlign: 'center',
-    fontFamily: 'Nunito_400Regular', writingDirection: 'rtl',
+    color: Colors.muted, fontSize: 14, textAlign: 'center',
+    writingDirection: 'rtl',
   } as any,
 
-  // ── Tab switcher ──
+  // ── Tab switcher ──────────────────────────────────────────────────────────
   tabRow: {
     flexDirection: 'row-reverse',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 16, padding: 4, marginBottom: 24,
+    backgroundColor: '#f5ede2',
+    borderRadius: 999, padding: 4, marginBottom: 24,
   },
   tab: {
-    flex: 1, paddingVertical: 12, borderRadius: 12,
+    flex: 1, paddingVertical: 12, borderRadius: 999,
     alignItems: 'center', flexDirection: 'row-reverse',
     justifyContent: 'center', minHeight: 44,
   },
   tabActive: {
     backgroundColor: '#fff',
-    ...shadow('#000', 1, 3, 0.08, 2),
+    ...shadow('#785900', 1, 4, 0.1, 2),
   },
-  tabText: { fontSize: 14, fontWeight: '600', fontFamily: 'Nunito_600SemiBold' } as any,
-  tabTextActive:   { color: '#4338ca' },
-  tabTextInactive: { color: '#64748b' },
+  tabText: {
+    fontSize: 14, fontWeight: '600', fontFamily: 'Baloo2_700Bold',
+  } as any,
+  tabTextActive:   { color: Colors.primaryDark },
+  tabTextInactive: { color: Colors.muted },
 
-  // ── Input row ──
+  // ── Pill input row ────────────────────────────────────────────────────────
   inputRow: {
     flexDirection: 'row-reverse', alignItems: 'center',
-    backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
-    borderRadius: 12, paddingHorizontal: 16, minHeight: 52,
+    backgroundColor: '#f4ece7',     // surface-container warm
+    borderWidth: 2, borderColor: '#e9e1db',
+    borderRadius: 999,              // pill
+    paddingHorizontal: 18, minHeight: 54,
   },
   inputRowFocused: {
     borderColor: Colors.primary,
-    borderWidth: 2,
-    backgroundColor: '#faf9ff',
+    backgroundColor: '#fffbf0',
+    ...(Platform.OS === 'web'
+      ? ({ boxShadow: '0 0 0 4px rgba(255,193,7,0.2)' } as any)
+      : {}),
   },
   inputText: {
     flex: 1, color: Colors.text, fontSize: 16, paddingVertical: 14,
-    fontFamily: 'Nunito_400Regular',
     ...(Platform.OS === 'web' ? { outlineWidth: 0, outlineStyle: 'none' } as any : {}),
   } as any,
 
-  // ── Forgot / link button ──
+  // ── Forgot / link ─────────────────────────────────────────────────────────
   forgotBtn: { alignItems: 'center', marginTop: 16, minHeight: 44, justifyContent: 'center' },
   forgotText: {
-    color: '#6366f1', fontSize: 14, fontWeight: '600',
-    fontFamily: 'Nunito_600SemiBold', writingDirection: 'rtl',
+    color: Colors.primaryDark, fontSize: 14, fontWeight: '600',
+    fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
 
-  // ── Back to public ──
+  // ── Back to public ────────────────────────────────────────────────────────
   backToPublic: {
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
     gap: 6, marginTop: 24, minHeight: 44,
   },
   backToPublicText: {
-    color: '#94a3b8', fontSize: 14,
-    fontFamily: 'Nunito_400Regular', writingDirection: 'rtl',
+    color: Colors.muted, fontSize: 14,
+    writingDirection: 'rtl',
   } as any,
 
-  // ── Magic-sent confirmation ──
-  magicSentWrap: { alignItems: 'center', paddingVertical: 32 },
+  // ── Magic-link sent ───────────────────────────────────────────────────────
+  magicSentWrap:  { alignItems: 'center', paddingVertical: 32 },
   mailIcon: {
     width: 64, height: 64, backgroundColor: Colors.primaryLight,
-    borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+    borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
   magicSentTitle: {
-    color: Colors.text, fontWeight: '700', fontSize: 20,
+    color: Colors.primaryDark, fontWeight: '700', fontSize: 20,
     textAlign: 'center', marginBottom: 8,
     fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
   magicSentDesc: {
-    color: '#64748b', fontSize: 14, textAlign: 'center',
-    lineHeight: 24, fontFamily: 'Nunito_400Regular', writingDirection: 'rtl',
+    color: Colors.muted, fontSize: 14, textAlign: 'center',
+    lineHeight: 24, writingDirection: 'rtl',
   } as any,
-  magicSentEmail: { fontWeight: '600', color: '#334155' },
-  resendBtn: { marginTop: 24, minHeight: 44, justifyContent: 'center' },
+  magicSentEmail: { fontWeight: '600', color: Colors.text },
+  resendBtn:  { marginTop: 24, minHeight: 44, justifyContent: 'center' },
   resendText: {
-    color: '#6366f1', fontSize: 14, fontWeight: '600',
-    fontFamily: 'Nunito_600SemiBold',
+    color: Colors.primaryDark, fontSize: 14, fontWeight: '600',
+    fontFamily: 'Baloo2_700Bold',
   } as any,
 });
 
@@ -137,14 +178,13 @@ export default function LoginScreen() {
   const { session, user, loading: authLoading } = useAuth();
   const { isDesktop } = useBreakpoint();
 
-  const [tab, setTab]             = useState<Tab>('password');
-  const [email, setEmail]         = useState('');
-  const [password, setPassword]   = useState('');
+  const [tab, setTab]               = useState<Tab>('password');
+  const [email, setEmail]           = useState('');
+  const [password, setPassword]     = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [magicSent, setMagicSent] = useState(false);
+  const [magicSent, setMagicSent]   = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // Redirect once authenticated
   useEffect(() => {
     if (authLoading) return;
     if (session && user) {
@@ -189,12 +229,13 @@ export default function LoginScreen() {
     }
   }
 
-  if (authLoading) {
-    return <SafeAreaView style={S.screen} />;
-  }
+  if (authLoading) return <SafeAreaView style={S.screen} />;
 
   return (
-    <SafeAreaView style={[S.screen, isDesktop && { backgroundColor: 'transparent' }]}>
+    <SafeAreaView style={S.screen}>
+      {/* Decorative background blobs */}
+      <BlobDecoration />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={S.kvoid}
@@ -204,7 +245,10 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[S.content, isDesktop && { alignSelf: 'center', width: '100%', maxWidth: 440, paddingHorizontal: 32, paddingTop: 80 }]}>
+          <View style={[
+            S.content,
+            isDesktop && { alignSelf: 'center', width: '100%', maxWidth: 440, paddingHorizontal: 32, paddingTop: 80 },
+          ]}>
 
             {/* ── Logo ── */}
             <View style={S.logoWrap}>
@@ -221,9 +265,7 @@ export default function LoginScreen() {
               <Text style={S.appName} accessibilityRole="header">
                 תפסתי אותך בטוב
               </Text>
-              <Text style={S.appSub}>
-                כניסה לצוות בית הספר
-              </Text>
+              <Text style={S.appSub}>כניסה לצוות בית הספר</Text>
             </View>
 
             {/* ── Tab switcher ── */}
@@ -241,8 +283,8 @@ export default function LoginScreen() {
                   >
                     <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }}>
                       {tabId === 'password'
-                        ? <Lock size={14} color={active ? Colors.primary : Colors.muted} />
-                        : <Mail size={14} color={active ? Colors.primary : Colors.muted} />
+                        ? <Lock size={14} color={active ? Colors.primaryDark : Colors.muted} />
+                        : <Mail size={14} color={active ? Colors.primaryDark : Colors.muted} />
                       }
                       <Text style={[S.tabText, active ? S.tabTextActive : S.tabTextInactive]}>
                         {tabId === 'password' ? 'סיסמה' : 'קישור לאימייל'}
@@ -253,19 +295,20 @@ export default function LoginScreen() {
               })}
             </View>
 
-            <Card style={{ padding: 20 }}>
+            {/* ── Login card (glass on web) ── */}
+            <Card glass style={{ padding: 24 }}>
 
-              {/* ── Password tab ── */}
+              {/* Password tab */}
               {tab === 'password' && (
                 <View>
                   <FormField label={t('email')} hint="כתובת האימייל שרשומה בבית הספר" required>
                     <View style={[S.inputRow, focusedField === 'email-pw' && S.inputRowFocused]}>
-                      <Mail size={18} color={focusedField === 'email-pw' ? Colors.primary : Colors.muted} style={{ marginLeft: 8 }} />
+                      <Mail size={18} color={focusedField === 'email-pw' ? Colors.primary : Colors.muted} style={{ marginLeft: 10 }} />
                       <TextInput
                         value={email}
                         onChangeText={setEmail}
                         placeholder="teacher@school.com"
-                        placeholderTextColor="#94a3b8"
+                        placeholderTextColor={Colors.outline}
                         keyboardType="email-address"
                         autoCapitalize="none"
                         autoCorrect={false}
@@ -274,26 +317,24 @@ export default function LoginScreen() {
                         onFocus={() => setFocusedField('email-pw')}
                         onBlur={() => setFocusedField(null)}
                         accessibilityLabel="שדה כתובת אימייל"
-                        accessibilityHint="הזן את כתובת האימייל שלך"
                       />
                     </View>
                   </FormField>
 
                   <FormField label={t('password')} hint="הסיסמה שקיבלת מהמנהל בעת ההצטרפות" required>
                     <View style={[S.inputRow, focusedField === 'password' && S.inputRowFocused]}>
-                      <Lock size={18} color={focusedField === 'password' ? Colors.primary : Colors.muted} style={{ marginLeft: 8 }} />
+                      <Lock size={18} color={focusedField === 'password' ? Colors.primary : Colors.muted} style={{ marginLeft: 10 }} />
                       <TextInput
                         value={password}
                         onChangeText={setPassword}
                         placeholder="••••••••"
-                        placeholderTextColor="#94a3b8"
+                        placeholderTextColor={Colors.outline}
                         secureTextEntry
                         textAlign="right"
                         style={S.inputText}
                         onFocus={() => setFocusedField('password')}
                         onBlur={() => setFocusedField(null)}
                         accessibilityLabel="שדה סיסמה"
-                        accessibilityHint="הזן את הסיסמה שלך"
                         onSubmitEditing={handlePasswordLogin}
                         returnKeyType="go"
                       />
@@ -308,14 +349,12 @@ export default function LoginScreen() {
                     accessibilityLabel="שלח לי קישור כניסה לאימייל"
                     style={[S.forgotBtn, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
                   >
-                    <Text style={S.forgotText}>
-                      {t('forgotPassword')}? שלח לי קישור לאימייל
-                    </Text>
+                    <Text style={S.forgotText}>{t('forgotPassword')}? שלח לי קישור לאימייל</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* ── Magic link tab ── */}
+              {/* Magic link tab */}
               {tab === 'magic' && (
                 <View>
                   {magicSent ? (
@@ -323,9 +362,7 @@ export default function LoginScreen() {
                       <View style={S.mailIcon}>
                         <Mail size={28} color={Colors.primary} />
                       </View>
-                      <Text style={S.magicSentTitle}>
-                        הקישור נשלח!
-                      </Text>
+                      <Text style={S.magicSentTitle}>הקישור נשלח!</Text>
                       <Text style={S.magicSentDesc}>
                         בדוק את תיבת הדואר שלך{'\n'}
                         <Text style={S.magicSentEmail}>{email}</Text>
@@ -347,12 +384,12 @@ export default function LoginScreen() {
                         required
                       >
                         <View style={[S.inputRow, focusedField === 'email-magic' && S.inputRowFocused]}>
-                          <Mail size={18} color={focusedField === 'email-magic' ? Colors.primary : Colors.muted} style={{ marginLeft: 8 }} />
+                          <Mail size={18} color={focusedField === 'email-magic' ? Colors.primary : Colors.muted} style={{ marginLeft: 10 }} />
                           <TextInput
                             value={email}
                             onChangeText={setEmail}
                             placeholder="teacher@school.com"
-                            placeholderTextColor="#94a3b8"
+                            placeholderTextColor={Colors.outline}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             autoCorrect={false}
@@ -361,18 +398,12 @@ export default function LoginScreen() {
                             onFocus={() => setFocusedField('email-magic')}
                             onBlur={() => setFocusedField(null)}
                             accessibilityLabel="שדה כתובת אימייל לקישור כניסה"
-                            accessibilityHint="הזן את האימייל שלך ונשלח לך קישור לכניסה"
                             onSubmitEditing={handleMagicLink}
                             returnKeyType="send"
                           />
                         </View>
                       </FormField>
-
-                      <Button
-                        label={t('sendMagicLink')}
-                        onPress={handleMagicLink}
-                        loading={submitting}
-                      />
+                      <Button label={t('sendMagicLink')} onPress={handleMagicLink} loading={submitting} />
                     </View>
                   )}
                 </View>
@@ -386,7 +417,7 @@ export default function LoginScreen() {
               accessibilityRole="link"
               accessibilityLabel="חזרה לדף הציבורי"
             >
-              <ArrowRight size={15} color="#94a3b8" />
+              <ArrowRight size={15} color={Colors.muted} />
               <Text style={S.backToPublicText}>חזרה לדף ההצלחות</Text>
             </TouchableOpacity>
 

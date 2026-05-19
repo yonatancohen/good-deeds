@@ -28,10 +28,10 @@ type Gift = Tables<'gifts'>;
 
 const S = StyleSheet.create({
   infoBanner: {
-    backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE',
+    backgroundColor: Colors.primarySurface, borderWidth: 1, borderColor: Colors.primaryLight,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16,
   },
-  infoBannerText: { color: '#3730A3', fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
+  infoBannerText: { color: Colors.primaryDark, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
   giftIconBox: {
     width: 48, height: 48, backgroundColor: '#FFEDD5',
     borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12,

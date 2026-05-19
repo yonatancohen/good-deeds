@@ -28,10 +28,10 @@ type Deed = Tables<'deeds'>;
 
 const S = StyleSheet.create({
   infoBanner: {
-    backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE',
+    backgroundColor: Colors.primarySurface, borderWidth: 1, borderColor: Colors.primaryLight,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16,
   },
-  infoBannerText: { color: '#3730A3', fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
+  infoBannerText: { color: Colors.primaryDark, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
   amtBadgeActive:   { backgroundColor: Colors.primaryLight, width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
   amtBadgeInactive: { backgroundColor: '#f1f5f9', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
   amtTextActive:   { color: Colors.primary, fontWeight: '700', fontSize: 17 } as any,

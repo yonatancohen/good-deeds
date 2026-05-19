@@ -55,7 +55,7 @@ const S = StyleSheet.create({
   assignBtnText: { color: Colors.muted, fontSize: 12, fontWeight: '500' } as any,
   classChipRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 },
   classChip: {
-    backgroundColor: '#EEF2FF', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
+    backgroundColor: Colors.primaryLight, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
   },
   classChipText: { color: Colors.primary, fontSize: 12, fontWeight: '600' } as any,
   noClass: { color: '#94a3b8', fontSize: 12, writingDirection: 'rtl' } as any,
@@ -65,7 +65,7 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8, borderRadius: 12, borderWidth: 1, minHeight: 44,
   },
-  classRowActive:   { backgroundColor: '#EEF2FF', borderColor: '#c7d2fe' },
+  classRowActive:   { backgroundColor: Colors.primaryLight, borderColor: Colors.primary },
   classRowInactive: { backgroundColor: '#fff', borderColor: Colors.border },
   classRowText: { fontWeight: '600', fontSize: 14, writingDirection: 'rtl' } as any,
   classRowTextActive:   { color: Colors.primary },
@@ -80,7 +80,7 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12, marginBottom: 10,
     borderRadius: 12, borderWidth: 1.5, borderColor: Colors.primary,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: Colors.primaryLight,
   },
   selectAllText:       { fontWeight: '700', fontSize: 14, color: Colors.primary, writingDirection: 'rtl' } as any,
   selectAllTextActive: { color: Colors.primary },
@@ -109,7 +109,7 @@ const S = StyleSheet.create({
   csvSummaryRow: { flexDirection: 'row-reverse', gap: 10, marginBottom: 12 },
   csvSummaryCard: { flex: 1, borderRadius: 12, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
   csvSummaryNew:  { backgroundColor: '#ECFDF5', borderColor: '#6EE7B7' },
-  csvSummarySkip: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  csvSummarySkip: { backgroundColor: Colors.surface, borderColor: Colors.border },
   csvSummaryNum: { fontSize: 24, fontWeight: '700', marginBottom: 2 } as any,
   csvSummaryNumNew:  { color: '#065f46' },
   csvSummaryNumSkip: { color: '#64748b' },
@@ -367,7 +367,7 @@ export default function AdminTeachersScreen() {
         <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
           <TouchableOpacity
             onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}
-            style={[AS.addBtn, { backgroundColor: '#EEF2FF', paddingHorizontal: 12 }, webPointer]}
+            style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
             accessibilityRole="button" accessibilityLabel="ייבוא מורים מ-CSV"
           >
             <FileUp size={15} color={Colors.primary} />

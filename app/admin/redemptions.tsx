@@ -38,10 +38,10 @@ type RedemptionRound = Tables<'redemption_rounds'> & {
 
 const S = StyleSheet.create({
   infoBanner: {
-    backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE',
+    backgroundColor: Colors.primarySurface, borderWidth: 1, borderColor: Colors.primaryLight,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16,
   },
-  infoBannerText: { color: '#3730A3', fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
+  infoBannerText: { color: Colors.primaryDark, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
   redemptionRow: {
     backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 16,
     marginBottom: 12, borderWidth: 1, borderColor: '#f1f5f9',
@@ -84,14 +84,14 @@ const S = StyleSheet.create({
   pillInactive:      { backgroundColor: '#fff', borderColor: Colors.border },
   pillTextActive:    { color: '#fff', fontWeight: '600', fontSize: 14 } as any,
   pillTextInactive:  { color: '#334155', fontWeight: '600', fontSize: 14 } as any,
-  pillNone:          { backgroundColor: '#475569', borderColor: '#475569' },
+  pillNone:          { backgroundColor: Colors.muted, borderColor: Colors.muted },
   noteInput: {
     backgroundColor: Colors.bg, borderWidth: 1, borderColor: Colors.border,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
     color: Colors.text, fontSize: 14, textAlign: 'right', marginBottom: 20, writingDirection: 'rtl',
   } as any,
   saveActive:   { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.primary },
-  saveDisabled: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#a5b4fc' },
+  saveDisabled: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.surfaceDim },
   yearHeader: {
     fontSize: 13, fontWeight: '700', color: Colors.primary,
     textAlign: 'right', writingDirection: 'rtl',

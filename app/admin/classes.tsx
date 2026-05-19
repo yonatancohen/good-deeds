@@ -264,7 +264,7 @@ export default function AdminClassesScreen() {
         <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
           <TouchableOpacity
             onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); setBulkYear(schoolYears[0]); }}
-            style={[AS.addBtn, { backgroundColor: '#EEF2FF', paddingHorizontal: 12 }, webPointer]}
+            style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
             accessibilityRole="button" accessibilityLabel="יצירת כיתות בבulk"
           >
             <Layers size={15} color={Colors.primary} />
@@ -472,10 +472,10 @@ const S = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
   },
   pillOn:  { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  pillOff: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  pillOff: { backgroundColor: Colors.surface, borderColor: Colors.border },
   pillText: { fontSize: 16, fontWeight: '700', fontFamily: 'Baloo2_700Bold' } as any,
   pillTextOn:  { color: '#fff' },
-  pillTextOff: { color: '#475569' },
+  pillTextOff: { color: Colors.muted },
 
   // Preview
   preview: {
@@ -490,8 +490,8 @@ const S = StyleSheet.create({
     fontFamily: 'Baloo2_700Bold',
   } as any,
   previewEmpty: {
-    marginTop: 20, backgroundColor: '#F8FAFC', borderRadius: 12,
-    padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0',
+    marginTop: 20, backgroundColor: Colors.surface, borderRadius: 12,
+    padding: 16, alignItems: 'center', borderWidth: 1, borderColor: Colors.border,
     borderStyle: 'dashed',
   },
   previewEmptyText: {
@@ -531,7 +531,7 @@ const S = StyleSheet.create({
   // Grade row (bulk sheet)
   gradeRow: {
     flexDirection: 'row-reverse', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', gap: 10,
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 10,
   },
   gradeCircle: {
     width: 38, height: 38, borderRadius: 10,
@@ -546,8 +546,8 @@ const S = StyleSheet.create({
 
   // Bulk preview
   bulkSummary: {
-    marginTop: 16, backgroundColor: '#F8FAFC',
-    borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E2E8F0',
+    marginTop: 16, backgroundColor: Colors.surface,
+    borderRadius: 14, padding: 14, borderWidth: 1, borderColor: Colors.border,
   },
   bulkSummaryNew: { color: Colors.success, fontSize: 13, fontWeight: '700' } as any,
   bulkSummarySkip: { color: '#94a3b8', fontSize: 13, fontWeight: '600' } as any,
@@ -555,7 +555,7 @@ const S = StyleSheet.create({
     backgroundColor: '#ECFDF5', borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#6EE7B7',
   },
-  bulkChipSkip: { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' },
+  bulkChipSkip: { backgroundColor: Colors.surface, borderColor: Colors.border },
   bulkChipText: { color: '#065f46', fontSize: 13, fontWeight: '600' } as any,
   bulkChipTextSkip: { color: '#94a3b8' } as any,
 });

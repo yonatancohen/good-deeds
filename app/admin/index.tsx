@@ -33,12 +33,12 @@ interface MenuTile {
 }
 
 const MENU: MenuTile[] = [
-  { Icon: Building2, label: 'כיתות',       description: 'הוספה, עריכה ומחיקה של כיתות',              route: '/admin/classes',     tileBg: '#4F46E5' },
+  { Icon: Building2, label: 'כיתות',       description: 'הוספה, עריכה ומחיקה של כיתות',              route: '/admin/classes',     tileBg: '#0060ac' },
   { Icon: UserCheck, label: 'מורים',        description: 'ניהול מורים והזמנת מורים חדשים',            route: '/admin/teachers',    tileBg: '#7C3AED' },
-  { Icon: BookOpen,  label: 'מעשים טובים', description: 'ניהול רשימת המעשים הטובים ושוויהם',         route: '/admin/deeds',       tileBg: '#D97706' },
-  { Icon: Gift,      label: 'פרסים',        description: 'ניהול רשימת הפרסים שכיתה יכולה לזכות בהם',  route: '/admin/gifts',       tileBg: '#059669' },
+  { Icon: BookOpen,  label: 'מעשים טובים', description: 'ניהול רשימת המעשים הטובים ושוויהם',         route: '/admin/deeds',       tileBg: '#FF6B35' },
+  { Icon: Gift,      label: 'פרסים',        description: 'ניהול רשימת הפרסים שכיתה יכולה לזכות בהם',  route: '/admin/gifts',       tileBg: '#006e1c' },
   { Icon: Trophy,    label: 'מתנות לכיתה',  description: 'רישום מתנה לכיתה שהגיעה למטרה',              route: '/admin/redemptions', tileBg: '#EA580C' },
-  { Icon: Settings,  label: 'הגדרות',       description: 'שם בית הספר, שנת לימודים ומטרת נקודות',     route: '/admin/settings',    tileBg: '#475569' },
+  { Icon: Settings,  label: 'הגדרות',       description: 'שם בית הספר, שנת לימודים ומטרת נקודות',     route: '/admin/settings',    tileBg: '#785900' },
 ];
 
 const pointer = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
@@ -258,11 +258,11 @@ const S = StyleSheet.create({
 
   // Public link — styled like the hero banner
   publicLink: {
-    marginTop: 20, backgroundColor: '#4F46E5',
+    marginTop: 20, backgroundColor: Colors.primary,
     borderRadius: 20, paddingHorizontal: 20, paddingVertical: 18,
     flexDirection: 'row-reverse', alignItems: 'center',
     overflow: 'hidden',
-    ...shadow('#4F46E5', 6, 14, 0.35, 8),
+    ...shadow(Colors.primaryDark, 6, 14, 0.35, 8),
   },
   publicBlob1: {
     position: 'absolute', borderRadius: 999,

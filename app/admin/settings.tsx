@@ -69,10 +69,10 @@ const P = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
   },
   pillOn:  { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  pillOff: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  pillOff: { backgroundColor: Colors.surface, borderColor: Colors.border },
   pillText: { fontSize: 15, fontWeight: '700', fontFamily: 'Baloo2_700Bold' } as any,
   pillTextOn:  { color: '#fff' },
-  pillTextOff: { color: '#475569' },
+  pillTextOff: { color: Colors.muted },
 });
 
 export default function AdminSettingsScreen() {

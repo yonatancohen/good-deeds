@@ -16,8 +16,8 @@ export default function TeacherLayout() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
-        <ActivityIndicator size="large" color="#4F46E5" accessibilityLabel="טוען" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff8f2' }}>
+        <ActivityIndicator size="large" color="#ffc107" accessibilityLabel="טוען" />
       </View>
     );
   }
@@ -28,7 +28,7 @@ export default function TeacherLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#f8fafc' },
+        contentStyle: { backgroundColor: '#fff8f2' },
       }}
     />
   );

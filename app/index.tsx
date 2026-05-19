@@ -38,7 +38,7 @@ function PompomJar({ value, max }: { value: number; max: number }) {
       {/* Jar body */}
       <View style={{
         width: 34, height: 44, borderWidth: 2, borderColor: '#CBD5E1',
-        borderRadius: 6, overflow: 'hidden', backgroundColor: '#F8FAFC',
+        borderRadius: 6, overflow: 'hidden', backgroundColor: Colors.primarySurface,
         justifyContent: 'flex-end',
       }}>
         {pct > 0 && (
@@ -282,19 +282,19 @@ export default function PublicScreen() {
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F8FAFC' },
+  screen: { flex: 1, backgroundColor: Colors.bg },
 
   // Header
   header: {
     paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.card,
   },
   headerRow: {
     flexDirection: 'row-reverse', alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
   schoolName: {
-    fontSize: 20, fontWeight: '700', color: '#0F172A',
+    fontSize: 20, fontWeight: '700', color: Colors.text,
     textAlign: 'right', fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
   schoolYear: {
@@ -308,7 +308,7 @@ const S = StyleSheet.create({
 
   // Hero banner
   hero: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 28,
@@ -339,9 +339,9 @@ const S = StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: '#fff', borderRadius: 16, borderWidth: 1,
-    borderColor: '#F1F5F9', marginBottom: 12, overflow: 'hidden',
-    ...shadow('#000', 2, 8, 0.05, 2),
+    backgroundColor: Colors.card, borderRadius: 16, borderWidth: 1,
+    borderColor: Colors.border, marginBottom: 12, overflow: 'hidden',
+    ...shadow('#785900', 2, 8, 0.06, 3),
   },
   cardTop: {
     flexDirection: 'row-reverse', alignItems: 'center',
@@ -353,9 +353,9 @@ const S = StyleSheet.create({
     fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
   } as any,
   gradeTag: {
-    backgroundColor: '#F1F5F9', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2,
+    backgroundColor: Colors.surface, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2,
   },
-  gradeTagText: { color: '#64748B', fontSize: 12, fontWeight: '600' } as any,
+  gradeTagText: { color: Colors.muted, fontSize: 12, fontWeight: '600' } as any,
   cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardPoints: { color: '#64748B', fontSize: 14, fontWeight: '600' } as any,
   goalBadge: {
@@ -369,7 +369,7 @@ const S = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 14,
     flexDirection: 'row-reverse', alignItems: 'center', gap: 12,
   },
-  progBg: { height: 8, backgroundColor: '#F1F5F9', borderRadius: 999 },
+  progBg: { height: 8, backgroundColor: Colors.surfaceDim, borderRadius: 999 },
   progFill: { height: 8, borderRadius: 999 },
   cardProgRow: {
     flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 6,
@@ -382,8 +382,8 @@ const S = StyleSheet.create({
   // Students
   studentsWrap: {
     padding: 16, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: '#F8FAFC',
-    backgroundColor: '#FAFBFF',
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    backgroundColor: Colors.primarySurface,
   },
   noStudentsRow: {
     flexDirection: 'row-reverse', alignItems: 'center',
@@ -393,7 +393,7 @@ const S = StyleSheet.create({
   pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
     flexDirection: 'row-reverse', alignItems: 'center',
-    backgroundColor: '#EEF2FF', borderRadius: 8,
+    backgroundColor: Colors.primaryLight, borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 6, gap: 6,
   },
   pillBadge: {
@@ -402,14 +402,14 @@ const S = StyleSheet.create({
   },
   pillBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' } as any,
   pillName: {
-    color: '#312E81', fontSize: 13, fontWeight: '600',
+    color: Colors.primaryDark, fontSize: 13, fontWeight: '600',
     writingDirection: 'rtl', fontFamily: 'Nunito_600SemiBold',
   } as any,
 
   // Empty
   empty: { alignItems: 'center', marginTop: 60, gap: 12 },
   emptyIcon: {
-    width: 60, height: 60, backgroundColor: '#F1F5F9',
+    width: 60, height: 60, backgroundColor: Colors.surface,
     borderRadius: 16, alignItems: 'center', justifyContent: 'center',
   },
   emptyText: {
@@ -429,8 +429,8 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center',
     justifyContent: 'center', gap: 5,
     paddingVertical: 18,
-    borderTopWidth: 1, borderTopColor: '#F1F5F9',
-    backgroundColor: '#fff',
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    backgroundColor: Colors.card,
   },
   staffLinkText: { color: '#64748B', fontSize: 13, writingDirection: 'rtl' } as any,
 });

@@ -47,8 +47,8 @@ const S = StyleSheet.create({
     paddingHorizontal: 3, paddingVertical: 3,
     justifyContent: 'center',
   },
-  trackOn:  { backgroundColor: '#c7d2fe' },
-  trackOff: { backgroundColor: '#e2e8f0' },
+  trackOn:  { backgroundColor: '#ffdf9e' },   // primaryLight warm
+  trackOff: { backgroundColor: '#e9e1db' },   // surface-variant warm
   thumb: {
     width: 22, height: 22, borderRadius: 11,
     ...shadow('#000', 1, 2, 0.18, 2),

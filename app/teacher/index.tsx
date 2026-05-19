@@ -109,7 +109,7 @@ const S = StyleSheet.create({
   } as any,
   // Dropdown trigger
   classDropdown: {
-    backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#E2E8F0',
+    backgroundColor: Colors.card, borderRadius: 14, borderWidth: 1.5, borderColor: Colors.border,
     paddingHorizontal: 16, height: 52, flexDirection: 'row-reverse',
     alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
   },
@@ -129,7 +129,7 @@ const S = StyleSheet.create({
     paddingHorizontal: 4, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
   },
-  classListRowActive: { backgroundColor: '#EEF2FF', borderRadius: 12, paddingHorizontal: 12 },
+  classListRowActive: { backgroundColor: Colors.primaryLight, borderRadius: 12, paddingHorizontal: 12 },
   classListName: {
     fontSize: 16, fontWeight: '600', color: '#1e293b', writingDirection: 'rtl',
   } as any,
@@ -142,9 +142,9 @@ const S = StyleSheet.create({
 
   // ── Progress card ──
   progressCard: {
-    marginHorizontal: 16, backgroundColor: '#fff',
+    marginHorizontal: 16, backgroundColor: Colors.card,
     borderRadius: 20, overflow: 'hidden', marginBottom: 24,
-    ...shadow('#64748b', 4, 12, 0.10, 4),
+    ...shadow('#785900', 4, 12, 0.10, 4),
   },
   progressCardInner: {
     paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16,
@@ -205,10 +205,10 @@ const S = StyleSheet.create({
   // Year picker pills
   yearPill: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-    borderWidth: 1.5, borderColor: '#E2E8F0', backgroundColor: '#F8FAFC',
+    borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.surface,
   },
   yearPillActive:     { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  yearPillText:       { color: '#475569', fontWeight: '600', fontSize: 14 } as any,
+  yearPillText:       { color: Colors.muted, fontWeight: '600', fontSize: 14 } as any,
   yearPillTextActive: { color: '#fff', fontWeight: '600', fontSize: 14 } as any,
   deletedBadge: {
     backgroundColor: '#FEE2E2', borderRadius: 6,
@@ -228,7 +228,7 @@ const S = StyleSheet.create({
     height: 50,
   },
   redeemBtnFullDisabled: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: Colors.surfaceDim,
   },
   redeemBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 } as any,
   redemptionClassBadge: {
@@ -239,7 +239,7 @@ const S = StyleSheet.create({
   redemptionClassBadgeText: { color: Colors.primary, fontWeight: '600', fontSize: 14 } as any,
   redemptionHistoryItem: {
     flexDirection: 'row-reverse', alignItems: 'center',
-    backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9',
+    backgroundColor: Colors.primarySurface, borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
     paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8,
   },
   redemptionHistoryLeft: { flex: 1, marginLeft: 10 },
@@ -253,19 +253,19 @@ const S = StyleSheet.create({
     fontSize: 11, color: '#94a3b8', writingDirection: 'rtl', textAlign: 'right', marginTop: 4,
   } as any,
   redemptionDivider: {
-    height: 1, backgroundColor: '#E2E8F0', marginVertical: 16,
+    height: 1, backgroundColor: Colors.border, marginVertical: 16,
   },
   giftPill: {
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10,
-    borderWidth: 1.5, borderColor: '#E2E8F0', backgroundColor: '#F8FAFC',
+    borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.surface,
   },
   giftPillActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  giftPillText:   { color: '#475569', fontWeight: '600', fontSize: 14 } as any,
+  giftPillText:   { color: Colors.muted, fontWeight: '600', fontSize: 14 } as any,
   giftPillTextActive: { color: '#fff' } as any,
   searchWrap: {
     flexDirection: 'row-reverse', alignItems: 'center',
-    backgroundColor: '#F8FAFC', borderRadius: 14,
-    borderWidth: 1.5, borderColor: '#E2E8F0',
+    backgroundColor: Colors.surface, borderRadius: 14,
+    borderWidth: 1.5, borderColor: Colors.border,
     paddingHorizontal: 12, marginBottom: 12,
     ...shadow('transparent', 0, 0, 0, 0),
   },
@@ -356,7 +356,7 @@ const S = StyleSheet.create({
     flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center',
   },
   confirmBtnActive:    { backgroundColor: Colors.primary },
-  confirmBtnDisabled:  { backgroundColor: '#a5b4fc' },
+  confirmBtnDisabled:  { backgroundColor: Colors.surfaceDim },
   confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 } as any,
   cancelBtn: {
     flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#f1f5f9',
@@ -1108,7 +1108,7 @@ export default function TeacherScreen() {
 
           {/* RIGHT panel: class picker */}
           <ScrollView
-            style={{ width: 300, borderLeftWidth: 1, borderLeftColor: '#E2E8F0', backgroundColor: '#F8FAFC' }}
+            style={{ width: 300, borderLeftWidth: 1, borderLeftColor: Colors.border, backgroundColor: Colors.surface }}
             contentContainerStyle={{ padding: 16 }}
             showsVerticalScrollIndicator={false}
           >
@@ -1152,7 +1152,7 @@ export default function TeacherScreen() {
                     padding: 14,
                     marginBottom: 8,
                     borderWidth: 1,
-                    borderColor: active ? Colors.primary : '#E2E8F0',
+                    borderColor: active ? Colors.primary : Colors.border,
                   }, { cursor: 'pointer' } as any]}
                 >
                   <Text style={{
