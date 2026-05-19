@@ -19,7 +19,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LogOut, ClipboardList, ShieldCheck } from 'lucide-react-native';
+import { LogOut, ClipboardList, ShieldCheck, Users } from 'lucide-react-native';
 
 import { AS } from '@/lib/adminStyles';
 import { Colors } from '@/components/ui';
@@ -103,8 +103,13 @@ const S = StyleSheet.create({
   headerBtns: { flexDirection: 'row', gap: 8 },
   headerIconBtn: {
     width: 44, height: 44, borderRadius: 12,
-    backgroundColor: '#f5ede2', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center',
   },
+  headerBtn: {
+    backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12,
+    height: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+  },
+  headerBtnText: { color: Colors.muted, fontSize: 14, fontWeight: '500' } as any,
 
   // ── Scroll content ──
   scrollContent: { paddingBottom: 40 },
@@ -268,11 +273,12 @@ export default function TeacherHome() {
             {isAdmin && (
               <TouchableOpacity
                 onPress={() => router.replace('/admin')}
-                style={[S.headerIconBtn, ptr]}
+                style={[S.headerBtn, ptr]}
                 accessibilityRole="button"
-                accessibilityLabel="חזור לניהול"
+                accessibilityLabel="עבור לתצוגת מנהל"
               >
-                <ShieldCheck size={20} color={Colors.secondary} />
+                <ShieldCheck size={15} color={Colors.muted} />
+                <Text style={S.headerBtnText}>תצוגת מנהל</Text>
               </TouchableOpacity>
             )}
           </View>
