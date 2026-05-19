@@ -267,8 +267,8 @@ export default function AdminClassesScreen() {
             style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
             accessibilityRole="button" accessibilityLabel="יצירת כיתות בבulk"
           >
-            <Layers size={15} color={Colors.primary} />
-            <Text style={[AS.addBtnText, { color: Colors.primary }]}>הוספה חכמה</Text>
+            <Layers size={15} color={Colors.primaryDark} />
+            <Text style={AS.addBtnText}>הוספה חכמה</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף כיתה חדשה">
             <Plus size={15} color="#fff" />
