@@ -24,7 +24,7 @@ import { LogOut, ClipboardList } from 'lucide-react-native';
 import { AS } from '@/lib/adminStyles';
 import { Colors } from '@/components/ui';
 import { shadow } from '@/lib/shadow';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { useTeacherClassesWithProgress } from '@/hooks/useTeacherClassesWithProgress';

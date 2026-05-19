@@ -10,7 +10,7 @@ import {
   Settings, Globe, LogOut, Users, ChevronLeft,
 } from 'lucide-react-native';
 import '@/lib/i18n';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/components/ui';

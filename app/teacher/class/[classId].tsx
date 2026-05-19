@@ -36,7 +36,7 @@ import { shadow } from '@/lib/shadow';
 import { useClassStudents, CreditEventWithDetails } from '@/hooks/useClassStudents';
 import { useDeeds } from '@/hooks/useDeeds';
 import { useSettings } from '@/hooks/useSettings';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { confirmAction } from '@/lib/confirm';
 import { supabase } from '@/lib/supabase';
 

@@ -20,7 +20,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { safeBack } from '@/lib/navigation';
 import { useSettings } from '@/hooks/useSettings';
 import type { Tables } from '@/types/supabase';

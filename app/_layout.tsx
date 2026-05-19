@@ -8,6 +8,7 @@ import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-goo
 import { injectWebCSS } from '@/lib/injectWebCSS';
 import '@/lib/i18n';
 import { ConfirmProvider } from '@/components/ConfirmDialog';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Force RTL for Hebrew
 I18nManager.allowRTL(true);
@@ -37,11 +38,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ConfirmProvider>
-        <View style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? '#f0e8df' : '#fff8f2' }}>
-          <Stack screenOptions={{ headerShown: false }} />
-        </View>
-      </ConfirmProvider>
+      <AuthProvider>
+        <ConfirmProvider>
+          <View style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? '#f0e8df' : '#fff8f2' }}>
+            <Stack screenOptions={{ headerShown: false }} />
+          </View>
+        </ConfirmProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

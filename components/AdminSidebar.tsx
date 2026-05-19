@@ -17,7 +17,7 @@ import {
   Globe,
   LogOut,
 } from 'lucide-react-native';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/components/ui';

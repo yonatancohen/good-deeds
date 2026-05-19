@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { Mail, Lock, ArrowRight } from 'lucide-react-native';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button, Colors, FormField, Card } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
