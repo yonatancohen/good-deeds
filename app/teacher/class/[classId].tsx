@@ -39,6 +39,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminLayout } from '@/lib/adminStyles';
 import { confirmAction } from '@/lib/confirm';
+import { safeBack } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
 
 import type { Tables } from '@/types/supabase';
@@ -648,7 +649,7 @@ export default function ClassDetailScreen() {
       <View style={S.headerBar}>
         <View style={[S.header, pageContent]}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => safeBack(router, '/teacher')}
             accessibilityRole="button"
             accessibilityLabel="חזור"
             style={[S.backBtn, ptr]}
