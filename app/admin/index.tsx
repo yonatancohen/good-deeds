@@ -37,11 +37,11 @@ interface MenuTile {
 // All 6 palette colours, one per section — white text for dark bgs, primaryDark for light.
 const MENU: MenuTile[] = [
   { Icon: Building2, label: 'כיתות',       description: 'הוספה, עריכה ומחיקה של כיתות',              route: '/admin/classes',     tileBg: Colors.secondary, tileText: '#ffffff',          tileSub: 'rgba(255,255,255,0.72)' },
-  { Icon: UserCheck, label: 'מורים',        description: 'ניהול מורים והזמנת מורים חדשים',            route: '/admin/teachers',    tileBg: Colors.salmon,    tileText: Colors.primaryDark, tileSub: 'rgba(120,89,0,0.65)'    },
-  { Icon: BookOpen,  label: 'מעשים טובים', description: 'ניהול רשימת המעשים הטובים ושוויהם',         route: '/admin/deeds',       tileBg: Colors.accent,    tileText: '#ffffff',          tileSub: 'rgba(255,255,255,0.72)' },
-  { Icon: Gift,      label: 'פרסים',        description: 'ניהול רשימת הפרסים שכיתה יכולה לזכות בהם',  route: '/admin/gifts',       tileBg: Colors.success,   tileText: '#ffffff',          tileSub: 'rgba(255,255,255,0.72)' },
-  { Icon: Trophy,    label: 'מתנות לכיתה',  description: 'רישום מתנה לכיתה שהגיעה למטרה',              route: '/admin/redemptions', tileBg: Colors.primary,   tileText: Colors.primaryDark, tileSub: 'rgba(120,89,0,0.65)'    },
-  { Icon: Settings,  label: 'הגדרות',       description: 'שם בית הספר, שנת לימודים ומטרת נקודות',     route: '/admin/settings',    tileBg: Colors.peach,     tileText: Colors.primaryDark, tileSub: 'rgba(120,89,0,0.65)'    },
+  { Icon: UserCheck, label: 'מורים',        description: 'ניהול מורים והזמנת מורים חדשים',            route: '/admin/teachers',    tileBg: Colors.salmon,    tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
+  { Icon: BookOpen,  label: 'מעשים טובים', description: 'ניהול רשימת המעשים הטובים ושוויהם',         route: '/admin/deeds',       tileBg: Colors.accent,    tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
+  { Icon: Gift,      label: 'פרסים',        description: 'ניהול רשימת הפרסים שכיתה יכולה לזכות בהם',  route: '/admin/gifts',       tileBg: Colors.success,   tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
+  { Icon: Trophy,    label: 'מתנות לכיתה',  description: 'רישום מתנה לכיתה שהגיעה למטרה',              route: '/admin/redemptions', tileBg: Colors.primary,   tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
+  { Icon: Settings,  label: 'הגדרות',       description: 'שם בית הספר, שנת לימודים ומטרת נקודות',     route: '/admin/settings',    tileBg: Colors.peach,     tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
 ];
 
 const pointer = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
@@ -144,10 +144,10 @@ export default function AdminHomeScreen() {
                       accessibilityLabel={`${tile.label} — ${tile.description}`}
                     >
                       {/* Decorative circle */}
-                      <View style={[S.tileDecor, { backgroundColor: tile.tileText === '#ffffff' ? 'rgba(255,255,255,0.18)' : 'rgba(120,89,0,0.10)' }]} />
+                      <View style={[S.tileDecor, { backgroundColor: 'rgba(255,255,255,0.18)' }]} />
 
                       {/* Icon bubble */}
-                      <View style={[S.tileIconBubble, { backgroundColor: tile.tileText === '#ffffff' ? 'rgba(255,255,255,0.22)' : 'rgba(120,89,0,0.12)' }]}>
+                      <View style={[S.tileIconBubble, { backgroundColor: 'rgba(255,255,255,0.22)' }]}>
                         <Icon size={24} color={tile.tileText} />
                       </View>
 
@@ -273,10 +273,10 @@ const S = StyleSheet.create({
 
   // ── Public link ──
   publicLink: {
-    marginTop: 20, backgroundColor: Colors.primary,
-    borderRadius: 20, paddingHorizontal: 20, paddingVertical: 18,
+    marginTop: 20, backgroundColor: Colors.primaryDark,
+    borderRadius: 20, paddingHorizontal: 20, paddingVertical: 24,
     flexDirection: 'row-reverse', alignItems: 'center', overflow: 'hidden',
-    ...shadow(Colors.primaryDark, 6, 14, 0.35, 8),
+    ...shadow(Colors.primaryDark, 6, 16, 0.40, 8),
   },
   publicBlob1: {
     position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.15)',
