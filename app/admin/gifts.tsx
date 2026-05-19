@@ -117,7 +117,7 @@ export default function AdminGiftsScreen() {
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
             <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
-              <ChevronRight size={20} color={Colors.primary} />
+              <ChevronRight size={20} color={Colors.primaryDark} />
             </TouchableOpacity>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('gifts')}</Text>
           </View>

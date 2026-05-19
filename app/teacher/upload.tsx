@@ -243,7 +243,7 @@ export default function UploadScreen() {
       {/* Header */}
       <View style={S.header}>
         <TouchableOpacity onPress={() => safeBack(router, '/teacher')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
-          <ChevronRight size={20} color={Colors.primary} />
+          <ChevronRight size={20} color={Colors.primaryDark} />
         </TouchableOpacity>
         <Text style={S.headerTitle} accessibilityRole="header">{t('uploadCsv')}</Text>
       </View>

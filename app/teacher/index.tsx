@@ -56,7 +56,7 @@ function hebrewColorIndex(name: string): number {
 }
 
 // ── Responsive column count ───────────────────────────────────────────────────
-const MAX_CONTENT_W = 1200;
+const MAX_CONTENT_W = 960;
 
 function numCols(width: number, isWeb: boolean): number {
   if (!isWeb) return width >= 600 ? 3 : 2;
@@ -102,14 +102,16 @@ const S = StyleSheet.create({
   } as any,
   headerBtns: { flexDirection: 'row', gap: 8 },
   headerIconBtn: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
   },
   headerBtn: {
-    backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12,
+    backgroundColor: Colors.primaryLight, borderRadius: 16, paddingHorizontal: 14,
     height: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    ...(Platform.OS === 'web' ? ({ boxShadow: '0 5px 0 #5b4300' } as any) : {}),
   },
-  headerBtnText: { color: Colors.muted, fontSize: 14, fontWeight: '500' } as any,
+  headerBtnText: { color: Colors.primaryDark, fontSize: 14, fontWeight: '700', fontFamily: 'Baloo2_700Bold' } as any,
 
   // ── Scroll content ──
   scrollContent: { paddingBottom: 40 },
@@ -267,7 +269,7 @@ export default function TeacherHome() {
                 accessibilityRole="button"
                 accessibilityLabel="התנתק"
               >
-                <LogOut size={20} color={Colors.muted} />
+                <LogOut size={20} color={Colors.primaryDark} />
               </TouchableOpacity>
             )}
             {isAdmin && (
@@ -277,7 +279,7 @@ export default function TeacherHome() {
                 accessibilityRole="button"
                 accessibilityLabel="עבור לתצוגת מנהל"
               >
-                <ShieldCheck size={15} color={Colors.muted} />
+                <ShieldCheck size={15} color={Colors.primaryDark} />
                 <Text style={S.headerBtnText}>תצוגת מנהל</Text>
               </TouchableOpacity>
             )}

@@ -895,9 +895,10 @@ const S = StyleSheet.create({
     gap: 10,
   },
   backBtn: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: Colors.surface,
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
   },
   headerTitleWrap: { flex: 1, alignItems: 'flex-end' },
   headerTitle: {

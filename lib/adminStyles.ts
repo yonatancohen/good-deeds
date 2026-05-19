@@ -25,6 +25,11 @@ const btn3dShadow = Platform.OS === 'web'
   ? ({ boxShadow: '0 5px 0 #5b4300' } as any)
   : {};
 
+// Lighter 3D shadow for small icon-only buttons (web only)
+const iconBtn3dShadow = Platform.OS === 'web'
+  ? ({ boxShadow: '0 3px 0 #5b4300' } as any)
+  : {};
+
 export const AS = StyleSheet.create({
   // ── Screen ───────────────────────────────────────────────────────────────
   screen:   { flex: 1, backgroundColor: Colors.bg },
@@ -37,13 +42,14 @@ export const AS = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
   headerInner: {
-    paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
+    paddingTop: 16, paddingBottom: 12,
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
   },
   headerLeft: { flexDirection: 'row-reverse', alignItems: 'center' },
   backBtn: {
-    width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#f5ede2', marginLeft: 12,
+    width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primaryLight, marginLeft: 12,
+    ...iconBtn3dShadow,
   },
   headerTitle: {
     fontSize: 17, fontWeight: '700', color: Colors.primaryDark,
