@@ -13,13 +13,14 @@ import {
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ChevronRight, UserPlus, Upload, Plus, Trash2 } from 'lucide-react-native';
 import AdminSheet from '@/components/AdminSheet';
+import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
 import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { safeBack } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
 import { insertStudents, type ParsedStudentRow } from '@/lib/studentImport';
 import { getClassColorScheme } from '@/lib/classColors';
-import { csvUploadPath, studentCountLabel } from '@/lib/studentCountLabel';
+import { studentCountLabel } from '@/lib/studentCountLabel';
 import { confirmAction } from '@/lib/confirm';
 import type { Tables } from '@/types/supabase';
 
@@ -94,12 +95,11 @@ export default function AdminClassStudentsScreen() {
   const [loading, setLoading] = useState(true);
 
   const [manualVisible, setManualVisible] = useState(false);
+  const [uploadVisible, setUploadVisible] = useState(false);
   const [manualRows, setManualRows] = useState<ManualRow[]>([
     { id: '1', first_name: '', last_name: '' },
   ]);
   const [saving, setSaving] = useState(false);
-
-  const returnPath = classId ? `/admin/students/${classId}` : '/admin/students';
 
   const load = useCallback(async () => {
     if (!classId) {
@@ -215,7 +215,7 @@ export default function AdminClassStudentsScreen() {
           {classId ? (
             <View style={AS.rowActions}>
               <TactileIconBtn
-                onPress={() => router.push(csvUploadPath(classId, returnPath) as any)}
+                onPress={() => setUploadVisible(true)}
                 style={AS.iconBtnSecondary}
                 shadowColor="rgba(0,96,172,0.2)"
                 accessibilityLabel="ייבוא CSV"
@@ -353,6 +353,19 @@ export default function AdminClassStudentsScreen() {
           </TouchableOpacity>
         </View>
       </AdminSheet>
+
+      {classId ? (
+        <StudentCsvUploadSheet
+          visible={uploadVisible}
+          classId={classId}
+          className={className}
+          onClose={() => setUploadVisible(false)}
+          onImported={() => {
+            setUploadVisible(false);
+            load();
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

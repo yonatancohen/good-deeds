@@ -4,7 +4,3 @@ export function studentCountLabel(count: number): string {
   if (count === 1) return 'תלמיד אחד';
   return `${count} תלמידים`;
 }
-
-export function csvUploadPath(classId: string, returnTo: string): string {
-  return `/teacher/upload?classId=${classId}&returnTo=${encodeURIComponent(returnTo)}`;
-}

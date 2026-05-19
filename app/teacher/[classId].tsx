@@ -4,13 +4,11 @@
  * Layout (mobile, scrollable):
  *   1. Back header
  *   2. PomPomJar (class total vs. goal) — centred, top of content
- *   3. "הוסף נקודות לכיתה" CTA → opens DeedPickerSheet (awards deed to every student)
- *   4. Student list (each row: name, credits, per-student give-credit & history buttons)
- *
- * Deed picker sheet: scrollable list of pill-style selectable buttons, confirm button.
+ *   3. "הוספת נקודות לכיתה" CTA
+ *   4. Student list (each row: name, credits, per-student actions)
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -29,7 +27,8 @@ import { ChevronRight, Plus, ClipboardList, Users, Trash2, Pencil, UserPlus, Tro
 
 import { PomPomJar } from '@/components/PomPomJar';
 import AdminSheet from '@/components/AdminSheet';
-import { Colors } from '@/components/ui';
+import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS } from '@/lib/adminStyles';
 import { shadow } from '@/lib/shadow';
 
@@ -53,142 +52,6 @@ type DeedRow    = Tables<'deeds'>;
 type ClassRow   = Tables<'classes'>;
 
 const ptr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
-
-// ── Deed Picker Sheet ─────────────────────────────────────────────────────────
-
-interface DeedPickerSheetProps {
-  visible: boolean;
-  className: string;
-  studentCount: number;
-  deeds: DeedRow[];
-  onClose: () => void;
-  onConfirm: (deed: DeedRow) => Promise<void>;
-}
-
-function DeedPickerSheet({
-  visible,
-  className,
-  studentCount,
-  deeds,
-  onClose,
-  onConfirm,
-}: DeedPickerSheetProps) {
-  const [selectedDeedId, setSelectedDeedId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const sortedDeeds = useMemo(
-    () => [...deeds].sort((a, b) => b.amount - a.amount),
-    [deeds],
-  );
-  const selectedDeed = deeds.find((d) => d.id === selectedDeedId);
-
-  async function handleConfirm() {
-    if (!selectedDeed) return;
-    setSubmitting(true);
-    try {
-      await onConfirm(selectedDeed);
-      setSelectedDeedId(null);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function handleClose() {
-    setSelectedDeedId(null);
-    onClose();
-  }
-
-  const canConfirm = !!selectedDeedId && !submitting;
-
-  return (
-    <AdminSheet visible={visible} onClose={handleClose}>
-      <Text style={S.sheetTitle} accessibilityRole="header">
-        הוסף נקודות לכיתה
-      </Text>
-      <Text style={S.sheetSub}>
-        כיתה {className} · {studentCount} תלמידים יקבלו נקודות
-      </Text>
-
-      {/* Deed list */}
-      <Text style={S.sectionLabel}>בחר מעשה טוב</Text>
-      <Text style={S.sectionHint}>כל תלמידי הכיתה יקבלו את הנקודות</Text>
-
-      <ScrollView
-          showsVerticalScrollIndicator={false}
-          style={{ maxHeight: 300 }}
-          contentContainerStyle={S.deedList}
-          accessibilityRole="radiogroup"
-          accessibilityLabel="רשימת מעשים טובים"
-        >
-          {sortedDeeds.map((deed) => {
-            const active = selectedDeedId === deed.id;
-            return (
-              <TouchableOpacity
-                key={deed.id}
-                onPress={() => setSelectedDeedId(deed.id)}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: active }}
-                accessibilityLabel={`${deed.name} — ${deed.amount} נקודות`}
-                style={[
-                  S.deedPill,
-                  active ? S.deedPillActive : S.deedPillInactive,
-                  ptr,
-                ]}
-              >
-                <Text style={[S.deedAmount, active ? S.deedAmountActive : S.deedAmountInactive]}>
-                  +{deed.amount}
-                </Text>
-                <Text style={[S.deedName, active ? S.deedNameActive : S.deedNameInactive]}>
-                  {deed.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-      {/* Selected summary */}
-      {selectedDeed && (
-        <View style={S.selectedSummary}>
-          <Text style={S.selectedSummaryText}>
-            {studentCount} תלמידים יקבלו {selectedDeed.amount} נקודות כל אחד
-          </Text>
-          <Text style={S.selectedSummaryTotal}>
-            סה״כ: +{selectedDeed.amount * studentCount} נקודות לכיתה
-          </Text>
-        </View>
-      )}
-
-      {/* Buttons */}
-      <View style={[AS.sheetBtns, { marginTop: 20 }]}>
-        <TouchableOpacity
-          onPress={handleConfirm}
-          disabled={!canConfirm}
-          accessibilityRole="button"
-          accessibilityLabel="אשר הוספת נקודות לכיתה"
-          accessibilityState={{ disabled: !canConfirm }}
-          style={[
-            canConfirm ? AS.saveBtn : AS.saveBtnDisabled,
-            ptr,
-          ]}
-        >
-          {submitting ? (
-            <ActivityIndicator color={Colors.primaryDark} />
-          ) : (
-            <Text style={AS.saveBtnText}>הוסף נקודות</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleClose}
-          accessibilityRole="button"
-          accessibilityLabel="ביטול"
-          style={[AS.cancelBtn, ptr]}
-        >
-          <Text style={AS.cancelBtnText}>ביטול</Text>
-        </TouchableOpacity>
-      </View>
-    </AdminSheet>
-  );
-}
 
 // ── Give Credit Modal (per student) ──────────────────────────────────────────
 
@@ -364,7 +227,7 @@ function ClassCreditSheet({
 
   return (
     <AdminSheet visible={visible} onClose={handleClose}>
-      <Text style={S.sheetTitle} accessibilityRole="header">זיכוי לכל הכיתה</Text>
+      <Text style={S.sheetTitle} accessibilityRole="header">הוספת נקודות לכיתה</Text>
       <Text style={S.sheetSub}>כיתה {className} — הנקודות יתווספו לסך הכיתה</Text>
 
       <Text style={S.sectionLabel}>כמות נקודות</Text>
@@ -404,7 +267,7 @@ function ClassCreditSheet({
           onPress={handleSubmit}
           disabled={!canConfirm}
           accessibilityRole="button"
-          accessibilityLabel="אשר זיכוי לכיתה"
+          accessibilityLabel="אשר הוספת נקודות לכיתה"
           style={[canConfirm ? AS.saveBtn : AS.saveBtnDisabled, ptr]}
         >
           {submitting ? (
@@ -522,64 +385,49 @@ interface StudentItemProps {
   onGiveCredit: () => void;
   onViewHistory: () => void;
   onEdit: () => void;
-  onDelete: () => void;
 }
 
-function StudentItem({ student, credits, onGiveCredit, onViewHistory, onEdit, onDelete }: StudentItemProps) {
+function StudentItem({ student, credits, onGiveCredit, onViewHistory, onEdit }: StudentItemProps) {
   const { first_name, last_name } = student;
   return (
     <View
-      style={S.studentRow}
+      style={AS.row}
       accessibilityLabel={`${first_name} ${last_name} — ${credits} נקודות`}
     >
-      {/* Left: avatar + name */}
-      <View style={S.studentLeft}>
-        <View style={S.studentAvatar}>
-          <Text style={S.studentAvatarText}>
-            {first_name.charAt(0)}{last_name.charAt(0)}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={S.studentName}>{first_name} {last_name}</Text>
-          <Text style={S.studentPoints}>{credits} נקודות</Text>
-        </View>
+      <View style={S.studentAvatar}>
+        <Text style={S.studentAvatarText}>
+          {first_name.charAt(0)}{last_name.charAt(0)}
+        </Text>
       </View>
-
-      {/* Right: action buttons */}
-      <View style={S.studentActions}>
-        <TouchableOpacity
-          onPress={onDelete}
-          accessibilityRole="button"
-          accessibilityLabel={`מחק ${first_name} ${last_name}`}
-          style={[S.studentDeleteBtn, ptr]}
-        >
-          <Trash2 size={15} color={Colors.danger} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onEdit}
-          accessibilityRole="button"
-          accessibilityLabel={`ערוך ${first_name} ${last_name}`}
-          style={[S.studentSecondaryBtn, ptr]}
-        >
-          <Pencil size={15} color={Colors.muted} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onViewHistory}
-          accessibilityRole="button"
-          accessibilityLabel={`היסטוריית נקודות של ${first_name} ${last_name}`}
-          style={[S.studentSecondaryBtn, ptr]}
-        >
-          <ClipboardList size={15} color={Colors.muted} />
-        </TouchableOpacity>
-        <TouchableOpacity
+      <View style={AS.rowLeft}>
+        <Text style={AS.rowTitle}>{first_name} {last_name}</Text>
+        <Text style={AS.rowSub}>{credits} נקודות</Text>
+      </View>
+      <View style={AS.rowActions}>
+        <TactileIconBtn
           onPress={onGiveCredit}
-          accessibilityRole="button"
+          style={AS.iconBtnPrimary}
+          shadowColor="rgba(120,89,0,0.22)"
           accessibilityLabel={`הוסף נקודה ל${first_name} ${last_name}`}
-          style={[S.giveBtn, ptr]}
         >
-          <Plus size={13} color="#fff" />
-          <Text style={S.giveBtnText}>נקודה</Text>
-        </TouchableOpacity>
+          <Plus size={16} color={Colors.primaryDark} />
+        </TactileIconBtn>
+        <TactileIconBtn
+          onPress={onViewHistory}
+          style={AS.iconBtnSecondary}
+          shadowColor="rgba(0,96,172,0.2)"
+          accessibilityLabel={`היסטוריית נקודות של ${first_name} ${last_name}`}
+        >
+          <ClipboardList size={16} color={Colors.secondary} />
+        </TactileIconBtn>
+        <TactileIconBtn
+          onPress={onEdit}
+          style={AS.iconBtn}
+          shadowColor="rgba(79,70,50,0.12)"
+          accessibilityLabel={`ערוך ${first_name} ${last_name}`}
+        >
+          <Pencil size={16} color={Colors.muted} />
+        </TactileIconBtn>
       </View>
     </View>
   );
@@ -615,13 +463,11 @@ export default function ClassDetailScreen() {
   const goal = settings?.global_goal ?? 100;
 
   // Local optimistic state
-  const [deletedStudentIds,      setDeletedStudentIds]      = useState<Set<string>>(new Set());
   const [locallyAddedStudents,   setLocallyAddedStudents]   = useState<Array<{ student: StudentRow; credits: number }>>([]);
   const [localCreditAdjustments, setLocalCreditAdjustments] = useState<Record<string, number>>({});
   const [localClassCredits, setLocalClassCredits] = useState(0);
 
   // Sheet visibility
-  const [deedPickerVisible,  setDeedPickerVisible]  = useState(false);
   const [classCreditVisible, setClassCreditVisible] = useState(false);
   const [giveCreditStudent,  setGiveCreditStudent]  = useState<StudentRow | null>(null);
   const [historyStudent,     setHistoryStudent]     = useState<StudentRow | null>(null);
@@ -630,61 +476,23 @@ export default function ClassDetailScreen() {
   const [studentFirstName,   setStudentFirstName]   = useState('');
   const [studentLastName,    setStudentLastName]    = useState('');
   const [savingStudent,      setSavingStudent]      = useState(false);
+  const [uploadVisible,      setUploadVisible]      = useState(false);
 
   // Derived student list (with optimistic mutations)
   const visibleStudents = useMemo(() => [
-    ...students
-      .filter(({ student }) => !deletedStudentIds.has(student.id))
-      .map(({ student, credits }) => ({
-        student,
-        credits: credits + (localCreditAdjustments[student.id] ?? 0),
-      })),
-    ...locallyAddedStudents
-      .filter(({ student }) => !deletedStudentIds.has(student.id))
-      .map(({ student, credits }) => ({
-        student,
-        credits: credits + (localCreditAdjustments[student.id] ?? 0),
-      })),
-  ], [students, locallyAddedStudents, deletedStudentIds, localCreditAdjustments]);
+    ...students.map(({ student, credits }) => ({
+      student,
+      credits: credits + (localCreditAdjustments[student.id] ?? 0),
+    })),
+    ...locallyAddedStudents.map(({ student, credits }) => ({
+      student,
+      credits: credits + (localCreditAdjustments[student.id] ?? 0),
+    })),
+  ], [students, locallyAddedStudents, localCreditAdjustments]);
 
   const studentTotal = visibleStudents.reduce((sum, s) => sum + s.credits, 0);
   const classTotal   = studentTotal + classLevelCredits + localClassCredits;
   const cappedTotal  = Math.min(classTotal, goal);
-
-  // ── Class-wide deed: insert credit_events for every student ──────────────
-  const handleClassDeed = useCallback(async (deed: DeedRow) => {
-    if (!classId || !user) throw new Error('חסרים נתונים');
-    if (visibleStudents.length === 0) {
-      Alert.alert('אין תלמידים', 'הכיתה ריקה — אין תלמידים לתת נקודות');
-      return;
-    }
-
-    const rows = visibleStudents.map(({ student }) => ({
-      student_id: student.id,
-      deed_id:    deed.id,
-      amount:     deed.amount,
-      note:       null as string | null,
-      given_by:   user.id,
-    }));
-
-    const { error } = await supabase.from('credit_events').insert(rows);
-    if (error) {
-      Alert.alert('שגיאה', error.message);
-      return;
-    }
-
-    // Optimistic: bump every student's local credits
-    setLocalCreditAdjustments((prev) => {
-      const next = { ...prev };
-      for (const { student } of visibleStudents) {
-        next[student.id] = (next[student.id] ?? 0) + deed.amount;
-      }
-      return next;
-    });
-
-    setDeedPickerVisible(false);
-    refetch();
-  }, [classId, user, visibleStudents, refetch]);
 
   // ── Student CRUD ──────────────────────────────────────────────────────────
   function openAddStudent() {
@@ -716,7 +524,6 @@ export default function ClassDetailScreen() {
       setSavingStudent(false);
       if (error) { Alert.alert('שגיאה', error.message); return; }
       setLocallyAddedStudents([]);
-      setDeletedStudentIds(new Set());
       refetch();
     } else {
       const { data: newStudent, error } = await supabase
@@ -731,19 +538,6 @@ export default function ClassDetailScreen() {
     setStudentSheetVisible(false);
   }
 
-  async function handleDeleteStudent(s: StudentRow) {
-    confirmAction(
-      'מחיקת תלמיד',
-      `למחוק את ${s.first_name} ${s.last_name}?`,
-      async () => {
-        const { error } = await supabase.from('students').delete().eq('id', s.id);
-        if (error) Alert.alert('שגיאה', error.message);
-        else setDeletedStudentIds((prev) => new Set([...prev, s.id]));
-      },
-      'מחק',
-    );
-  }
-
   // ── Loading / error states ────────────────────────────────────────────────
   if (!classId) {
     return (
@@ -756,37 +550,38 @@ export default function ClassDetailScreen() {
   const className = classRow?.name ?? '';
 
   return (
-    <SafeAreaView style={S.screen}>
+    <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
 
       {/* ── Header ── */}
-      <View style={S.headerBar}>
-        <View style={[S.header, pageContent]}>
-          <TouchableOpacity
-            onPress={() => safeBack(router, '/teacher')}
-            accessibilityRole="button"
-            accessibilityLabel="חזור"
-            style={[S.backBtn, ptr]}
-          >
-            <ChevronRight size={20} color={Colors.primaryDark} />
-          </TouchableOpacity>
-          <View style={S.headerTitleWrap}>
-            <Text style={S.headerTitle} accessibilityRole="header">
-              כיתה {className}
-            </Text>
-            <Text style={S.headerSub}>
-              {visibleStudents.length} תלמידים
-              {classRow?.grade ? ` · שכבה ${classRow.grade}` : ''}
-            </Text>
+      <View style={AS.header}>
+        <View style={[AS.headerInner, pageContent, S.headerInner]}>
+          <View style={AS.headerLeft}>
+            <TouchableOpacity
+              onPress={() => safeBack(router, '/teacher')}
+              accessibilityRole="button"
+              accessibilityLabel="חזור"
+              style={[AS.backBtn, ptr]}
+            >
+              <ChevronRight size={20} color={Colors.primaryDark} />
+            </TouchableOpacity>
+            <View style={S.headerTitleWrap}>
+              <Text style={AS.headerTitle} accessibilityRole="header">
+                כיתה {className}
+              </Text>
+              <Text style={S.headerSub}>
+                {visibleStudents.length} תלמידים
+                {classRow?.grade ? ` · שכבה ${classRow.grade}` : ''}
+              </Text>
+            </View>
           </View>
-          {/* Add student button */}
-          <TouchableOpacity
+          <TactileIconBtn
             onPress={openAddStudent}
-            accessibilityRole="button"
+            style={AS.iconBtnSuccess}
+            shadowColor="rgba(0,110,28,0.2)"
             accessibilityLabel="הוסף תלמיד"
-            style={[S.headerAddBtn, ptr]}
           >
-            <UserPlus size={18} color={Colors.primaryDark} />
-          </TouchableOpacity>
+            <UserPlus size={18} color={Colors.success} />
+          </TactileIconBtn>
         </View>
       </View>
 
@@ -809,26 +604,16 @@ export default function ClassDetailScreen() {
           )}
         </View>
 
-        {/* ── 2. Class credit CTAs ── */}
+        {/* ── 2. Class credit CTA ── */}
         <View style={S.classCtaRow}>
-          <TouchableOpacity
-            onPress={() => setDeedPickerVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="הוסף נקודות לכל תלמידי הכיתה"
-            style={[S.classCtaBtn, S.classCtaBtnHalf, ptr]}
-            disabled={visibleStudents.length === 0}
-          >
-            <Plus size={18} color={Colors.primaryDark} />
-            <Text style={S.classCtaBtnText}>נקודות לכל תלמיד</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setClassCreditVisible(true)}
             accessibilityRole="button"
-            accessibilityLabel="זיכוי לכל הכיתה"
-            style={[S.classCtaBtnAlt, S.classCtaBtnHalf, ptr]}
+            accessibilityLabel="הוספת נקודות לכיתה"
+            style={[S.classCtaBtnAlt, ptr]}
           >
             <Plus size={18} color="#fff" />
-            <Text style={S.classCtaBtnAltText}>זיכוי לכל הכיתה</Text>
+            <Text style={S.classCtaBtnAltText}>הוספת נקודות לכיתה</Text>
           </TouchableOpacity>
         </View>
 
@@ -838,15 +623,14 @@ export default function ClassDetailScreen() {
             <Text style={S.studentsLabel}>
               תלמידים ({visibleStudents.length})
             </Text>
-            <TouchableOpacity
-              onPress={() => router.push(`/teacher/upload?classId=${classId}`)}
-              accessibilityRole="button"
-              accessibilityLabel="העלאת רשימת תלמידים מ-CSV"
-              style={[S.uploadBtn, ptr]}
+            <TactileIconBtn
+              onPress={() => setUploadVisible(true)}
+              style={AS.iconBtnSecondary}
+              shadowColor="rgba(0,96,172,0.2)"
+              accessibilityLabel="ייבוא CSV"
             >
-              <Upload size={13} color={Colors.primary} />
-              <Text style={S.uploadBtnText}>ייבוא CSV</Text>
-            </TouchableOpacity>
+              <Upload size={16} color={Colors.secondary} />
+            </TactileIconBtn>
           </View>
 
           {studentsLoading ? (
@@ -863,15 +647,14 @@ export default function ClassDetailScreen() {
                 <Users size={24} color={Colors.muted} />
               </View>
               <Text style={S.emptyCardText}>אין תלמידים בכיתה</Text>
-              <TouchableOpacity
-                onPress={() => router.push(`/teacher/upload?classId=${classId}`)}
-                accessibilityRole="button"
-                accessibilityLabel="העלה רשימת תלמידים"
-                style={[S.uploadLink, ptr]}
+              <TactileIconBtn
+                onPress={() => setUploadVisible(true)}
+                style={[AS.iconBtnSecondary, { marginTop: 12 }]}
+                shadowColor="rgba(0,96,172,0.2)"
+                accessibilityLabel="העלה רשימת תלמידים מ-CSV"
               >
-                <Upload size={14} color={Colors.primary} />
-                <Text style={S.uploadLinkText}>העלה רשימת תלמידים</Text>
-              </TouchableOpacity>
+                <Upload size={16} color={Colors.secondary} />
+              </TactileIconBtn>
             </View>
           ) : (
             visibleStudents.map(({ student, credits }) => (
@@ -882,7 +665,6 @@ export default function ClassDetailScreen() {
                 onGiveCredit={() => setGiveCreditStudent(student)}
                 onViewHistory={() => setHistoryStudent(student)}
                 onEdit={() => openEditStudent(student)}
-                onDelete={() => handleDeleteStudent(student)}
               />
             ))
           )}
@@ -892,6 +674,20 @@ export default function ClassDetailScreen() {
         <View style={{ height: 32 }} />
       </View>{/* /pageContent */}
       </ScrollView>
+
+      {classId ? (
+        <StudentCsvUploadSheet
+          visible={uploadVisible}
+          classId={classId}
+          className={className}
+          onClose={() => setUploadVisible(false)}
+          onImported={() => {
+            setUploadVisible(false);
+            setLocallyAddedStudents([]);
+            refetch();
+          }}
+        />
+      ) : null}
 
       <ClassCreditSheet
         visible={classCreditVisible}
@@ -904,16 +700,6 @@ export default function ClassDetailScreen() {
           setLocalClassCredits((prev) => prev + amt);
           refetch();
         }}
-      />
-
-      {/* ── Class Deed Picker Sheet ── */}
-      <DeedPickerSheet
-        visible={deedPickerVisible}
-        className={className}
-        studentCount={visibleStudents.length}
-        deeds={deeds}
-        onClose={() => setDeedPickerVisible(false)}
-        onConfirm={handleClassDeed}
       />
 
       {/* ── Per-Student Give Credit Sheet ── */}
@@ -1018,40 +804,13 @@ const S = StyleSheet.create({
   screen:   { flex: 1, backgroundColor: Colors.bg },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg },
 
-  // ── Header ──
-  headerBar: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  header: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    gap: 10,
-  },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: Colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
-  },
-  headerTitleWrap: { flex: 1, alignItems: 'flex-end' },
-  headerTitle: {
-    fontSize: 17, fontWeight: '700', color: Colors.primaryDark,
-    fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl', textAlign: 'right',
-  } as any,
+  // ── Header (bar uses AS.header / AS.headerInner) ──
+  headerInner: { paddingTop: 8, paddingBottom: 8 },
+  headerTitleWrap: { alignItems: 'flex-end' },
   headerSub: {
     fontSize: 12, color: Colors.muted,
     writingDirection: 'rtl', textAlign: 'right', marginTop: 1,
   } as any,
-  headerAddBtn: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: Colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
-  },
 
   // ── Scroll content ──
   scrollContent: {
@@ -1084,32 +843,10 @@ const S = StyleSheet.create({
   } as any,
 
   classCtaRow: {
-    flexDirection: 'row-reverse',
-    gap: 10,
     marginHorizontal: 16,
     marginTop: 20,
     marginBottom: 8,
   },
-  classCtaBtnHalf: { flex: 1 },
-  classCtaBtn: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.primary,
-    borderRadius: 16,
-    paddingVertical: 14,
-    minHeight: 52,
-    ...shadow(Colors.primaryDark, 4, 0, 1, 4),
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 5px 0 #5b4300' } as any) : {}),
-  },
-  classCtaBtnText: {
-    color: Colors.primaryDark,
-    fontWeight: '700',
-    fontSize: 14,
-    fontFamily: 'Baloo2_700Bold',
-    writingDirection: 'rtl',
-  } as any,
   classCtaBtnAlt: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -1163,60 +900,21 @@ const S = StyleSheet.create({
     textTransform: 'uppercase', letterSpacing: 0.8,
     writingDirection: 'rtl',
   } as any,
-  uploadBtn: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.primaryLight, borderRadius: 10,
-    borderWidth: 1, borderColor: Colors.primary,
-    paddingHorizontal: 12, paddingVertical: 7, minHeight: 36,
-  },
-  uploadBtnText: {
-    color: Colors.primary, fontSize: 12, fontWeight: '600',
-    writingDirection: 'rtl',
-  } as any,
-
-  // ── Student row ──
-  studentRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-    ...shadow('#64748b', 2, 8, 0.08, 3),
-  },
-  studentLeft: {
-    flexDirection: 'row-reverse', alignItems: 'center', flex: 1, gap: 10,
-  },
   studentAvatar: {
-    backgroundColor: Colors.primaryLight, borderRadius: 12,
-    width: 40, height: 40, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 12,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
   },
   studentAvatarText: {
-    color: Colors.primaryDark, fontWeight: '700', fontSize: 12,
+    color: Colors.primaryDark,
+    fontWeight: '700',
+    fontSize: 13,
+    fontFamily: 'Baloo2_700Bold',
   } as any,
-  studentName: {
-    color: '#1e293b', fontWeight: '700', fontSize: 14,
-    textAlign: 'right', writingDirection: 'rtl',
-  } as any,
-  studentPoints: {
-    color: '#94a3b8', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginTop: 1,
-  } as any,
-  studentActions: { flexDirection: 'row-reverse', gap: 6, alignItems: 'center' },
-  studentSecondaryBtn: {
-    backgroundColor: '#f8fafc', borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0',
-    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-  },
-  studentDeleteBtn: {
-    backgroundColor: '#FEF2F2', borderRadius: 10, borderWidth: 1, borderColor: '#fecaca',
-    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-  },
-  giveBtn: {
-    backgroundColor: Colors.primary, borderRadius: 10, height: 36,
-    paddingHorizontal: 12, flexDirection: 'row-reverse', alignItems: 'center', gap: 4,
-  },
-  giveBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' } as any,
 
   // ── Empty card ──
   emptyCard: {
@@ -1229,13 +927,6 @@ const S = StyleSheet.create({
   },
   emptyCardText: {
     color: Colors.muted, fontSize: 14, textAlign: 'center', writingDirection: 'rtl',
-  } as any,
-  uploadLink: {
-    marginTop: 12, minHeight: 44, flexDirection: 'row-reverse',
-    justifyContent: 'center', alignItems: 'center', gap: 6,
-  },
-  uploadLinkText: {
-    color: Colors.primary, fontSize: 14, fontWeight: '500', writingDirection: 'rtl',
   } as any,
   emptyText: {
     color: Colors.muted, textAlign: 'center', paddingVertical: 32, writingDirection: 'rtl',
@@ -1255,18 +946,6 @@ const S = StyleSheet.create({
     color: '#334155', fontWeight: '600', fontSize: 14,
     textAlign: 'right', marginBottom: 4, writingDirection: 'rtl',
   } as any,
-  sectionHint: {
-    color: '#94a3b8', fontSize: 12, textAlign: 'right',
-    marginBottom: 12, writingDirection: 'rtl',
-  } as any,
-
-  // ── Deed pills ──
-  deedList: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingBottom: 8,
-  },
   deedRowWrap: {
     flexDirection: 'row-reverse',
     flexWrap: 'wrap',
@@ -1286,22 +965,6 @@ const S = StyleSheet.create({
   deedName: { fontSize: 11, marginTop: 3, textAlign: 'center', writingDirection: 'rtl' } as any,
   deedNameActive:   { color: Colors.primaryDark },
   deedNameInactive: { color: '#94a3b8' },
-
-  // ── Selected summary ──
-  selectedSummary: {
-    backgroundColor: Colors.primaryLight, borderRadius: 14,
-    paddingHorizontal: 16, paddingVertical: 12, marginTop: 8,
-    alignItems: 'flex-end',
-  },
-  selectedSummaryText: {
-    color: Colors.primaryDark, fontSize: 14, fontWeight: '600',
-    textAlign: 'right', writingDirection: 'rtl',
-  } as any,
-  selectedSummaryTotal: {
-    color: Colors.primaryDark, fontSize: 16, fontWeight: '700',
-    textAlign: 'right', writingDirection: 'rtl', marginTop: 4,
-    fontFamily: 'Baloo2_700Bold',
-  } as any,
 
   // ── Note input ──
   noteInput: {

@@ -13,6 +13,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ChevronRight, UserPlus, Upload, Plus, Trash2 } from 'lucide-react-native';
 import AdminSheet from '@/components/AdminSheet';
+import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
 import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { safeBack } from '@/lib/navigation';
@@ -20,7 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/hooks/useSettings';
 import { insertStudents, type ParsedStudentRow } from '@/lib/studentImport';
 import { getClassColorScheme } from '@/lib/classColors';
-import { csvUploadPath, studentCountLabel } from '@/lib/studentCountLabel';
+import { studentCountLabel } from '@/lib/studentCountLabel';
 import type { Tables } from '@/types/supabase';
 
 type ClassRow = Tables<'classes'>;
@@ -97,6 +98,7 @@ export default function AdminStudentsScreen() {
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<ClassRow | null>(null);
+  const [uploadClass, setUploadClass] = useState<ClassRow | null>(null);
   const [manualRows, setManualRows] = useState<ManualRow[]>([
     { id: '1', first_name: '', last_name: '' },
   ]);
@@ -232,9 +234,7 @@ export default function AdminStudentsScreen() {
                     </TouchableOpacity>
                     <View style={AS.rowActions}>
                       <TactileIconBtn
-                        onPress={() =>
-                          router.push(csvUploadPath(cls.id, '/admin/students') as any)
-                        }
+                        onPress={() => setUploadClass(cls)}
                         style={AS.iconBtnSecondary}
                         shadowColor="rgba(0,96,172,0.2)"
                         accessibilityLabel={`ייבוא CSV לכיתה ${cls.name}`}
@@ -256,6 +256,19 @@ export default function AdminStudentsScreen() {
           </View>
         </ScrollView>
       )}
+
+      {uploadClass ? (
+        <StudentCsvUploadSheet
+          visible={!!uploadClass}
+          classId={uploadClass.id}
+          className={uploadClass.name}
+          onClose={() => setUploadClass(null)}
+          onImported={() => {
+            setUploadClass(null);
+            loadClasses();
+          }}
+        />
+      ) : null}
 
       <AdminSheet visible={!!selectedClass} onClose={() => setSelectedClass(null)}>
         <Text style={AS.sheetTitle} accessibilityRole="header">

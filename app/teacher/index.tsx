@@ -1,8 +1,7 @@
 /**
  * Teacher Home — Class Cards
  *
- * Stitch-design card list: full-width coloured cards on mobile,
- * responsive 2–4 col grid on wider screens.
+ * Coloured class cards in a responsive RTL grid (1–4 columns by width).
  * Card colour cycles through 6 design-system palette colours,
  * keyed by the first Hebrew letter in the class name.
  */
@@ -17,6 +16,7 @@ import {
   ActivityIndicator,
   Platform,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogOut, ClipboardList, ShieldCheck, GraduationCap, Users } from 'lucide-react-native';
@@ -30,6 +30,7 @@ import { supabase } from '@/lib/supabase';
 import { useTeacherClassesWithProgress } from '@/hooks/useTeacherClassesWithProgress';
 import '@/lib/i18n';
 import { CLASS_COLORS, hebrewColorIndex } from '@/lib/classColors';
+import { BP } from '@/lib/responsive';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const MAX_CONTENT_W = 960;
@@ -38,6 +39,14 @@ const MAX_CONTENT_W = 960;
 const ptr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
 const GRID_PAD = 16;
 const GRID_GAP  = 12;
+
+/** Text on coloured class cards — always white for contrast */
+const CARD_ON = {
+  text: '#ffffff',
+  sub: 'rgba(255,255,255,0.78)',
+  track: 'rgba(255,255,255,0.28)',
+  fill: 'rgba(255,255,255,0.88)',
+} as const;
 
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
@@ -101,29 +110,32 @@ const S = StyleSheet.create({
     textAlign: 'left', writingDirection: 'rtl',
   } as any,
 
-  // ── Card list ──
+  // ── Card grid (layout applied inline for responsive cols) ──
   grid: {
     paddingHorizontal: GRID_PAD,
-    gap: GRID_GAP,
   },
 
   // ── Class card ──
   card: {
-    borderRadius: 22,
+    borderRadius: 20,
     overflow: 'hidden',
-    padding: 18,
-    minHeight: 148,
+    padding: 16,
+    minHeight: 132,
     justifyContent: 'space-between',
     ...shadow('#0f172a', 6, 20, 0.16, 8),
   },
+  cardCompact: {
+    padding: 14,
+    minHeight: 120,
+  },
 
-  // Top row: name block (right) + icon bubble (left)
+  // Top row: icon (left) + name block (right), RTL
   cardTop: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  cardNameBlock: { flex: 1, alignItems: 'flex-end', marginLeft: 10 },
+  cardNameBlock: { flex: 1, alignItems: 'flex-end', marginRight: 10 },
   cardName: {
     fontSize: 22, fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
@@ -199,24 +211,53 @@ const S = StyleSheet.create({
 });
 
 // ── Component ─────────────────────────────────────────────────────────────────
+function gridColumns(screenWidth: number): number {
+  if (screenWidth < 420) return 1;
+  if (screenWidth < BP.md) return 2;
+  if (screenWidth >= BP.lg) return 4;
+  if (screenWidth >= BP.md) return 3;
+  return 2;
+}
+
 export default function TeacherHome() {
   const router  = useRouter();
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings();
   const { classes, loading, error } = useTeacherClassesWithProgress();
-  const isWeb = Platform.OS === 'web';
+  const { width: screenWidth } = useWindowDimensions();
   const goal  = settings?.global_goal ?? 100;
 
   const displayName = useMemo(() => {
     return user?.display_name ?? user?.email?.split('@')[0] ?? 'מורה';
   }, [user]);
 
+  const cols = useMemo(() => gridColumns(screenWidth), [screenWidth]);
+  const contentWidth = Math.min(screenWidth - GRID_PAD * 2, MAX_CONTENT_W);
+  const cardWidth =
+    cols === 1
+      ? contentWidth
+      : Math.floor((contentWidth - GRID_GAP * (cols - 1)) / cols);
+
+  const gridStyle = useMemo(
+    () =>
+      Platform.OS === 'web'
+        ? ({
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gap: GRID_GAP,
+            width: '100%',
+            direction: 'rtl',
+          } as object)
+        : { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: GRID_GAP },
+    [cols],
+  );
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace('/');
   }
 
-  const centreStyle = isWeb
+  const centreStyle = Platform.OS === 'web'
     ? { maxWidth: MAX_CONTENT_W, alignSelf: 'center' as const, width: '100%' as any }
     : undefined;
 
@@ -293,11 +334,12 @@ export default function TeacherHome() {
               </View>
 
               {/* Grid */}
-              <View style={S.grid}>
+              <View style={[S.grid, gridStyle]}>
                 {classes.map((item) => {
                   const scheme  = CLASS_COLORS[hebrewColorIndex(item.class.name)];
                   const pct     = goal > 0 ? Math.min(item.totalCredits / goal, 1) : 0;
                   const pctPct  = Math.round(pct * 100);
+                  const compact = cols >= 3;
 
                   return (
                     <TouchableOpacity
@@ -306,44 +348,47 @@ export default function TeacherHome() {
                       accessibilityRole="button"
                       accessibilityLabel={`כיתה ${item.class.name}`}
                       activeOpacity={0.82}
-                      style={[S.card, { backgroundColor: scheme.bg }, ptr]}
+                      style={[
+                        S.card,
+                        compact && S.cardCompact,
+                        { backgroundColor: scheme.bg },
+                        Platform.OS !== 'web' && { width: cardWidth },
+                        ptr,
+                      ]}
                     >
-                      {/* ── Top row ── */}
+                      {/* ── Top row: icon שמאל, שם ימין (RTL) ── */}
                       <View style={S.cardTop}>
-                        {/* Class name + students (right/RTL) */}
+                        <View style={S.cardIconBubble}>
+                          <GraduationCap size={22} color={CARD_ON.text} />
+                        </View>
                         <View style={S.cardNameBlock}>
-                          <Text style={[S.cardName, { color: scheme.text }]}>
+                          <Text style={[S.cardName, { color: CARD_ON.text }]}>
                             {item.class.name}
                           </Text>
                           <View style={S.cardStudentRow}>
-                            <Users size={11} color={scheme.sub} />
-                            <Text style={[S.cardStudents, { color: scheme.sub }]}>
+                            <Users size={11} color={CARD_ON.sub} />
+                            <Text style={[S.cardStudents, { color: CARD_ON.sub }]}>
                               {item.studentCount} תלמידים
                             </Text>
                           </View>
-                        </View>
-
-                        {/* Icon bubble (left/RTL) */}
-                        <View style={S.cardIconBubble}>
-                          <GraduationCap size={22} color={scheme.text} />
                         </View>
                       </View>
 
                       {/* ── Bottom: score + progress ── */}
                       <View style={S.cardBottom}>
                         <View style={S.cardScoreRow}>
-                          <Text style={[S.cardScore, { color: scheme.text }]}>
+                          <Text style={[S.cardScore, { color: CARD_ON.text }]}>
                             {item.totalCredits}/{goal}
                           </Text>
-                          <Text style={[S.cardGoalLabel, { color: scheme.sub }]}>
+                          <Text style={[S.cardGoalLabel, { color: CARD_ON.sub }]}>
                             יעד קבוצתי
                           </Text>
                         </View>
-                        <View style={[S.cardTrack, { backgroundColor: scheme.track }]}>
+                        <View style={[S.cardTrack, { backgroundColor: CARD_ON.track }]}>
                           <View
                             style={[
                               S.cardFill,
-                              { width: `${pctPct}%` as any, backgroundColor: scheme.fill },
+                              { width: `${pctPct}%` as any, backgroundColor: CARD_ON.fill },
                             ]}
                           />
                         </View>

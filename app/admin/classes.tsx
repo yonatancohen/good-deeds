@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { confirmAction } from '@/lib/confirm';
 import AdminSheet from '@/components/AdminSheet';
+import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
 import { Building2, Pencil, Trash2, Plus, ChevronRight, Layers, Upload } from 'lucide-react-native';
 import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
@@ -129,6 +130,7 @@ export default function AdminClassesScreen() {
   const [bulkYear,     setBulkYear]     = useState(schoolYears[0]);
   const [bulkCounts,   setBulkCounts]   = useState<Record<string, number>>(EMPTY_COUNTS);
   const [bulkCreating, setBulkCreating] = useState(false);
+  const [uploadClass, setUploadClass] = useState<ClassRow | null>(null);
 
   const bulkEffectiveYear = bulkYear;
 
@@ -308,7 +310,7 @@ export default function AdminClassesScreen() {
                         <Text style={AS.rowTitle}>כיתה {cls.name}</Text>
                       </View>
                       <View style={AS.rowActions}>
-                        <TactileIconBtn onPress={() => router.push(`/teacher/upload?classId=${cls.id}` as any)} style={AS.iconBtnSecondary} shadowColor="rgba(0,96,172,0.2)" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
+                        <TactileIconBtn onPress={() => setUploadClass(cls)} style={AS.iconBtnSecondary} shadowColor="rgba(0,96,172,0.2)" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
                           <Upload size={16} color={Colors.secondary} />
                         </TactileIconBtn>
                         <TactileIconBtn onPress={() => openEdit(cls)} style={AS.iconBtn} accessibilityLabel={`ערוך ${cls.name}`}>
@@ -465,6 +467,16 @@ export default function AdminClassesScreen() {
               </TouchableOpacity>
             </View>
       </AdminSheet>
+
+      {uploadClass ? (
+        <StudentCsvUploadSheet
+          visible={!!uploadClass}
+          classId={uploadClass.id}
+          className={uploadClass.name}
+          onClose={() => setUploadClass(null)}
+          onImported={() => setUploadClass(null)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

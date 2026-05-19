@@ -123,6 +123,16 @@ export const AS = StyleSheet.create({
     width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.secondarySurface,
   },
+  /** Amber — primary actions (e.g. give credit) */
+  iconBtnPrimary: {
+    width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primaryLight,
+  },
+  /** Green — positive add / import */
+  iconBtnSuccess: {
+    width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.successSurface,
+  },
   iconBtnDanger: {
     width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.dangerLight,
