@@ -1,13 +1,9 @@
 /**
  * Teacher Home — Class Grid
  *
- * Shows all the teacher's assigned classes as coloured cards in a responsive grid:
- *   mobile (< 480 px)  → 2 columns
- *   tablet (480–767)   → 3 columns
- *   desktop (≥ 768 px) → 4–6 columns (scales with window width)
- *
- * Tapping a card navigates to /teacher/class/[classId].
- * All student/deed management lives inside the class detail screen.
+ * Responsive grid of coloured class cards. Tap → /teacher/[classId].
+ * Grid columns: 2 mobile · 3 narrow tablet · 4–6 desktop (scales with width).
+ * Card colour is stable: derived from the first Hebrew letter in the class name.
  */
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,7 +19,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LogOut, Settings2, ClipboardList } from 'lucide-react-native';
+import { LogOut, ClipboardList } from 'lucide-react-native';
 
 import { AS } from '@/lib/adminStyles';
 import { Colors } from '@/components/ui';
@@ -34,84 +30,110 @@ import { supabase } from '@/lib/supabase';
 import { useTeacherClassesWithProgress } from '@/hooks/useTeacherClassesWithProgress';
 import '@/lib/i18n';
 
-// ── Class card colour palette ─────────────────────────────────────────────────
-const CLASS_COLORS: { bg: string; text: string; sub: string; bar: string }[] = [
-  { bg: '#FF8C42', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#4ECDC4', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#6C63FF', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#FF6B6B', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#48C774', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#0074D9', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#E040FB', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#FF9800', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#00BCD4', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-  { bg: '#F06292', text: '#fff',    sub: 'rgba(255,255,255,0.75)', bar: 'rgba(255,255,255,0.9)' },
-];
+// ── Colour palette ────────────────────────────────────────────────────────────
+// Index 0 = א, 1 = ב, 2 = ג … Cycles after 10.
+const CLASS_COLORS = [
+  '#FF8C42', // א – warm orange
+  '#4ECDC4', // ב – teal
+  '#6C63FF', // ג – violet
+  '#FF6B6B', // ד – coral
+  '#48C774', // ה – green
+  '#0074D9', // ו – blue
+  '#E040FB', // ז – purple
+  '#FF9800', // ח – amber
+  '#00BCD4', // ט – cyan
+  '#F06292', // י – pink
+] as const;
 
-function getColor(index: number) {
-  return CLASS_COLORS[index % CLASS_COLORS.length];
+/** First Hebrew letter found in name → stable 0-based palette index */
+const HEB_ALPHA = 'אבגדהוזחטיכלמנסעפצקרשת';
+function hebrewColorIndex(name: string): number {
+  for (const ch of name) {
+    const i = HEB_ALPHA.indexOf(ch);
+    if (i >= 0) return i % CLASS_COLORS.length;
+  }
+  return 0;
 }
 
-// ── Column count helper ───────────────────────────────────────────────────────
-function numColumns(width: number, isWeb: boolean): number {
+// ── Responsive column count ───────────────────────────────────────────────────
+const MAX_CONTENT_W = 1200;
+
+function numCols(width: number, isWeb: boolean): number {
   if (!isWeb) return width >= 600 ? 3 : 2;
-  if (width < 640)  return 2;
-  if (width < 900)  return 3;
-  if (width < 1200) return 4;
-  if (width < 1500) return 5;
+  const w = Math.min(width, MAX_CONTENT_W);
+  if (w < 560)  return 2;
+  if (w < 820)  return 3;
+  if (w < 1000) return 4;
+  if (w < 1200) return 5;
   return 6;
 }
 
-// ── StyleSheet ────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
 const ptr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
+const GRID_PAD = 16;
+const GRID_GAP  = 12;
 
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
 
-  // ── Header ──
-  header: {
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14,
-    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.border,
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+  // ── Header bar (full-width) ──
+  headerBar: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  headerLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  headerInner: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
+  },
+  headerText: { alignItems: 'flex-end' },
   headerTitle: {
     fontSize: 20, fontWeight: '700', color: Colors.primaryDark,
-    fontFamily: 'Baloo2_700Bold', writingDirection: 'rtl',
+    fontFamily: 'Baloo2_700Bold',
+    textAlign: 'right', writingDirection: 'rtl',
   } as any,
   headerSub: {
-    fontSize: 12, color: Colors.muted, writingDirection: 'rtl', marginTop: 1,
+    fontSize: 12, color: Colors.muted, marginTop: 1,
+    textAlign: 'right', writingDirection: 'rtl',
   } as any,
-  headerBtns: { flexDirection: 'row-reverse', gap: 8 },
+  headerBtns: { flexDirection: 'row', gap: 8 },
   headerIconBtn: {
     width: 44, height: 44, borderRadius: 12,
     backgroundColor: '#f5ede2', alignItems: 'center', justifyContent: 'center',
   },
 
-  // ── Content ──
-  content: { flex: 1 },
+  // ── Scroll content ──
   scrollContent: { paddingBottom: 40 },
 
-  // ── Section ──
+  // ── Section label row ──
   sectionRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 24, paddingBottom: 12,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: GRID_PAD,
+    paddingTop: 24,
+    paddingBottom: 12,
   },
   sectionTitle: {
     fontSize: 13, fontWeight: '700', color: Colors.muted,
-    textTransform: 'uppercase', letterSpacing: 0.8,
-    writingDirection: 'rtl', textAlign: 'right',
+    letterSpacing: 0.6,
+    textAlign: 'right', writingDirection: 'rtl',
   } as any,
   classCount: {
-    fontSize: 12, color: Colors.outline, writingDirection: 'rtl',
+    fontSize: 12, color: Colors.outline,
+    textAlign: 'left', writingDirection: 'rtl',
   } as any,
 
   // ── Grid ──
   grid: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',   // RTL: cards start from the right
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: GRID_PAD,
+    gap: GRID_GAP,
   },
 
   // ── Class card ──
@@ -119,7 +141,7 @@ const S = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 18,
     paddingBottom: 14,
     minHeight: 160,
     justifyContent: 'space-between',
@@ -128,22 +150,29 @@ const S = StyleSheet.create({
   cardName: {
     fontSize: 22, fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
-    writingDirection: 'rtl', textAlign: 'right',
+    color: '#fff',
+    textAlign: 'right', writingDirection: 'rtl',
     flexShrink: 1,
   } as any,
   cardSub: {
-    fontSize: 13, marginTop: 2,
-    writingDirection: 'rtl', textAlign: 'right',
+    fontSize: 13, marginTop: 3,
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'right', writingDirection: 'rtl',
   } as any,
-  cardBottom: { marginTop: 12 },
-  cardProgress: {
-    height: 6, borderRadius: 999, overflow: 'hidden', marginBottom: 6,
+  cardBottom: { marginTop: 14 },
+  cardProgressTrack: {
+    height: 6, borderRadius: 999, overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginBottom: 6,
   },
   cardProgressFill: {
     height: '100%' as any, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.9)',
   },
   cardProgressLabel: {
-    fontSize: 11, fontWeight: '600', writingDirection: 'rtl', textAlign: 'right',
+    fontSize: 11, fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'right', writingDirection: 'rtl',
   } as any,
 
   // ── Empty state ──
@@ -162,13 +191,13 @@ const S = StyleSheet.create({
     textAlign: 'center', marginTop: 6, writingDirection: 'rtl',
   } as any,
 
-  // ── No class banner ──
-  noClassBanner: {
+  // ── Error banner ──
+  errorBanner: {
     margin: 16, backgroundColor: '#FFFBEB',
     borderWidth: 1, borderColor: '#FDE68A',
     borderRadius: 16, paddingHorizontal: 20, paddingVertical: 16,
   },
-  noClassText: {
+  errorText: {
     color: '#92400e', fontSize: 14, textAlign: 'center', writingDirection: 'rtl',
   } as any,
 });
@@ -182,15 +211,15 @@ export default function TeacherHome() {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
 
-  const cols     = numColumns(width, isWeb);
-  const padH     = 16;
-  const gap      = 12;
-  const cardW    = (width - padH * 2 - gap * (cols - 1)) / cols;
-  const goal     = settings?.global_goal ?? 100;
+  // Cap card width to MAX_CONTENT_W so cards don't over-stretch on wide screens
+  const effectiveW = isWeb ? Math.min(width, MAX_CONTENT_W) : width;
+  const cols       = numCols(width, isWeb);
+  const cardW      = (effectiveW - GRID_PAD * 2 - GRID_GAP * (cols - 1)) / cols;
+  const goal       = settings?.global_goal ?? 100;
 
   const displayName = useMemo(() => {
-    const email = user?.email ?? '';
-    return email.split('@')[0] ?? 'מורה';
+    const name = user?.display_name ?? user?.email?.split('@')[0] ?? 'מורה';
+    return name;
   }, [user]);
 
   async function handleLogout() {
@@ -198,7 +227,12 @@ export default function TeacherHome() {
     router.replace('/');
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // centred container on web (applied to both header inner + grid)
+  const centreStyle = isWeb
+    ? { maxWidth: MAX_CONTENT_W, alignSelf: 'center' as const, width: '100%' as any }
+    : undefined;
+
+  // ── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <SafeAreaView style={AS.centered}>
@@ -207,120 +241,99 @@ export default function TeacherHome() {
     );
   }
 
-  const assignedClasses = classes.filter((c) => c.studentCount > 0 || true);
-  const hasClasses = assignedClasses.length > 0;
-
   return (
     <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
+
       {/* ── Header ── */}
-      <View style={S.header}>
-        <View>
-          <Text style={S.headerTitle}>שלום, {displayName} 👋</Text>
-          <Text style={S.headerSub}>הכיתות שלך</Text>
-        </View>
-        <View style={S.headerBtns}>
-          {user && (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={[S.headerIconBtn, ptr]}
-              accessibilityRole="button"
-              accessibilityLabel="התנתק"
-            >
-              <LogOut size={20} color={Colors.muted} />
-            </TouchableOpacity>
-          )}
+      <View style={S.headerBar}>
+        <View style={[S.headerInner, centreStyle]}>
+          {/* Greeting — right side (RTL first child in row-reverse) */}
+          <View style={S.headerText}>
+            <Text style={S.headerTitle}>שלום, {displayName} 👋</Text>
+            <Text style={S.headerSub}>הכיתות שלך</Text>
+          </View>
+
+          {/* Action buttons — left side */}
+          <View style={S.headerBtns}>
+            {user && (
+              <TouchableOpacity
+                onPress={handleLogout}
+                style={[S.headerIconBtn, ptr]}
+                accessibilityRole="button"
+                accessibilityLabel="התנתק"
+              >
+                <LogOut size={20} color={Colors.muted} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
 
       {/* ── Body ── */}
       <ScrollView
-        style={S.content}
-        contentContainerStyle={[
-          S.scrollContent,
-          isWeb && { maxWidth: 1400, alignSelf: 'center', width: '100%' },
-        ]}
+        contentContainerStyle={S.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {error ? (
-          <View style={S.noClassBanner}>
-            <Text style={S.noClassText}>{error}</Text>
-          </View>
-        ) : !hasClasses ? (
-          <View style={S.empty}>
-            <View style={S.emptyIcon}>
-              <ClipboardList size={28} color={Colors.primaryDark} />
-            </View>
-            <Text style={S.emptyTitle}>אין כיתות משויכות</Text>
-            <Text style={S.emptyHint}>פנה/י למנהל המערכת כדי לקבל גישה לכיתות</Text>
-          </View>
-        ) : (
-          <>
-            {/* Section header */}
-            <View style={S.sectionRow}>
-              <Text style={S.sectionTitle}>כיתות</Text>
-              <Text style={S.classCount}>{assignedClasses.length} כיתות</Text>
+        <View style={centreStyle}>
+          {error ? (
+            <View style={S.errorBanner}>
+              <Text style={S.errorText}>{error}</Text>
             </View>
 
-            {/* Card grid */}
-            <View style={S.grid}>
-              {assignedClasses.map((item) => {
-                const palette  = getColor(item.colorIndex);
-                const pct      = goal > 0 ? Math.min(item.totalCredits / goal, 1) : 0;
-                const pctLabel = goal > 0
-                  ? `${item.totalCredits} / ${goal} נקודות`
-                  : `${item.totalCredits} נקודות`;
+          ) : classes.length === 0 ? (
+            <View style={S.empty}>
+              <View style={S.emptyIcon}>
+                <ClipboardList size={28} color={Colors.primaryDark} />
+              </View>
+              <Text style={S.emptyTitle}>אין כיתות משויכות</Text>
+              <Text style={S.emptyHint}>פנה/י למנהל המערכת כדי לקבל גישה לכיתות</Text>
+            </View>
 
-                return (
-                  <TouchableOpacity
-                    key={item.class.id}
-                    onPress={() => router.push(`/teacher/class/${item.class.id}`)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`כיתה ${item.class.name}`}
-                    activeOpacity={0.85}
-                    style={[
-                      S.card,
-                      { backgroundColor: palette.bg, width: cardW },
-                      ptr,
-                    ]}
-                  >
-                    {/* Class name + student count */}
-                    <View>
-                      <Text style={[S.cardName, { color: palette.text }]}>
-                        {item.class.name}
-                      </Text>
-                      <Text style={[S.cardSub, { color: palette.sub }]}>
-                        {item.studentCount} תלמידים
-                      </Text>
-                    </View>
+          ) : (
+            <>
+              {/* Section label */}
+              <View style={S.sectionRow}>
+                <Text style={S.sectionTitle}>כיתות</Text>
+                <Text style={S.classCount}>{classes.length} כיתות</Text>
+              </View>
 
-                    {/* Progress bar + label */}
-                    <View style={S.cardBottom}>
-                      <View
-                        style={[
-                          S.cardProgress,
-                          { backgroundColor: 'rgba(255,255,255,0.3)' },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            S.cardProgressFill,
-                            {
-                              width: `${Math.round(pct * 100)}%` as any,
-                              backgroundColor: palette.bar,
-                            },
-                          ]}
-                        />
+              {/* Grid */}
+              <View style={S.grid}>
+                {classes.map((item) => {
+                  const bg      = CLASS_COLORS[hebrewColorIndex(item.class.name)];
+                  const pct     = goal > 0 ? Math.min(item.totalCredits / goal, 1) : 0;
+                  const pctPct  = Math.round(pct * 100);
+                  const label   = `${item.totalCredits} / ${goal} נקודות`;
+
+                  return (
+                    <TouchableOpacity
+                      key={item.class.id}
+                      onPress={() => router.push(`/teacher/${item.class.id}`)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`כיתה ${item.class.name}`}
+                      activeOpacity={0.85}
+                      style={[S.card, { backgroundColor: bg, width: cardW }, ptr]}
+                    >
+                      {/* Class name + student count */}
+                      <View>
+                        <Text style={S.cardName}>{item.class.name}</Text>
+                        <Text style={S.cardSub}>{item.studentCount} תלמידים</Text>
                       </View>
-                      <Text style={[S.cardProgressLabel, { color: palette.sub }]}>
-                        {pctLabel}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </>
-        )}
+
+                      {/* Progress bar */}
+                      <View style={S.cardBottom}>
+                        <View style={S.cardProgressTrack}>
+                          <View style={[S.cardProgressFill, { width: `${pctPct}%` as any }]} />
+                        </View>
+                        <Text style={S.cardProgressLabel}>{label}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
