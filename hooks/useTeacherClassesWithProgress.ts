@@ -14,7 +14,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/supabase';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ClassRow = Tables<'classes'>;
 
@@ -33,7 +33,7 @@ interface UseTeacherClassesWithProgress {
 }
 
 export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [classes, setClasses] = useState<TeacherClassWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,27 +42,16 @@ export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
     if (!user) return;
 
     try {
-      // ── Step 1: get all classes + access rights in parallel ─────────────────
-      const [classesRes, accessRes] = await Promise.all([
-        supabase.from('classes').select('*').is('deleted_at', null).order('name'),
-        isAdmin
-          ? Promise.resolve({ data: null as Tables<'user_class_access'>[] | null, error: null })
-          : supabase.from('user_class_access').select('class_id').eq('user_id', user.id),
-      ]);
+      // ── Step 1: all teachers see all classes (no per-teacher access filter) ──
+      const classesRes = await supabase
+        .from('classes')
+        .select('*')
+        .is('deleted_at', null)
+        .order('name');
 
       if (classesRes.error) throw classesRes.error;
-      if (accessRes.error) throw accessRes.error;
 
-      const allClasses = classesRes.data ?? [];
-      const assignedIds = new Set(
-        isAdmin
-          ? allClasses.map((c) => c.id)
-          : (accessRes.data ?? []).map((a) => a.class_id),
-      );
-
-      const visibleClasses = isAdmin
-        ? allClasses
-        : allClasses.filter((c) => assignedIds.has(c.id));
+      const visibleClasses = classesRes.data ?? [];
 
       if (visibleClasses.length === 0) {
         setClasses([]);
@@ -138,7 +127,7 @@ export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
     } finally {
       setLoading(false);
     }
-  }, [user, isAdmin]);
+  }, [user]);
 
   useEffect(() => {
     load();

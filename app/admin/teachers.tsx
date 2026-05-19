@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback } from 'react';
-import { Building2, UserCheck, Trash2, Plus, ChevronRight, FileUp } from 'lucide-react-native';
+import { UserCheck, Trash2, Plus, ChevronRight, FileUp } from 'lucide-react-native';
 import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { shadow } from '@/lib/shadow';
@@ -410,8 +410,7 @@ export default function AdminTeachersScreen() {
                 <Text style={AS.emptyHint}>לחץ על "+ הוספה" כדי להוסיף.</Text>
               </View>
             ) : (
-              teachers.map(({ user, classIds }) => {
-                const assignedClasses = classes.filter((c) => classIds.includes(c.id));
+              teachers.map(({ user }) => {
                 return (
                   <View key={user.id} style={S.teacherCard} accessibilityLabel={`מורה: ${user.display_name}`}>
                     <View style={S.teacherTop}>
@@ -427,14 +426,6 @@ export default function AdminTeachersScreen() {
                       </View>
                       <View style={S.teacherActions}>
                         <TactileIconBtn
-                          onPress={() => openAssign(user, classIds)}
-                          style={S.assignBtn}
-                          accessibilityLabel={`שייך כיתות ל${user.display_name}`}
-                        >
-                          <Building2 size={14} color={Colors.muted} />
-                          <Text style={S.assignBtnText}>כיתות</Text>
-                        </TactileIconBtn>
-                        <TactileIconBtn
                           onPress={() => handleDeleteTeacher(user)}
                           style={AS.iconBtnDanger}
                           shadowColor="rgba(186,26,26,0.2)"
@@ -444,16 +435,6 @@ export default function AdminTeachersScreen() {
                         </TactileIconBtn>
                       </View>
                     </View>
-
-                    {assignedClasses.length > 0 && (
-                      <View style={[S.classChipRow, { marginTop: 8 }]}>
-                        {assignedClasses.map((c) => (
-                          <View key={c.id} style={S.classChip}>
-                            <Text style={S.classChipText}>{c.name}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
                   </View>
                 );
               })
