@@ -19,7 +19,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LogOut, ClipboardList } from 'lucide-react-native';
+import { LogOut, ClipboardList, ShieldCheck } from 'lucide-react-native';
 
 import { AS } from '@/lib/adminStyles';
 import { Colors } from '@/components/ui';
@@ -205,7 +205,7 @@ const S = StyleSheet.create({
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function TeacherHome() {
   const router  = useRouter();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { settings } = useSettings();
   const { classes, loading, error } = useTeacherClassesWithProgress();
   const { width } = useWindowDimensions();
@@ -255,6 +255,16 @@ export default function TeacherHome() {
 
           {/* Action buttons — left side */}
           <View style={S.headerBtns}>
+            {isAdmin && (
+              <TouchableOpacity
+                onPress={() => router.replace('/admin')}
+                style={[S.headerIconBtn, ptr]}
+                accessibilityRole="button"
+                accessibilityLabel="חזור לניהול"
+              >
+                <ShieldCheck size={20} color={Colors.secondary} />
+              </TouchableOpacity>
+            )}
             {user && (
               <TouchableOpacity
                 onPress={handleLogout}
