@@ -50,7 +50,7 @@ export const AS = StyleSheet.create({
   // ── Primary action button (header "+") ───────────────────────────────────
   addBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 999,                  // pill
+    borderRadius: 16,
     height: 44,
     paddingHorizontal: 18,
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
@@ -191,14 +191,14 @@ export const AS = StyleSheet.create({
   sheetBtns: { flexDirection: 'row-reverse', gap: 12, marginTop: 4 },
   saveBtn: {
     flex: 1, paddingVertical: 16,
-    borderRadius: 999,              // pill
+    borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.primary,
     ...btn3dShadow,
   },
   saveBtnDisabled: {
     flex: 1, paddingVertical: 16,
-    borderRadius: 999,
+    borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#ffe082',
   },
@@ -208,7 +208,7 @@ export const AS = StyleSheet.create({
   } as any,
   cancelBtn: {
     flex: 1, paddingVertical: 16,
-    borderRadius: 999,
+    borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#f5ede2',
   },

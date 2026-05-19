@@ -29,7 +29,7 @@ const USE_ND = Platform.OS !== 'web';
 const S = StyleSheet.create({
   // ── Button ────────────────────────────────────────────────────────────────
   btnBase: {
-    borderRadius: 999,           // pill
+    borderRadius: 16,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     paddingVertical: 16,
