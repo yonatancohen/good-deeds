@@ -17,7 +17,6 @@ import {
   ActivityIndicator,
   Platform,
   StyleSheet,
-  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogOut, ClipboardList, ShieldCheck, GraduationCap, Users } from 'lucide-react-native';
@@ -52,17 +51,8 @@ function hebrewColorIndex(name: string): number {
   return 0;
 }
 
-// ── Responsive column count ───────────────────────────────────────────────────
+// ── Layout constants ──────────────────────────────────────────────────────────
 const MAX_CONTENT_W = 960;
-
-function numCols(width: number, isWeb: boolean): number {
-  if (!isWeb) return width >= 600 ? 2 : 1;
-  const w = Math.min(width, MAX_CONTENT_W);
-  if (w < 700)  return 1;
-  if (w < 960)  return 2;
-  if (w < 1200) return 3;
-  return 4;
-}
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const ptr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
@@ -131,10 +121,8 @@ const S = StyleSheet.create({
     textAlign: 'left', writingDirection: 'rtl',
   } as any,
 
-  // ── Grid wrapper ──
+  // ── Card list ──
   grid: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
     paddingHorizontal: GRID_PAD,
     gap: GRID_GAP,
   },
@@ -236,13 +224,8 @@ export default function TeacherHome() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings();
   const { classes, loading, error } = useTeacherClassesWithProgress();
-  const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
-
-  const effectiveW = isWeb ? Math.min(width, MAX_CONTENT_W) : width;
-  const cols       = numCols(width, isWeb);
-  const cardW      = (effectiveW - GRID_PAD * 2 - GRID_GAP * (cols - 1)) / cols;
-  const goal       = settings?.global_goal ?? 100;
+  const goal  = settings?.global_goal ?? 100;
 
   const displayName = useMemo(() => {
     return user?.display_name ?? user?.email?.split('@')[0] ?? 'מורה';
@@ -343,7 +326,7 @@ export default function TeacherHome() {
                       accessibilityRole="button"
                       accessibilityLabel={`כיתה ${item.class.name}`}
                       activeOpacity={0.82}
-                      style={[S.card, { backgroundColor: scheme.bg, width: cardW }, ptr]}
+                      style={[S.card, { backgroundColor: scheme.bg }, ptr]}
                     >
                       {/* ── Top row ── */}
                       <View style={S.cardTop}>
