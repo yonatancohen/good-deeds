@@ -139,7 +139,8 @@ const S = StyleSheet.create({
 export default function UploadScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { classId } = useLocalSearchParams<{ classId: string }>();
+  const { classId, returnTo } = useLocalSearchParams<{ classId: string; returnTo?: string }>();
+  const backRoute = returnTo && returnTo.startsWith('/') ? returnTo : '/teacher';
 
   const [preview, setPreview]         = useState<PreviewStudent[] | null>(null);
   const [importing, setImporting]     = useState(false);
@@ -206,7 +207,7 @@ export default function UploadScreen() {
         </View>
         <Text style={S.doneTitle}>{t('imported')}</Text>
         <Text style={S.doneSub}>{importedCount} תלמידים יובאו לכיתה</Text>
-        <TouchableOpacity onPress={() => safeBack(router, '/teacher')} style={[S.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה לכיתה">
+        <TouchableOpacity onPress={() => safeBack(router, backRoute)} style={[S.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
           <Text style={S.backBtnText}>{t('back')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -217,7 +218,7 @@ export default function UploadScreen() {
     <SafeAreaView style={AS.screen}>
       {/* Header */}
       <View style={S.header}>
-        <TouchableOpacity onPress={() => safeBack(router, '/teacher')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+        <TouchableOpacity onPress={() => safeBack(router, backRoute)} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
           <ChevronRight size={20} color={Colors.primaryDark} />
         </TouchableOpacity>
         <Text style={S.headerTitle} accessibilityRole="header">{t('uploadCsv')}</Text>

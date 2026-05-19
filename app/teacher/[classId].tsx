@@ -1,5 +1,5 @@
 /**
- * Class Detail Screen — /teacher/class/[classId]
+ * Class Detail Screen — /teacher/[classId]
  *
  * Layout (mobile, scrollable):
  *   1. Back header

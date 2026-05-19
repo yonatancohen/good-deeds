@@ -1,5 +1,5 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,58 +10,41 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ChevronRight, UserPlus, Upload, Plus, Trash2 } from 'lucide-react-native';
 import AdminSheet from '@/components/AdminSheet';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { safeBack } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/hooks/useSettings';
 import { insertStudents, type ParsedStudentRow } from '@/lib/studentImport';
+import { getClassColorScheme } from '@/lib/classColors';
+import { csvUploadPath, studentCountLabel } from '@/lib/studentCountLabel';
 import type { Tables } from '@/types/supabase';
 
 type ClassRow = Tables<'classes'>;
 
 const S = StyleSheet.create({
-  classRow: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    flexDirection: 'row-reverse',
+  classCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    marginLeft: 12,
   },
-  className: {
-    fontSize: 16,
+  classCircleText: {
+    fontSize: 18,
     fontWeight: '700',
-    color: Colors.text,
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    fontFamily: 'Baloo2_700Bold',
   } as any,
-  classMeta: {
-    fontSize: 12,
-    color: Colors.muted,
-    textAlign: 'right',
-    marginTop: 2,
-    writingDirection: 'rtl',
-  } as any,
-  actions: { flexDirection: 'row-reverse', gap: 8 },
-  actionBtn: {
+  rowPress: {
+    flex: 1,
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    minWidth: 0,
   },
-  actionBtnText: { color: Colors.primary, fontSize: 12, fontWeight: '600', writingDirection: 'rtl' } as any,
   manualRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -111,6 +94,7 @@ export default function AdminStudentsScreen() {
   const currentYear = settings?.current_year ?? '';
 
   const [classes, setClasses] = useState<ClassRow[]>([]);
+  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<ClassRow | null>(null);
   const [manualRows, setManualRows] = useState<ManualRow[]>([
@@ -119,18 +103,26 @@ export default function AdminStudentsScreen() {
   const [saving, setSaving] = useState(false);
 
   const loadClasses = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('classes')
-      .select('*')
-      .is('deleted_at', null)
-      .order('name');
-    if (!error) setClasses(data ?? []);
+    const [classesRes, studentsRes] = await Promise.all([
+      supabase.from('classes').select('*').is('deleted_at', null).order('name'),
+      supabase.from('students').select('class_id'),
+    ]);
+    if (!classesRes.error) setClasses(classesRes.data ?? []);
+    const counts: Record<string, number> = {};
+    if (!studentsRes.error) {
+      for (const s of studentsRes.data ?? []) {
+        counts[s.class_id] = (counts[s.class_id] ?? 0) + 1;
+      }
+    }
+    setStudentCounts(counts);
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadClasses();
-  }, [loadClasses]);
+  useFocusEffect(
+    useCallback(() => {
+      loadClasses();
+    }, [loadClasses]),
+  );
 
   const visibleClasses = classes.filter((c) =>
     currentYear ? c.year === currentYear : true,
@@ -181,6 +173,7 @@ export default function AdminStudentsScreen() {
     } else {
       Alert.alert('✅', `${count} תלמידים נוספו לכיתה ${selectedClass.name}`);
       setSelectedClass(null);
+      loadClasses();
     }
   }
 
@@ -213,34 +206,52 @@ export default function AdminStudentsScreen() {
                 <Text style={AS.emptyHint}>הוסף כיתות בדף הכיתות תחילה.</Text>
               </View>
             ) : (
-              visibleClasses.map((cls) => (
-                <View key={cls.id} style={S.classRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={S.className}>{cls.name}</Text>
-                    {cls.grade && <Text style={S.classMeta}>שכבה {cls.grade}</Text>}
-                  </View>
-                  <View style={S.actions}>
+              visibleClasses.map((cls) => {
+                const scheme = getClassColorScheme(cls.grade ?? cls.name);
+                const count = studentCounts[cls.id] ?? 0;
+                return (
+                  <View key={cls.id} style={AS.row}>
                     <TouchableOpacity
-                      onPress={() => openManual(cls)}
-                      style={[S.actionBtn, webPointer]}
+                      onPress={() => router.push(`/admin/students/${cls.id}`)}
+                      style={[S.rowPress, webPointer]}
                       accessibilityRole="button"
-                      accessibilityLabel={`הוסף תלמידים ידנית לכיתה ${cls.name}`}
+                      accessibilityLabel={`כיתה ${cls.name}, ${studentCountLabel(count)}`}
                     >
-                      <UserPlus size={14} color={Colors.primary} />
-                      <Text style={S.actionBtnText}>ידני</Text>
+                      <View style={[S.classCircle, { backgroundColor: scheme.bg }]}>
+                        <Text style={[S.classCircleText, { color: scheme.text }]}>
+                          {cls.grade ?? cls.name.charAt(0)}
+                        </Text>
+                      </View>
+                      <View style={AS.rowLeft}>
+                        <Text style={AS.rowTitle}>{cls.name}</Text>
+                        <Text style={AS.rowSub}>
+                          {studentCountLabel(count)}
+                          {cls.grade ? ` · שכבה ${cls.grade}` : ''}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => router.push(`/teacher/upload?classId=${cls.id}` as any)}
-                      style={[S.actionBtn, webPointer]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`ייבוא CSV לכיתה ${cls.name}`}
-                    >
-                      <Upload size={14} color={Colors.primary} />
-                      <Text style={S.actionBtnText}>CSV</Text>
-                    </TouchableOpacity>
+                    <View style={AS.rowActions}>
+                      <TactileIconBtn
+                        onPress={() =>
+                          router.push(csvUploadPath(cls.id, '/admin/students') as any)
+                        }
+                        style={AS.iconBtnSecondary}
+                        shadowColor="rgba(0,96,172,0.2)"
+                        accessibilityLabel={`ייבוא CSV לכיתה ${cls.name}`}
+                      >
+                        <Upload size={16} color={Colors.secondary} />
+                      </TactileIconBtn>
+                      <TactileIconBtn
+                        onPress={() => openManual(cls)}
+                        style={AS.iconBtn}
+                        accessibilityLabel={`הוסף תלמידים ידנית לכיתה ${cls.name}`}
+                      >
+                        <UserPlus size={16} color={Colors.muted} />
+                      </TactileIconBtn>
+                    </View>
                   </View>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
         </ScrollView>

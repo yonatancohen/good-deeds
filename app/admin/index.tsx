@@ -38,7 +38,7 @@ interface MenuTile {
 // All 6 palette colours, one per section — white text for dark bgs, primaryDark for light.
 const MENU: MenuTile[] = [
   { Icon: Building2, label: 'כיתות',       description: 'הוספה, עריכה ומחיקה של כיתות',              route: '/admin/classes',     tileBg: Colors.secondary, tileText: '#ffffff',          tileSub: 'rgba(255,255,255,0.72)' },
-  { Icon: GraduationCap, label: 'תלמידים', description: 'הוספת תלמידים ב-CSV או ידנית לכל כיתה',     route: '/admin/students',    tileBg: '#6366F1',        tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
+  { Icon: GraduationCap, label: 'תלמידים', description: 'צפייה, הוספה ומחיקה של תלמידים לפי כיתה',     route: '/admin/students',    tileBg: '#6366F1',        tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: UserCheck, label: 'מורים',        description: 'ניהול מורים והזמנת מורים חדשים',            route: '/admin/teachers',    tileBg: Colors.salmon,    tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: BookOpen,  label: 'מעשים טובים', description: 'ניהול רשימת המעשים הטובים ושוויהם',         route: '/admin/deeds',       tileBg: Colors.accent,    tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
   { Icon: Gift,      label: 'פרסים',        description: 'ניהול רשימת הפרסים שכיתה יכולה לזכות בהם',  route: '/admin/gifts',       tileBg: Colors.success,   tileText: '#ffffff', tileSub: 'rgba(255,255,255,0.72)' },
