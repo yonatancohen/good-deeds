@@ -36,7 +36,7 @@ export function useDeeds(): UseDeeds {
     fetchDeeds();
 
     const channel = supabase
-      .channel(`deeds-changes-${Date.now()}`)
+      .channel(`deeds-changes-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'deeds' },
