@@ -7,7 +7,7 @@ import {
 import { confirmAction } from '@/lib/confirm';
 import AdminSheet from '@/components/AdminSheet';
 import { Building2, Pencil, Trash2, Plus, ChevronRight, Layers, Upload } from 'lucide-react-native';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -294,24 +294,23 @@ export default function AdminClassesScreen() {
                   <Text style={S.yearHeader}>{year}</Text>
                   {yearClasses.map((cls) => (
                     <View key={cls.id} style={AS.row} accessibilityLabel={`כיתה ${cls.name}`}>
-                      <View style={[AS.rowLeft, { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }]}>
-                        <View style={S.classCircle}>
-                          <Text style={S.classCircleText}>{cls.grade ?? cls.name.charAt(0)}</Text>
-                        </View>
-                        <View>
-                          <Text style={AS.rowTitle}>כיתה {cls.name}</Text>
-                        </View>
+                      {/* Grade circle avatar */}
+                      <View style={S.classCircle}>
+                        <Text style={S.classCircleText}>{cls.grade ?? cls.name.charAt(0)}</Text>
+                      </View>
+                      <View style={AS.rowLeft}>
+                        <Text style={AS.rowTitle}>כיתה {cls.name}</Text>
                       </View>
                       <View style={AS.rowActions}>
-                        <TouchableOpacity onPress={() => router.push(`/teacher/upload?classId=${cls.id}` as any)} style={[AS.iconBtn, webPointer]} accessibilityRole="button" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
-                          <Upload size={16} color={Colors.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => openEdit(cls)} style={[AS.iconBtn, webPointer]} accessibilityRole="button" accessibilityLabel={`ערוך ${cls.name}`}>
+                        <TactileIconBtn onPress={() => router.push(`/teacher/upload?classId=${cls.id}` as any)} style={AS.iconBtnSecondary} shadowColor="rgba(0,96,172,0.2)" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
+                          <Upload size={16} color={Colors.secondary} />
+                        </TactileIconBtn>
+                        <TactileIconBtn onPress={() => openEdit(cls)} style={AS.iconBtn} accessibilityLabel={`ערוך ${cls.name}`}>
                           <Pencil size={16} color={Colors.muted} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleDelete(cls)} style={[AS.iconBtnDanger, webPointer]} accessibilityRole="button" accessibilityLabel={`מחק ${cls.name}`}>
+                        </TactileIconBtn>
+                        <TactileIconBtn onPress={() => handleDelete(cls)} style={AS.iconBtnDanger} shadowColor="rgba(186,26,26,0.2)" accessibilityLabel={`מחק ${cls.name}`}>
                           <Trash2 size={16} color={Colors.danger} />
-                        </TouchableOpacity>
+                        </TactileIconBtn>
                       </View>
                     </View>
                   ))}
@@ -508,12 +507,13 @@ const S = StyleSheet.create({
 
   // Class list row
   classCircle: {
-    width: 40, height: 40, borderRadius: 12,
+    width: 48, height: 48, borderRadius: 24,
     backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
+    marginLeft: 12,
   },
   classCircleText: {
-    color: Colors.primary, fontSize: 18, fontWeight: '700',
+    color: Colors.primaryDark, fontSize: 18, fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
   } as any,
 

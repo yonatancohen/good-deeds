@@ -64,12 +64,12 @@ export const AS = StyleSheet.create({
   // ── List row card ─────────────────────────────────────────────────────────
   row: {
     backgroundColor: '#fff',
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 16, paddingVertical: 16,
-    marginBottom: 12,
-    ...shadow('#785900', 2, 10, 0.06, 3),
+    borderColor: 'rgba(212,197,171,0.4)',    // very subtle warm border
+    paddingHorizontal: 16, paddingVertical: 12,
+    marginBottom: 8,
+    ...shadow('#785900', 0, 8, 0.05, 12),   // soft warm shadow
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
   },
   rowLeft:  { flex: 1, marginLeft: 12 },
@@ -81,13 +81,41 @@ export const AS = StyleSheet.create({
     fontSize: 12, color: Colors.muted, textAlign: 'right', marginTop: 2, writingDirection: 'rtl',
   } as any,
   rowMeta:    { flexDirection: 'row-reverse', gap: 8, marginTop: 2 },
-  rowActions: { flexDirection: 'row-reverse', gap: 8 },
+  rowActions: { flexDirection: 'row-reverse', gap: 6 },
+
+  // ── Row leading avatar circle (Stitch style) ──────────────────────────────
+  rowAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primaryLight,
+    marginLeft: 12,
+  },
+  rowAvatarSecondary: {
+    backgroundColor: Colors.secondarySurface,
+  },
+  rowAvatarSuccess: {
+    backgroundColor: Colors.successSurface,
+  },
+  rowAvatarDanger: {
+    backgroundColor: Colors.dangerLight,
+  },
+  rowAvatarText: {
+    fontSize: 17, fontWeight: '700', color: Colors.primaryDark,
+    fontFamily: 'Baloo2_700Bold', textAlign: 'center',
+  } as any,
+
+  // ── Tactile icon buttons ─────────────────────────────────────────────────
+  // Use with <TactileIconBtn style={AS.iconBtn}> for the 3D press effect
   iconBtn: {
-    width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#f5ede2',
   },
+  iconBtnSecondary: {
+    width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.secondarySurface,
+  },
   iconBtnDanger: {
-    width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.dangerLight,
   },
 

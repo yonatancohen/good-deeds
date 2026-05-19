@@ -14,7 +14,7 @@ import {
 import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { BookOpen, Pencil, Trash2, Plus, ChevronRight } from 'lucide-react-native';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -32,8 +32,8 @@ const S = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16,
   },
   infoBannerText: { color: Colors.primaryDark, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
-  amtBadgeActive:   { backgroundColor: Colors.primaryLight, width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
-  amtBadgeInactive: { backgroundColor: '#f1f5f9', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
+  amtBadgeActive:   { backgroundColor: Colors.primaryLight, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
+  amtBadgeInactive: { backgroundColor: Colors.surface,      width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
   amtTextActive:   { color: Colors.primary, fontWeight: '700', fontSize: 17 } as any,
   amtTextInactive: { color: '#94a3b8', fontWeight: '700', fontSize: 17 } as any,
   deedName: { fontWeight: '600', fontSize: 15, textAlign: 'right', writingDirection: 'rtl' } as any,
@@ -189,12 +189,12 @@ export default function AdminDeedsScreen() {
 
                   {/* Edit + Delete */}
                   <View style={AS.rowActions}>
-                    <TouchableOpacity onPress={() => openEdit(deed)} style={[AS.iconBtn, webPointer]} accessibilityRole="button" accessibilityLabel={`ערוך ${deed.name}`}>
+                    <TactileIconBtn onPress={() => openEdit(deed)} style={AS.iconBtn} accessibilityLabel={`ערוך ${deed.name}`}>
                       <Pencil size={16} color={Colors.muted} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(deed)} style={[AS.iconBtnDanger, webPointer]} accessibilityRole="button" accessibilityLabel={`מחק ${deed.name}`}>
+                    </TactileIconBtn>
+                    <TactileIconBtn onPress={() => handleDelete(deed)} style={AS.iconBtnDanger} shadowColor="rgba(186,26,26,0.2)" accessibilityLabel={`מחק ${deed.name}`}>
                       <Trash2 size={16} color={Colors.danger} />
-                    </TouchableOpacity>
+                    </TactileIconBtn>
                   </View>
                 </View>
               ))

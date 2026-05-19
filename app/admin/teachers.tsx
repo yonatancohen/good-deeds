@@ -1,8 +1,9 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Building2, UserCheck, Trash2, Plus, ChevronRight, FileUp } from 'lucide-react-native';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
+import { shadow } from '@/lib/shadow';
 import {
   View,
   Text,
@@ -41,18 +42,33 @@ interface ParsedTeacher {
 
 const S = StyleSheet.create({
   teacherCard: {
-    backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 16,
-    marginBottom: 12, borderWidth: 1, borderColor: '#f1f5f9',
+    backgroundColor: '#fff', borderRadius: 16,
+    paddingHorizontal: 16, paddingVertical: 12,
+    marginBottom: 8,
+    borderWidth: 1, borderColor: 'rgba(212,197,171,0.4)',
+    ...shadow('#785900', 0, 8, 0.05, 12),
   },
-  teacherTop: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 },
+  teacherTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  teacherAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: Colors.secondarySurface,
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 12,
+    flexShrink: 0,
+  },
+  teacherAvatarText: {
+    fontSize: 16, fontWeight: '700', color: Colors.secondary,
+    fontFamily: 'Baloo2_700Bold',
+  } as any,
+  teacherInfo: { flex: 1 },
   teacherName: { fontSize: 15, fontWeight: '700', color: Colors.text, textAlign: 'right', writingDirection: 'rtl' } as any,
-  teacherEmail: { color: '#94a3b8', fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
-  teacherActions: { flexDirection: 'row-reverse', gap: 8 },
+  teacherEmail: { color: '#94a3b8', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginTop: 1 } as any,
+  teacherActions: { flexDirection: 'row-reverse', gap: 6 },
   assignBtn: {
-    backgroundColor: '#f1f5f9', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 6, minHeight: 36,
+    backgroundColor: Colors.surface, borderRadius: 14, paddingHorizontal: 12, height: 44,
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
   },
-  assignBtnText: { color: Colors.muted, fontSize: 12, fontWeight: '500' } as any,
+  assignBtnText: { color: Colors.muted, fontSize: 12, fontWeight: '600' } as any,
   classChipRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 },
   classChip: {
     backgroundColor: Colors.primaryLight, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
@@ -397,42 +413,45 @@ export default function AdminTeachersScreen() {
                 return (
                   <View key={user.id} style={S.teacherCard} accessibilityLabel={`מורה: ${user.display_name}`}>
                     <View style={S.teacherTop}>
-                      <View style={{ flex: 1, marginLeft: 12 }}>
+                      {/* Initials avatar */}
+                      <View style={S.teacherAvatar}>
+                        <Text style={S.teacherAvatarText}>
+                          {user.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
+                        </Text>
+                      </View>
+                      <View style={S.teacherInfo}>
                         <Text style={S.teacherName}>{user.display_name}</Text>
                         <Text style={S.teacherEmail}>{user.email}</Text>
                       </View>
                       <View style={S.teacherActions}>
-                        <TouchableOpacity
+                        <TactileIconBtn
                           onPress={() => openAssign(user, classIds)}
-                          style={[S.assignBtn, webPointer]}
-                          accessibilityRole="button"
+                          style={S.assignBtn}
                           accessibilityLabel={`שייך כיתות ל${user.display_name}`}
                         >
                           <Building2 size={14} color={Colors.muted} />
                           <Text style={S.assignBtnText}>כיתות</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        </TactileIconBtn>
+                        <TactileIconBtn
                           onPress={() => handleDeleteTeacher(user)}
-                          style={[AS.iconBtnDanger, webPointer]}
-                          accessibilityRole="button"
+                          style={AS.iconBtnDanger}
+                          shadowColor="rgba(186,26,26,0.2)"
                           accessibilityLabel={`מחק מורה ${user.display_name}`}
                         >
                           <Trash2 size={16} color={Colors.danger} />
-                        </TouchableOpacity>
+                        </TactileIconBtn>
                       </View>
                     </View>
 
-                    <View style={S.classChipRow}>
-                      {assignedClasses.length === 0 ? (
-                        <Text style={S.noClass}>לא שויך לאף כיתה</Text>
-                      ) : (
-                        assignedClasses.map((c) => (
+                    {assignedClasses.length > 0 && (
+                      <View style={[S.classChipRow, { marginTop: 8 }]}>
+                        {assignedClasses.map((c) => (
                           <View key={c.id} style={S.classChip}>
                             <Text style={S.classChipText}>{c.name}</Text>
                           </View>
-                        ))
-                      )}
-                    </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 );
               })

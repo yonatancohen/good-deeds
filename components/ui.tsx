@@ -6,7 +6,7 @@
  * Icons: lucide-react-native — NO emoji icons in UI
  */
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Animated,
   TouchableOpacity,
@@ -537,3 +537,64 @@ export const inputFocusStyle: ViewStyle = {
     ? ({ boxShadow: '0 0 0 4px rgba(255,193,7,0.2)' } as any)
     : {}),
 };
+
+// ── Tactile Icon Button ────────────────────────────────────────────────────────
+// Stitch-style 3D press effect: the button sinks 3px on press.
+// On web: boxShadow simulates depth, disappears + translateY on pressIn.
+// On native: spring translateY only.
+
+interface TactileIconBtnProps {
+  onPress: () => void;
+  style?: any;
+  shadowColor?: string;
+  accessibilityLabel?: string;
+  children: React.ReactNode;
+}
+
+export function TactileIconBtn({
+  onPress,
+  style,
+  shadowColor = 'rgba(120,89,0,0.2)',
+  accessibilityLabel,
+  children,
+}: TactileIconBtnProps) {
+  const [pressed, setPressed] = useState(false);
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  function pressIn() {
+    setPressed(true);
+    Animated.spring(translateY, {
+      toValue: 3,
+      useNativeDriver: USE_ND,
+      tension: 400, friction: 15,
+    }).start();
+  }
+  function pressOut() {
+    setPressed(false);
+    Animated.spring(translateY, {
+      toValue: 0,
+      useNativeDriver: USE_ND,
+      tension: 300, friction: 18,
+    }).start();
+  }
+
+  const depth: any = Platform.OS === 'web'
+    ? (pressed ? { boxShadow: 'none' } : { boxShadow: `0 3px 0 ${shadowColor}` })
+    : {};
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={pressIn}
+      onPressOut={pressOut}
+      activeOpacity={1}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : undefined}
+    >
+      <Animated.View style={[style, depth, { transform: [{ translateY: translateY as any }] }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}

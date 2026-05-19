@@ -14,7 +14,7 @@ import {
 import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { Gift as GiftIcon, Pencil, Trash2, Plus, ChevronRight } from 'lucide-react-native';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -151,6 +151,10 @@ export default function AdminGiftsScreen() {
                   style={[AS.row, !gift.is_active && { opacity: 0.6 }]}
                   accessibilityLabel={`מתנה: ${gift.name}, ${gift.is_active ? 'פעילה' : 'לא פעילה'}`}
                 >
+                  {/* Gift icon circle */}
+                  <View style={[AS.rowAvatar, AS.rowAvatarSuccess]}>
+                    <GiftIcon size={22} color={Colors.success} />
+                  </View>
                   <View style={AS.rowLeft}>
                     <Text style={[S.giftName, { color: gift.is_active ? Colors.text : '#94a3b8' }]}>{gift.name}</Text>
                     {gift.description && <Text style={S.giftDesc}>{gift.description}</Text>}
@@ -165,12 +169,12 @@ export default function AdminGiftsScreen() {
                   </View>
                   <View style={S.rowDivider} />
                   <View style={AS.rowActions}>
-                    <TouchableOpacity onPress={() => openEdit(gift)} style={[AS.iconBtn, webPointer]} accessibilityRole="button" accessibilityLabel={`ערוך ${gift.name}`}>
+                    <TactileIconBtn onPress={() => openEdit(gift)} style={AS.iconBtn} accessibilityLabel={`ערוך ${gift.name}`}>
                       <Pencil size={16} color={Colors.muted} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(gift)} style={[AS.iconBtnDanger, webPointer]} accessibilityRole="button" accessibilityLabel={`מחק ${gift.name}`}>
+                    </TactileIconBtn>
+                    <TactileIconBtn onPress={() => handleDelete(gift)} style={AS.iconBtnDanger} shadowColor="rgba(186,26,26,0.2)" accessibilityLabel={`מחק ${gift.name}`}>
                       <Trash2 size={16} color={Colors.danger} />
-                    </TouchableOpacity>
+                    </TactileIconBtn>
                   </View>
                 </View>
               ))
