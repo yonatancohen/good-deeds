@@ -17,7 +17,7 @@ import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
 import { Skeleton, Colors } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
-import { cardDepthStyle } from '@/lib/cardDepth';
+import { cardDepthStyle, buttonDepthStatic } from '@/lib/cardDepth';
 import { shadow } from '@/lib/shadow';
 import { getClassColorScheme } from '@/lib/classColors';
 
@@ -383,7 +383,7 @@ const S = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
+    ...buttonDepthStatic(3),
   },
 
   // Hero — full-bleed strip; text constrained via heroInner

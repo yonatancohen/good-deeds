@@ -23,6 +23,7 @@ import { shadow } from '@/lib/shadow';
 // ── Color tokens — re-exported for backward compatibility ─────────────────────
 export { Colors } from '@/lib/colors';
 import { Colors } from '@/lib/colors';
+import { CARD_DEPTH, hardDepthStyle } from '@/lib/cardDepth';
 
 const USE_ND = Platform.OS !== 'web';
 
@@ -202,9 +203,11 @@ export function Button({
   fullWidth = true,
 }: ButtonProps) {
   const isOff = disabled || loading;
+  const [pressed, setPressed] = useState(false);
   const pressScale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
+    setPressed(true);
     Animated.spring(pressScale, {
       toValue: 0.96,
       useNativeDriver: USE_ND,
@@ -212,6 +215,7 @@ export function Button({
     }).start();
   }
   function handlePressOut() {
+    setPressed(false);
     Animated.spring(pressScale, {
       toValue: 1,
       useNativeDriver: USE_ND,
@@ -234,10 +238,8 @@ export function Button({
   const spinnerColor =
     variant === 'secondary' || variant === 'ghost' ? Colors.primaryDark : Colors.primaryDark;
 
-  // 3D shadow for primary on web
-  const primaryShadow = variant === 'primary' && !isOff && Platform.OS === 'web'
-    ? { boxShadow: '0 5px 0 #5b4300' } as any
-    : {};
+  const primaryShadow =
+    variant === 'primary' && !isOff ? hardDepthStyle(pressed, 5) : {};
 
   return (
     <TouchableOpacity
@@ -578,9 +580,8 @@ export function TactileIconBtn({
     }).start();
   }
 
-  const depth: any = Platform.OS === 'web'
-    ? (pressed ? { boxShadow: 'none' } : { boxShadow: `0 3px 0 ${shadowColor}` })
-    : {};
+  const depthColor = shadowColor.startsWith('#') ? shadowColor : CARD_DEPTH;
+  const depth: any = hardDepthStyle(pressed, 3, depthColor);
 
   return (
     <TouchableOpacity

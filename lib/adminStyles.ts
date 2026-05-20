@@ -5,6 +5,7 @@
 import { StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/lib/colors';
 import { shadow } from '@/lib/shadow';
+import { buttonDepthStatic } from '@/lib/cardDepth';
 import { useBreakpoint } from '@/lib/responsive';
 
 export function useAdminLayout() {
@@ -20,15 +21,8 @@ export function useAdminLayout() {
   };
 }
 
-// 3D shadow for CTA buttons (web only)
-const btn3dShadow = Platform.OS === 'web'
-  ? ({ boxShadow: '0 5px 0 #5b4300' } as any)
-  : {};
-
-// Lighter 3D shadow for small icon-only buttons (web only)
-const iconBtn3dShadow = Platform.OS === 'web'
-  ? ({ boxShadow: '0 3px 0 #5b4300' } as any)
-  : {};
+const btn3dShadow = buttonDepthStatic(5);
+const iconBtn3dShadow = buttonDepthStatic(3);
 
 export const AS = StyleSheet.create({
   // ── Screen ───────────────────────────────────────────────────────────────

@@ -21,7 +21,7 @@ import { LogOut, ClipboardList, ShieldCheck, Users } from 'lucide-react-native';
 
 import { AS } from '@/lib/adminStyles';
 import { Colors } from '@/components/ui';
-import { cardDepthStyle } from '@/lib/cardDepth';
+import { cardDepthStyle, buttonDepthStatic } from '@/lib/cardDepth';
 import { shadow } from '@/lib/shadow';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
@@ -76,12 +76,12 @@ const S = StyleSheet.create({
   headerIconBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center',
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
+    ...buttonDepthStatic(3),
   },
   headerBtn: {
     backgroundColor: Colors.primaryLight, borderRadius: 16, paddingHorizontal: 14,
     height: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 5px 0 #5b4300' } as any) : {}),
+    ...buttonDepthStatic(5),
   },
   headerBtnText: { color: Colors.primaryDark, fontSize: 14, fontWeight: '700', fontFamily: 'Baloo2_700Bold' } as any,
 

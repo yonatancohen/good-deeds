@@ -53,3 +53,7 @@ yarn-error.*
 *.aab
 *.apk
 *.ipa
+
+# Supabase
+supabase/.temp
+supabase/config.toml

@@ -20,7 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { Colors } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
-import { cardDepthStyle } from '@/lib/cardDepth';
+import { cardDepthStyle, buttonDepthStatic } from '@/lib/cardDepth';
 import { confirmAction } from '@/lib/confirm';
 import type { Tables } from '@/types/supabase';
 
@@ -764,7 +764,7 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
+    ...buttonDepthStatic(3),
   },
   headerBtnText: {
     color: Colors.primaryDark,
@@ -779,7 +779,7 @@ const S = StyleSheet.create({
     backgroundColor: Colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
+    ...buttonDepthStatic(3),
   },
 
   // ── Scroll body ──
@@ -924,7 +924,7 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    ...(Platform.OS === 'web' ? ({ boxShadow: '0 3px 0 #5b4300' } as any) : {}),
+    ...buttonDepthStatic(3),
   },
   fulfillBtnText: {
     fontSize: 13,
