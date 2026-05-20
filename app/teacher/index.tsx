@@ -131,6 +131,7 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
+    ...(Platform.OS === 'web' ? ({ direction: 'rtl' } as object) : null),
   },
   classCircle: {
     width: 52,
@@ -282,25 +283,51 @@ function TeacherClassCard({
         style={[S.card, compact && S.cardCompact, ptr]}
       >
           <View style={S.cardTop}>
-            <View
-              style={[S.classCircle, { backgroundColor: scheme.bg }]}
-              accessibilityLabel={`כיתה ${item.class.name}`}
-            >
-              <Text
-                style={[S.classCircleText, { color: scheme.text }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-              >
-                {item.class.name}
-              </Text>
-            </View>
-            <View style={S.cardStudentRow}>
-              <Users size={12} color={Colors.muted} />
-              <Text style={S.cardStudents}>
-                {item.studentCount} תלמידים
-              </Text>
-            </View>
+            {Platform.OS === 'web' ? (
+              <>
+                <View
+                  style={[S.classCircle, { backgroundColor: scheme.bg }]}
+                  accessibilityLabel={`כיתה ${item.class.name}`}
+                >
+                  <Text
+                    style={[S.classCircleText, { color: scheme.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
+                    {item.class.name}
+                  </Text>
+                </View>
+                <View style={S.cardStudentRow}>
+                  <Users size={12} color={Colors.muted} />
+                  <Text style={S.cardStudents}>
+                    {item.studentCount} תלמידים
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={S.cardStudentRow}>
+                  <Users size={12} color={Colors.muted} />
+                  <Text style={S.cardStudents}>
+                    {item.studentCount} תלמידים
+                  </Text>
+                </View>
+                <View
+                  style={[S.classCircle, { backgroundColor: scheme.bg }]}
+                  accessibilityLabel={`כיתה ${item.class.name}`}
+                >
+                  <Text
+                    style={[S.classCircleText, { color: scheme.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
+                    {item.class.name}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
 
           <View style={S.cardBottom}>
