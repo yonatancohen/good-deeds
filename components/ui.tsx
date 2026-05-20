@@ -6,7 +6,7 @@
  * Icons: lucide-react-native — NO emoji icons in UI
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, isValidElement } from 'react';
 import {
   Animated,
   TouchableOpacity,
@@ -17,13 +17,17 @@ import {
   ViewStyle,
   TextStyle,
   Platform,
+  StyleProp,
 } from 'react-native';
 import { shadow } from '@/lib/shadow';
 
 // ── Color tokens — re-exported for backward compatibility ─────────────────────
 export { Colors } from '@/lib/colors';
 import { Colors } from '@/lib/colors';
-import { CARD_DEPTH, hardDepthStyle } from '@/lib/cardDepth';
+import { DepthShell } from '@/lib/DepthShell';
+import { AS } from '@/lib/adminStyles';
+import { useBreakpoint } from '@/lib/responsive';
+import { Plus } from 'lucide-react-native';
 
 const USE_ND = Platform.OS !== 'web';
 
@@ -238,8 +242,35 @@ export function Button({
   const spinnerColor =
     variant === 'secondary' || variant === 'ghost' ? Colors.primaryDark : Colors.primaryDark;
 
-  const primaryShadow =
-    variant === 'primary' && !isOff ? hardDepthStyle(pressed, 5) : {};
+  const primaryWrap =
+    variant === 'primary' && !isOff ? (
+      <DepthShell
+        depth={5}
+        borderRadius={16}
+        pressed={pressed}
+        outerStyle={fullWidth ? S.btnFull : undefined}
+      >
+        <Animated.View
+          style={[S.btnBase, bg, { transform: [{ scale: pressScale }] }]}
+        >
+          {loading ? (
+            <ActivityIndicator color={spinnerColor} />
+          ) : (
+            <Text style={[textStyle, { writingDirection: 'rtl' }]}>{label}</Text>
+          )}
+        </Animated.View>
+      </DepthShell>
+    ) : (
+      <Animated.View
+        style={[S.btnBase, bg, { transform: [{ scale: pressScale }] }]}
+      >
+        {loading ? (
+          <ActivityIndicator color={spinnerColor} />
+        ) : (
+          <Text style={[textStyle, { writingDirection: 'rtl' }]}>{label}</Text>
+        )}
+      </Animated.View>
+    );
 
   return (
     <TouchableOpacity
@@ -252,22 +283,9 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isOff }}
-      style={[fullWidth && S.btnFull, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
+      style={[fullWidth && variant !== 'primary' && S.btnFull, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
     >
-      <Animated.View
-        style={[
-          S.btnBase,
-          bg,
-          primaryShadow,
-          { transform: [{ scale: pressScale }] },
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator color={spinnerColor} />
-        ) : (
-          <Text style={[textStyle, { writingDirection: 'rtl' }]}>{label}</Text>
-        )}
-      </Animated.View>
+      {primaryWrap}
     </TouchableOpacity>
   );
 }
@@ -550,52 +568,146 @@ interface TactileIconBtnProps {
   style?: any;
   shadowColor?: string;
   accessibilityLabel?: string;
+  depth?: number;
+  flat?: boolean;
   children: React.ReactNode;
 }
 
 export function TactileIconBtn({
   onPress,
   style,
-  shadowColor = 'rgba(120,89,0,0.2)',
+  shadowColor: _shadowColor = 'rgba(120,89,0,0.2)',
   accessibilityLabel,
+  depth = 2,
+  flat = true,
   children,
 }: TactileIconBtnProps) {
   const [pressed, setPressed] = useState(false);
-  const translateY = useRef(new Animated.Value(0)).current;
-
-  function pressIn() {
-    setPressed(true);
-    Animated.spring(translateY, {
-      toValue: 3,
-      useNativeDriver: USE_ND,
-      tension: 400, friction: 15,
-    }).start();
-  }
-  function pressOut() {
-    setPressed(false);
-    Animated.spring(translateY, {
-      toValue: 0,
-      useNativeDriver: USE_ND,
-      tension: 300, friction: 18,
-    }).start();
-  }
-
-  const depthColor = shadowColor.startsWith('#') ? shadowColor : CARD_DEPTH;
-  const depth: any = hardDepthStyle(pressed, 3, depthColor);
+  const flatStyle = Array.isArray(style) ? style.find(s => s && typeof s === 'object') : style;
+  const borderRadius = (flatStyle?.borderRadius as number | undefined) ?? 14;
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      onPressIn={pressIn}
-      onPressOut={pressOut}
-      activeOpacity={1}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      style={Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : undefined}
-    >
-      <Animated.View style={[style, depth, { transform: [{ translateY: translateY as any }] }]}>
+    <DepthShell depth={depth} borderRadius={borderRadius} pressed={pressed} flat={flat}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        activeOpacity={1}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        style={[style, Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : undefined]}
+      >
         {children}
-      </Animated.View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </DepthShell>
+  );
+}
+
+/** Strip Text labels from custom AddBtn children on icon-only layouts. */
+function addBtnChildrenWithoutLabels(children: React.ReactNode): React.ReactNode {
+  return React.Children.map(children, (child) => {
+    if (isValidElement(child) && child.type === Text) return null;
+    return child;
+  });
+}
+
+/** Header / screen “+ הוספה” CTA with 3D lip. Icon-only on mobile unless `iconOnly={false}`. */
+export function AddBtn({
+  onPress,
+  label = 'הוספה',
+  accessibilityLabel,
+  style,
+  light,
+  iconOnly: iconOnlyProp,
+  children,
+}: {
+  onPress: () => void;
+  label?: string;
+  accessibilityLabel: string;
+  style?: ViewStyle;
+  light?: boolean;
+  /** Force icon-only (true) or labeled (false). Default: mobile = icon-only. */
+  iconOnly?: boolean;
+  children?: React.ReactNode;
+}) {
+  const [pressed, setPressed] = useState(false);
+  const { isMobile } = useBreakpoint();
+  const iconOnly = iconOnlyProp ?? isMobile;
+
+  const inner = children
+    ? iconOnly
+      ? addBtnChildrenWithoutLabels(children)
+      : children
+    : (
+      <>
+        <Plus size={iconOnly ? 18 : 15} color={Colors.primaryDark} />
+        {!iconOnly && <Text style={AS.addBtnText}>{label}</Text>}
+      </>
+    );
+
+  return (
+    <DepthShell depth={5} borderRadius={16} pressed={pressed} flat outerStyle={style}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        activeOpacity={1}
+        style={[
+          AS.addBtn,
+          light && { backgroundColor: Colors.primaryLight },
+          iconOnly && AS.addBtnIconOnly,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+      >
+        {inner}
+      </TouchableOpacity>
+    </DepthShell>
+  );
+}
+
+/** Any pressable with the 3D lip — header pills, CTAs, etc. */
+export function DepthPressable({
+  onPress,
+  style,
+  depth = 5,
+  borderRadius,
+  flat = true,
+  disabled,
+  accessibilityLabel,
+  accessibilityRole = 'button',
+  color,
+  children,
+}: {
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+  depth?: number;
+  borderRadius?: number;
+  flat?: boolean;
+  disabled?: boolean;
+  accessibilityLabel: string;
+  accessibilityRole?: 'button' | 'link';
+  color?: string;
+  children: React.ReactNode;
+}) {
+  const [pressed, setPressed] = useState(false);
+  const flatStyle = Array.isArray(style) ? style.find(s => s && typeof s === 'object' && 'borderRadius' in s) : style;
+  const br = borderRadius ?? (flatStyle as ViewStyle | undefined)?.borderRadius ?? 16;
+
+  return (
+    <DepthShell depth={depth} borderRadius={br as number} pressed={pressed} flat={flat} color={color}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        disabled={disabled}
+        activeOpacity={1}
+        accessibilityRole={accessibilityRole}
+        accessibilityLabel={accessibilityLabel}
+        style={[style, Platform.OS === 'web' && ({ cursor: disabled ? 'default' : 'pointer' } as any)]}
+      >
+        {children}
+      </TouchableOpacity>
+    </DepthShell>
   );
 }

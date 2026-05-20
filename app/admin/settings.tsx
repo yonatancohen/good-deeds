@@ -20,7 +20,7 @@ import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/hooks/useSettings';
 import { safeBack } from '@/lib/navigation';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 
 // ── Hebrew year helpers (shared with classes screen) ─────────────────────────
@@ -42,9 +42,16 @@ function getSchoolYears(): string[] {
 }
 
 // ── Pill selector ─────────────────────────────────────────────────────────────
-function PillGroup({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
+function PillGroup({
+  options, value, onSelect, fullWidth,
+}: {
+  options: string[];
+  value: string;
+  onSelect: (v: string) => void;
+  fullWidth?: boolean;
+}) {
   return (
-    <View style={P.group}>
+    <View style={[P.group, fullWidth && P.groupFull]}>
       {options.map(opt => {
         const on = value === opt;
         return (
@@ -53,7 +60,7 @@ function PillGroup({ options, value, onSelect }: { options: string[]; value: str
             onPress={() => onSelect(opt)}
             accessibilityRole="radio"
             accessibilityState={{ checked: on }}
-            style={[P.pill, on ? P.pillOn : P.pillOff, webPointer]}
+            style={[P.pill, fullWidth && P.pillFull, on ? P.pillOn : P.pillOff, webPointer]}
           >
             <Text style={[P.pillText, on ? P.pillTextOn : P.pillTextOff]}>{opt}</Text>
           </TouchableOpacity>
@@ -63,11 +70,13 @@ function PillGroup({ options, value, onSelect }: { options: string[]; value: str
   );
 }
 const P = StyleSheet.create({
-  group: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  group: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  groupFull: { flexWrap: 'nowrap', width: '100%' },
   pill: {
     height: 44, borderRadius: 10, borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
   },
+  pillFull: { flex: 1, minWidth: 0, paddingHorizontal: 4 },
   pillOn:  { backgroundColor: Colors.primary, borderColor: Colors.primary },
   pillOff: { backgroundColor: Colors.surface, borderColor: Colors.border },
   pillText: { fontSize: 15, fontWeight: '700', fontFamily: 'Baloo2_700Bold' } as any,
@@ -76,7 +85,7 @@ const P = StyleSheet.create({
 });
 
 export default function AdminSettingsScreen() {
-  const { listPad, pageContent } = useAdminLayout();
+  const { listPad, pageContent, isDesktop } = useAdminLayout();
   const { t } = useTranslation();
   const router = useRouter();
   const { settings, loading } = useSettings();
@@ -142,9 +151,9 @@ export default function AdminSettingsScreen() {
         {/* Header */}
         <View style={AS.header}>
           <View style={[AS.headerInner, pageContent, { justifyContent: 'flex-start' }]}>
-            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+            <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('settings')}</Text>
           </View>
         </View>
@@ -174,7 +183,12 @@ export default function AdminSettingsScreen() {
               <View>
                 <Text style={AS.fieldLabel}>{t('currentYear')}</Text>
                 <Text style={AS.fieldHint}>בחר את שנת הלימודים הנוכחית</Text>
-                <PillGroup options={schoolYears} value={currentYear} onSelect={setCurrentYear} />
+                <PillGroup
+                  options={schoolYears}
+                  value={currentYear}
+                  onSelect={setCurrentYear}
+                  fullWidth={!isDesktop}
+                />
               </View>
 
               {/* Global Goal */}
@@ -202,7 +216,7 @@ export default function AdminSettingsScreen() {
           backgroundColor: Colors.bg,
           borderTopWidth: 1, borderTopColor: '#f1f5f9',
         }}>
-          <View style={[pageContent, { paddingHorizontal: 16 }]}>
+          <View style={pageContent}>
             <View style={AS.sheetBtns}>
               <TouchableOpacity
                 onPress={handleSave}

@@ -23,14 +23,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronRight, Plus, ClipboardList, Users, Trash2, Pencil, UserPlus, Trophy, Upload } from 'lucide-react-native';
+import { ChevronRight, Plus, ClipboardList, Users, Trash2, Pencil, Trophy, Upload } from 'lucide-react-native';
 
 import { PomPomJar } from '@/components/PomPomJar';
 import AdminSheet from '@/components/AdminSheet';
 import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
-import { Colors, TactileIconBtn } from '@/components/ui';
+import { Colors, TactileIconBtn, AddBtn, DepthPressable } from '@/components/ui';
 import { AS } from '@/lib/adminStyles';
-import { shadow } from '@/lib/shadow';
 
 import { useClassStudents, CreditEventWithDetails } from '@/hooks/useClassStudents';
 import { useDeeds } from '@/hooks/useDeeds';
@@ -440,7 +439,10 @@ export default function ClassDetailScreen() {
   const { classId } = useLocalSearchParams<{ classId: string }>();
   const { user, isAdmin } = useAuth();          // ← single call, shared below
   const { settings } = useSettings();
-  const { pageContent } = useAdminLayout();
+  const { pageContent, isDesktop } = useAdminLayout();
+  const scrollWrap = isDesktop
+    ? { maxWidth: 960, alignSelf: 'center' as const, width: '100%' as const }
+    : undefined;
   const { deeds } = useDeeds();                  // ← single call, passed to sheets
 
   // Fetch only this one class (not all classes)
@@ -556,14 +558,13 @@ export default function ClassDetailScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent, S.headerInner]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity
+            <TactileIconBtn
               onPress={() => safeBack(router, '/teacher')}
-              accessibilityRole="button"
               accessibilityLabel="חזור"
               style={[AS.backBtn, ptr]}
             >
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <View style={S.headerTitleWrap}>
               <Text style={AS.headerTitle} accessibilityRole="header">
                 כיתה {className}
@@ -574,14 +575,11 @@ export default function ClassDetailScreen() {
               </Text>
             </View>
           </View>
-          <TactileIconBtn
+          <AddBtn
             onPress={openAddStudent}
-            style={AS.iconBtnSuccess}
-            shadowColor="rgba(0,110,28,0.2)"
             accessibilityLabel="הוסף תלמיד"
-          >
-            <UserPlus size={18} color={Colors.success} />
-          </TactileIconBtn>
+            style={ptr}
+          />
         </View>
       </View>
 
@@ -591,7 +589,7 @@ export default function ClassDetailScreen() {
         contentContainerStyle={S.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-      <View style={pageContent}>
+      <View style={scrollWrap}>
 
         {/* ── 1. PomPom Jar ── */}
         <View style={S.jarSection}>
@@ -606,15 +604,17 @@ export default function ClassDetailScreen() {
 
         {/* ── 2. Class credit CTA ── */}
         <View style={S.classCtaRow}>
-          <TouchableOpacity
+          <DepthPressable
             onPress={() => setClassCreditVisible(true)}
-            accessibilityRole="button"
             accessibilityLabel="הוספת נקודות לכיתה"
             style={[S.classCtaBtnAlt, ptr]}
+            depth={4}
+            borderRadius={16}
+            color="#1e3a5f"
           >
             <Plus size={18} color="#fff" />
             <Text style={S.classCtaBtnAltText}>הוספת נקודות לכיתה</Text>
-          </TouchableOpacity>
+          </DepthPressable>
         </View>
 
         {/* ── 3. Student list ── */}
@@ -856,7 +856,6 @@ const S = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 14,
     minHeight: 52,
-    ...shadow('#1e3a5f', 4, 0, 1, 4),
   },
   classCtaBtnAltText: {
     color: '#fff',
@@ -886,7 +885,6 @@ const S = StyleSheet.create({
 
   // ── Students section ──
   studentsSection: {
-    paddingHorizontal: 16,
     paddingTop: 20,
   },
   studentsHeaderRow: {
@@ -894,6 +892,7 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
+    paddingHorizontal: 16,
   },
   studentsLabel: {
     fontSize: 11, fontWeight: '700', color: Colors.muted,

@@ -20,8 +20,8 @@ import { useRouter } from 'expo-router';
 import { LogOut, ClipboardList, ShieldCheck, Users } from 'lucide-react-native';
 
 import { AS } from '@/lib/adminStyles';
-import { Colors } from '@/components/ui';
-import { cardDepthStyle, buttonDepthStatic } from '@/lib/cardDepth';
+import { Colors, DepthPressable } from '@/components/ui';
+import { DepthShell } from '@/lib/DepthShell';
 import { shadow } from '@/lib/shadow';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
@@ -58,7 +58,7 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 14,
   },
@@ -76,12 +76,10 @@ const S = StyleSheet.create({
   headerIconBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center',
-    ...buttonDepthStatic(3),
   },
   headerBtn: {
     backgroundColor: Colors.primaryLight, borderRadius: 16, paddingHorizontal: 14,
     height: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-    ...buttonDepthStatic(5),
   },
   headerBtnText: { color: Colors.primaryDark, fontSize: 14, fontWeight: '700', fontFamily: 'Baloo2_700Bold' } as any,
 
@@ -113,13 +111,6 @@ const S = StyleSheet.create({
   },
 
   // ── Class card ──
-  cardOuter: {
-    marginBottom: 4,
-    paddingBottom: 6,
-  },
-  cardLift: {
-    borderRadius: 20,
-  },
   card: {
     backgroundColor: Colors.card,
     borderRadius: 20,
@@ -260,7 +251,6 @@ function TeacherClassCard({
   const scheme = getClassColorScheme(item.class.name);
   const pct = goal > 0 ? Math.min(item.totalCredits / goal, 1) : 0;
   const pctPct = Math.round(pct * 100);
-  const liftY = pressed ? 4 : hovered ? -4 : 0;
 
   const hoverProps =
     Platform.OS === 'web'
@@ -274,26 +264,23 @@ function TeacherClassCard({
       : {};
 
   return (
-    <View
-      style={[S.cardOuter, Platform.OS !== 'web' && { width: cardWidth }]}
+    <DepthShell
+      depth={5}
+      borderRadius={20}
+      pressed={pressed}
+      hovered={hovered}
+      outerStyle={Platform.OS !== 'web' ? { width: cardWidth } : undefined}
       {...hoverProps}
     >
-      <View
-        style={[
-          S.cardLift,
-          cardDepthStyle(pressed, hovered),
-          { transform: [{ translateY: liftY }] },
-        ]}
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        accessibilityRole="button"
+        accessibilityLabel={`כיתה ${item.class.name}`}
+        activeOpacity={1}
+        style={[S.card, compact && S.cardCompact, ptr]}
       >
-        <TouchableOpacity
-          onPress={onPress}
-          onPressIn={() => setPressed(true)}
-          onPressOut={() => setPressed(false)}
-          accessibilityRole="button"
-          accessibilityLabel={`כיתה ${item.class.name}`}
-          activeOpacity={1}
-          style={[S.card, compact && S.cardCompact, ptr]}
-        >
           <View style={S.cardTop}>
             <View
               style={[S.classCircle, { backgroundColor: scheme.bg }]}
@@ -332,9 +319,8 @@ function TeacherClassCard({
               />
             </View>
           </View>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </TouchableOpacity>
+    </DepthShell>
   );
 }
 
@@ -400,25 +386,27 @@ export default function TeacherHome() {
           </View>
           <View style={S.headerBtns}>
             {user && (
-              <TouchableOpacity
+              <DepthPressable
                 onPress={handleLogout}
                 style={[S.headerIconBtn, ptr]}
-                accessibilityRole="button"
+                depth={3}
+                borderRadius={14}
                 accessibilityLabel="התנתק"
               >
                 <LogOut size={20} color={Colors.primaryDark} />
-              </TouchableOpacity>
+              </DepthPressable>
             )}
             {isAdmin && (
-              <TouchableOpacity
+              <DepthPressable
                 onPress={() => router.replace('/admin')}
                 style={[S.headerBtn, ptr]}
-                accessibilityRole="button"
+                depth={5}
+                borderRadius={16}
                 accessibilityLabel="עבור לתצוגת מנהל"
               >
                 <ShieldCheck size={15} color={Colors.primaryDark} />
                 <Text style={S.headerBtnText}>תצוגת מנהל</Text>
-              </TouchableOpacity>
+              </DepthPressable>
             )}
           </View>
         </View>

@@ -5,24 +5,22 @@
 import { StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/lib/colors';
 import { shadow } from '@/lib/shadow';
-import { buttonDepthStatic } from '@/lib/cardDepth';
 import { useBreakpoint } from '@/lib/responsive';
 
 export function useAdminLayout() {
   const { isDesktop } = useBreakpoint();
   return {
     isDesktop,
+    /** Vertical only — horizontal inset comes from `pageContent`. */
     listPad: isDesktop
-      ? { padding: 24, paddingBottom: 40 }
-      : { padding: 16 },
+      ? { paddingTop: 24, paddingBottom: 40 }
+      : { paddingTop: 16, paddingBottom: 16 },
     pageContent: isDesktop
-      ? { maxWidth: 960, alignSelf: 'center' as const, width: '100%' as const }
-      : undefined,
+      ? { maxWidth: 960, alignSelf: 'center' as const, width: '100%' as const, paddingHorizontal: 24 }
+      : { width: '100%' as const, paddingHorizontal: 16 },
+    pagePadX: isDesktop ? 24 : 16,
   };
 }
-
-const btn3dShadow = buttonDepthStatic(5);
-const iconBtn3dShadow = buttonDepthStatic(3);
 
 export const AS = StyleSheet.create({
   // ── Screen ───────────────────────────────────────────────────────────────
@@ -36,14 +34,16 @@ export const AS = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
   headerInner: {
-    paddingTop: 16, paddingBottom: 12,
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 16,
+    paddingBottom: 12,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  headerLeft: { flexDirection: 'row-reverse', alignItems: 'center' },
+  headerLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, flexShrink: 1 },
   backBtn: {
     width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.primaryLight, marginLeft: 12,
-    ...iconBtn3dShadow,
+    backgroundColor: Colors.primaryLight,
   },
   headerTitle: {
     fontSize: 17, fontWeight: '700', color: Colors.primaryDark,
@@ -57,7 +57,12 @@ export const AS = StyleSheet.create({
     height: 44,
     paddingHorizontal: 18,
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-    ...btn3dShadow,
+  },
+  /** Square header CTA on narrow screens — icon only, no label. */
+  addBtnIconOnly: {
+    width: 44,
+    paddingHorizontal: 0,
+    justifyContent: 'center',
   },
   addBtnText: { color: Colors.primaryDark, fontWeight: '700', fontSize: 14, fontFamily: 'Baloo2_700Bold' } as any,
 
@@ -207,7 +212,6 @@ export const AS = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.primary,
-    ...btn3dShadow,
   },
   saveBtnDisabled: {
     flex: 1, paddingVertical: 16,

@@ -8,7 +8,7 @@ import { confirmAction } from '@/lib/confirm';
 import AdminSheet from '@/components/AdminSheet';
 import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
 import { Building2, Pencil, Trash2, Plus, ChevronRight, Layers, Upload } from 'lucide-react-native';
-import { Colors, TactileIconBtn } from '@/components/ui';
+import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { safeBack } from '@/lib/navigation';
 import type { Tables } from '@/types/supabase';
 import { getClassColorScheme } from '@/lib/classColors';
+import { useBreakpoint } from '@/lib/responsive';
 
 type ClassRow = Tables<'classes'>;
 
@@ -108,6 +109,7 @@ function Stepper({ value, onChange, max = 4 }: { value: number; onChange: (v: nu
 // ── Main screen ───────────────────────────────────────────────────────────────
 export default function AdminClassesScreen() {
   const { listPad, pageContent } = useAdminLayout();
+  const { isDesktop } = useBreakpoint();
   const { t } = useTranslation();
   const router = useRouter();
   const { settings } = useSettings();
@@ -259,24 +261,23 @@ export default function AdminClassesScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+            <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('classes')}</Text>
           </View>
           <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); }}
-              style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
-              accessibilityRole="button" accessibilityLabel="יצירת כיתות בבulk"
-            >
-              <Layers size={15} color={Colors.primaryDark} />
-              <Text style={AS.addBtnText}>הוספה חכמה</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף כיתה חדשה">
-              <Plus size={15} color={Colors.primaryDark} />
-              <Text style={AS.addBtnText}>הוספה</Text>
-            </TouchableOpacity>
+            {isDesktop && (
+              <AddBtn
+                onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); }}
+                light
+                accessibilityLabel="יצירת כיתות בבulk"
+              >
+                <Layers size={18} color={Colors.primaryDark} />
+                <Text style={AS.addBtnText}>הוספה חכמה</Text>
+              </AddBtn>
+            )}
+            <AddBtn onPress={openAdd} accessibilityLabel="הוסף כיתה חדשה" />
           </View>
         </View>
       </View>

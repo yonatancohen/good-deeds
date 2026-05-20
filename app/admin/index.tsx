@@ -17,10 +17,10 @@ import '@/lib/i18n';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
-import { Colors } from '@/components/ui';
+import { Colors, DepthPressable } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
-import { cardDepthStyle, buttonDepthStatic } from '@/lib/cardDepth';
+import { DepthShell } from '@/lib/DepthShell';
 import { confirmAction } from '@/lib/confirm';
 import type { Tables } from '@/types/supabase';
 
@@ -77,7 +77,6 @@ function MenuTileCard({
 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
-  const liftY = pressed ? 4 : hovered ? -4 : 0;
   const { Icon } = tile;
 
   const hoverProps =
@@ -92,33 +91,32 @@ function MenuTileCard({
       : {};
 
   return (
-    <View style={[S.tileOuter, style]} {...hoverProps}>
-      <View
-        style={[
-          S.tileLift,
-          cardDepthStyle(pressed, hovered),
-          { transform: [{ translateY: liftY }] },
-        ]}
+    <DepthShell
+      depth={5}
+      borderRadius={20}
+      pressed={pressed}
+      hovered={hovered}
+      outerStyle={style}
+      {...hoverProps}
+    >
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        activeOpacity={1}
+        style={[S.tile, pointer]}
+        accessibilityRole="button"
+        accessibilityLabel={`${tile.label} — ${tile.description}`}
       >
-        <TouchableOpacity
-          onPress={onPress}
-          onPressIn={() => setPressed(true)}
-          onPressOut={() => setPressed(false)}
-          activeOpacity={1}
-          style={[S.tile, pointer]}
-          accessibilityRole="button"
-          accessibilityLabel={`${tile.label} — ${tile.description}`}
-        >
-          <View style={[S.tileIconCircle, { backgroundColor: tile.iconBg }]}>
-            <Icon size={24} color={tile.iconColor} />
-          </View>
-          <Text style={S.tileTitle}>{tile.label}</Text>
-          <Text style={S.tileDesc} numberOfLines={2}>
-            {tile.description}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+        <View style={[S.tileIconCircle, { backgroundColor: tile.iconBg }]}>
+          <Icon size={24} color={tile.iconColor} />
+        </View>
+        <Text style={S.tileTitle}>{tile.label}</Text>
+        <Text style={S.tileDesc} numberOfLines={2}>
+          {tile.description}
+        </Text>
+      </TouchableOpacity>
+    </DepthShell>
   );
 }
 
@@ -132,7 +130,6 @@ function PendingRedemptionCard({
   fulfilling: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const liftY = hovered ? -4 : 0;
 
   const hoverProps =
     Platform.OS === 'web'
@@ -143,15 +140,8 @@ function PendingRedemptionCard({
       : {};
 
   return (
-    <View style={S.pendingOuter} {...hoverProps}>
-      <View
-        style={[
-          S.tileLift,
-          cardDepthStyle(false, hovered),
-          { transform: [{ translateY: liftY }] },
-        ]}
-      >
-        <View style={S.pendingTile}>
+    <DepthShell depth={5} borderRadius={20} hovered={hovered} outerStyle={S.pendingOuter} {...hoverProps}>
+      <View style={S.pendingTile}>
           <View style={[S.tileIconCircle, S.pendingIconCircle, { backgroundColor: Colors.primary }]}>
             <Trophy size={24} color="#ffffff" />
           </View>
@@ -165,30 +155,40 @@ function PendingRedemptionCard({
                 : `נרשם ${moment(item.redeemed_at).format('DD/MM/YY')}`}
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={onMarkFulfilled}
-            disabled={fulfilling}
-            style={[S.fulfillBtn, pointer]}
-            accessibilityRole="button"
-            accessibilityLabel="סמן כמומש"
-          >
-            {fulfilling ? (
-              <ActivityIndicator size="small" color={Colors.primaryDark} />
-            ) : (
-              <Text style={S.fulfillBtnText}>סמן כמומש</Text>
-            )}
-          </TouchableOpacity>
+          <FulfillBtn onPress={onMarkFulfilled} disabled={fulfilling} />
         </View>
-      </View>
-    </View>
+    </DepthShell>
+  );
+}
+
+function FulfillBtn({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <DepthShell depth={3} borderRadius={16} pressed={pressed} flat>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        disabled={disabled}
+        style={[S.fulfillBtn, pointer]}
+        accessibilityRole="button"
+        accessibilityLabel="סמן כמומש"
+        activeOpacity={1}
+      >
+        {disabled ? (
+          <ActivityIndicator size="small" color={Colors.primaryDark} />
+        ) : (
+          <Text style={S.fulfillBtnText}>סמן כמומש</Text>
+        )}
+      </TouchableOpacity>
+    </DepthShell>
   );
 }
 
 function PendingEmptyCard() {
   return (
-    <View style={S.pendingOuter}>
-      <View style={[S.tileLift, cardDepthStyle(false, false)]}>
-        <View style={S.pendingTile}>
+    <DepthShell depth={5} borderRadius={20} outerStyle={S.pendingOuter}>
+      <View style={S.pendingTile}>
           <View style={[S.tileIconCircle, S.pendingIconCircle, { backgroundColor: Colors.surfaceDim }]}>
             <Trophy size={24} color={Colors.muted} />
           </View>
@@ -197,8 +197,7 @@ function PendingEmptyCard() {
             <Text style={S.pendingSub}>כשכיתה תירשם לפרס — תופיע כאן</Text>
           </View>
         </View>
-      </View>
-    </View>
+    </DepthShell>
   );
 }
 
@@ -431,24 +430,28 @@ export default function AdminHomeScreen() {
   function renderStats() {
     return (
       <View style={[S.statsRow, isLarge && S.statsRowDesktop]}>
-        <View style={[S.statCard, S.statCardPrimary]}>
-          <Star size={isDesktop ? 36 : 32} color={Colors.primaryDark} />
-          {statsLoading ? (
-            <ActivityIndicator size="small" color={Colors.primaryDark} style={{ marginVertical: 8 }} />
-          ) : (
-            <Text style={S.statValue}>{todayPoints.toLocaleString('he-IL')}</Text>
-          )}
-          <Text style={S.statLabel}>נקודות היום</Text>
-        </View>
-        <View style={[S.statCard, S.statCardSecondary]}>
-          <School size={isDesktop ? 36 : 32} color="#003e73" />
-          {statsLoading ? (
-            <ActivityIndicator size="small" color="#003e73" style={{ marginVertical: 8 }} />
-          ) : (
-            <Text style={[S.statValue, { color: '#003e73' }]}>{activeClasses}</Text>
-          )}
-          <Text style={[S.statLabel, { color: '#003e73' }]}>כיתות פעילות</Text>
-        </View>
+        <DepthShell depth={4} borderRadius={14} outerStyle={S.statOuter}>
+          <View style={[S.statCard, S.statCardPrimary]}>
+            <Star size={isDesktop ? 36 : 32} color={Colors.primaryDark} />
+            {statsLoading ? (
+              <ActivityIndicator size="small" color={Colors.primaryDark} style={{ marginVertical: 8 }} />
+            ) : (
+              <Text style={S.statValue}>{todayPoints.toLocaleString('he-IL')}</Text>
+            )}
+            <Text style={S.statLabel}>נקודות היום</Text>
+          </View>
+        </DepthShell>
+        <DepthShell depth={4} borderRadius={14} outerStyle={S.statOuter}>
+          <View style={[S.statCard, S.statCardSecondary]}>
+            <School size={isDesktop ? 36 : 32} color="#003e73" />
+            {statsLoading ? (
+              <ActivityIndicator size="small" color="#003e73" style={{ marginVertical: 8 }} />
+            ) : (
+              <Text style={[S.statValue, { color: '#003e73' }]}>{activeClasses}</Text>
+            )}
+            <Text style={[S.statLabel, { color: '#003e73' }]}>כיתות פעילות</Text>
+          </View>
+        </DepthShell>
       </View>
     );
   }
@@ -637,23 +640,25 @@ export default function AdminHomeScreen() {
           </View>
 
           <View style={S.headerActions}>
-            <TouchableOpacity
+            <DepthPressable
               onPress={() => router.push('/teacher')}
               style={[S.headerBtn, pointer]}
-              accessibilityRole="button"
+              depth={5}
+              borderRadius={16}
               accessibilityLabel="עבור לתצוגת מורה"
             >
               <Users size={15} color={Colors.primaryDark} />
               <Text style={S.headerBtnText}>תצוגת מורה</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </DepthPressable>
+            <DepthPressable
               onPress={handleLogout}
               style={[S.headerIconBtn, pointer]}
-              accessibilityRole="button"
+              depth={3}
+              borderRadius={14}
               accessibilityLabel="התנתק"
             >
               <LogOut size={18} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </DepthPressable>
           </View>
         </View>
       </View>
@@ -720,7 +725,7 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     alignSelf: 'center',
     width: '100%',
@@ -764,7 +769,6 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    ...buttonDepthStatic(3),
   },
   headerBtnText: {
     color: Colors.primaryDark,
@@ -779,7 +783,6 @@ const S = StyleSheet.create({
     backgroundColor: Colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    ...buttonDepthStatic(3),
   },
 
   // ── Scroll body ──
@@ -813,13 +816,12 @@ const S = StyleSheet.create({
     marginBottom: 28,
   },
   statsRowDesktop: { gap: 24, marginBottom: 36 },
+  statOuter: { flex: 1 },
   statCard: {
-    flex: 1,
     borderRadius: 14,
     paddingVertical: 20,
     paddingHorizontal: 16,
     alignItems: 'center',
-    ...shadow('#000', 2, 8, 0.08, 4),
   },
   statCardPrimary: { backgroundColor: Colors.primary },
   statCardSecondary: { backgroundColor: Colors.secondaryLight },
@@ -924,7 +926,6 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    ...buttonDepthStatic(3),
   },
   fulfillBtnText: {
     fontSize: 13,

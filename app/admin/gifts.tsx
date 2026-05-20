@@ -15,7 +15,7 @@ import {
 import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { Gift as GiftIcon, Pencil, Trash2, Plus, ChevronRight } from 'lucide-react-native';
-import { Colors, TactileIconBtn } from '@/components/ui';
+import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -80,71 +80,84 @@ function GiftCube({
   onDelete: () => void;
   onToggle: () => void;
 }) {
+  const itemStyle =
+    Platform.OS !== 'web' && cubeWidth != null
+      ? { width: cubeWidth, flexGrow: 0, flexShrink: 0 }
+      : undefined;
+
   return (
-    <View
-      style={[
-        S.cube,
-        cubeWidth != null && { width: cubeWidth },
-        { backgroundColor: scheme.bg },
-        !gift.is_active && S.cubeInactive,
-        isDesktop && S.cubeDesktop,
-      ]}
-      accessibilityLabel={`פרס: ${gift.name}, ${gift.is_active ? 'פעיל' : 'לא פעיל'}`}
-    >
-      <View style={S.cubeTop}>
-        <View style={[S.iconBubble, { backgroundColor: scheme.icon }]}>
-          <GiftIcon size={14} color={scheme.text} />
+    <View style={itemStyle}>
+      <View
+        style={[
+          S.cube,
+          { backgroundColor: scheme.bg },
+          !gift.is_active && S.cubeInactive,
+          isDesktop && S.cubeDesktop,
+        ]}
+        accessibilityLabel={`פרס: ${gift.name}, ${gift.is_active ? 'פעיל' : 'לא פעיל'}`}
+      >
+        <View style={S.cubeTop}>
+          <View style={[S.iconBubble, { backgroundColor: scheme.icon }]}>
+            <GiftIcon size={14} color={scheme.text} />
+          </View>
+          <View style={S.cubeActions}>
+            <TactileIconBtn
+              onPress={onEdit}
+              depth={1}
+              style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
+              shadowColor="transparent"
+              accessibilityLabel={`ערוך ${gift.name}`}
+            >
+              <Pencil size={14} color={scheme.text} />
+            </TactileIconBtn>
+            <TactileIconBtn
+              onPress={onDelete}
+              depth={1}
+              style={[
+                S.cubeActionBtn,
+                gift.is_active ? S.cubeActionDanger : S.cubeActionDangerMuted,
+              ]}
+              shadowColor={
+                gift.is_active ? 'rgba(186,26,26,0.12)' : 'rgba(186,26,26,0.15)'
+              }
+              accessibilityLabel={`מחק ${gift.name}`}
+            >
+              <Trash2 size={14} color={Colors.danger} />
+            </TactileIconBtn>
+          </View>
         </View>
-        <View style={S.cubeActions}>
-          <TactileIconBtn
-            onPress={onEdit}
-            style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
-            shadowColor="transparent"
-            accessibilityLabel={`ערוך ${gift.name}`}
-          >
-            <Pencil size={14} color={scheme.text} />
-          </TactileIconBtn>
-          <TactileIconBtn
-            onPress={onDelete}
-            style={[S.cubeActionBtn, S.cubeActionDanger]}
-            shadowColor="rgba(186,26,26,0.15)"
-            accessibilityLabel={`מחק ${gift.name}`}
-          >
-            <Trash2 size={14} color={Colors.danger} />
-          </TactileIconBtn>
-        </View>
-      </View>
 
-      <View style={S.cubeBody}>
-        <Text style={[S.cubeName, { color: scheme.text }]} numberOfLines={3}>
-          {gift.name}
-        </Text>
-        {gift.description ? (
-          <Text style={[S.cubeDesc, { color: scheme.sub }]} numberOfLines={2}>
-            {gift.description}
+        <View style={S.cubeBody}>
+          <Text style={[S.cubeName, { color: scheme.text }]} numberOfLines={3}>
+            {gift.name}
           </Text>
-        ) : null}
-      </View>
+          {gift.description ? (
+            <Text style={[S.cubeDesc, { color: scheme.sub }]} numberOfLines={2}>
+              {gift.description}
+            </Text>
+          ) : null}
+        </View>
 
-      <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
-        <PrimarySwitch
-          variant={gift.is_active ? 'onColor' : 'default'}
-          thumbOnColor={scheme.thumbOn}
-          value={gift.is_active}
-          onValueChange={onToggle}
-          accessibilityLabel={`${gift.is_active ? 'השבת' : 'הפעל'} ${gift.name}`}
-          accessibilityState={{ checked: gift.is_active }}
-        />
-        <Text style={[S.cubeStatus, { color: scheme.sub }]}>
-          {gift.is_active ? 'פעיל' : 'מושבת'}
-        </Text>
+        <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
+          <PrimarySwitch
+            variant={gift.is_active ? 'onColor' : 'default'}
+            thumbOnColor={scheme.thumbOn}
+            value={gift.is_active}
+            onValueChange={onToggle}
+            accessibilityLabel={`${gift.is_active ? 'השבת' : 'הפעל'} ${gift.name}`}
+            accessibilityState={{ checked: gift.is_active }}
+          />
+          <Text style={[S.cubeStatus, { color: scheme.sub }]}>
+            {gift.is_active ? 'פעיל' : 'מושבת'}
+          </Text>
+        </View>
       </View>
     </View>
   );
 }
 
 export default function AdminGiftsScreen() {
-  const { listPad, pageContent, isDesktop } = useAdminLayout();
+  const { listPad, pageContent, pagePadX, isDesktop } = useAdminLayout();
   const { isLarge } = useBreakpoint();
   const { width: screenWidth } = useWindowDimensions();
   const { t } = useTranslation();
@@ -157,8 +170,13 @@ export default function AdminGiftsScreen() {
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const cols = isLarge ? 3 : isDesktop ? 3 : 2;
-  const listPadX = isDesktop ? 48 : 32;
+  const cols = useMemo(() => {
+    if (isLarge) return 3;
+    if (isDesktop) return 3;
+    return 2;
+  }, [isLarge, isDesktop]);
+
+  const listPadX = pagePadX * 2;
   const contentWidth = Math.min(screenWidth - listPadX, GRID_MAX_W);
   const cubeWidth = Math.floor((contentWidth - GRID_GAP * (cols - 1)) / cols);
 
@@ -172,7 +190,13 @@ export default function AdminGiftsScreen() {
             width: '100%',
             direction: 'rtl',
           } as object)
-        : { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: GRID_GAP },
+        : {
+            flexDirection: 'row-reverse',
+            flexWrap: 'wrap',
+            gap: GRID_GAP,
+            width: '100%',
+            alignContent: 'flex-start',
+          },
     [cols],
   );
 
@@ -242,15 +266,12 @@ export default function AdminGiftsScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+            <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('gifts')}</Text>
           </View>
-          <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף פרס">
-            <Plus size={15} color={Colors.primaryDark} />
-            <Text style={AS.addBtnText}>הוספה</Text>
-          </TouchableOpacity>
+          <AddBtn onPress={openAdd} accessibilityLabel="הוסף פרס" />
         </View>
       </View>
 
@@ -283,7 +304,7 @@ export default function AdminGiftsScreen() {
                     gift={gift}
                     scheme={schemeForGift(gift.is_active)}
                     isDesktop={isDesktop}
-                    cubeWidth={Platform.OS === 'web' ? undefined : cubeWidth}
+                    cubeWidth={cubeWidth}
                     onEdit={() => openEdit(gift)}
                     onDelete={() => handleDelete(gift)}
                     onToggle={() => handleToggleActive(gift)}
@@ -403,9 +424,16 @@ const S = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   cubeActionDanger: {
     backgroundColor: 'rgba(255,255,255,0.92)',
+    borderColor: 'rgba(255,255,255,0.45)',
+  },
+  cubeActionDangerMuted: {
+    backgroundColor: Colors.dangerLight,
+    borderColor: 'rgba(186,26,26,0.12)',
   },
 
   cubeBody: {

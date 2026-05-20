@@ -15,7 +15,7 @@ import {
 import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { BookOpen, Pencil, Trash2, Plus, ChevronRight, Sparkles } from 'lucide-react-native';
-import { Colors, TactileIconBtn } from '@/components/ui';
+import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -87,65 +87,71 @@ function DeedCube({
   onDelete: () => void;
   onToggle: () => void;
 }) {
+  const itemStyle =
+    Platform.OS !== 'web' && cubeWidth != null
+      ? { width: cubeWidth, flexGrow: 0, flexShrink: 0 }
+      : undefined;
+
   return (
-    <View
-      style={[
-        S.cube,
-        cubeWidth != null && { width: cubeWidth },
-        { backgroundColor: scheme.bg },
-        !deed.is_active && S.cubeInactive,
-        isDesktop && S.cubeDesktop,
-      ]}
-      accessibilityLabel={`מעשה: ${deed.name}, ערך ${deed.amount}, ${deed.is_active ? 'פעיל' : 'לא פעיל'}`}
-    >
-      <View style={S.cubeTop}>
-        <View style={[S.sparkleBubble, { backgroundColor: scheme.icon }]}>
-          <Sparkles size={14} color={scheme.text} />
+    <View style={itemStyle}>
+      <View
+        style={[
+          S.cube,
+          { backgroundColor: scheme.bg },
+          !deed.is_active && S.cubeInactive,
+          isDesktop && S.cubeDesktop,
+        ]}
+        accessibilityLabel={`מעשה: ${deed.name}, ערך ${deed.amount}, ${deed.is_active ? 'פעיל' : 'לא פעיל'}`}
+      >
+        <View style={S.cubeTop}>
+          <View style={[S.sparkleBubble, { backgroundColor: scheme.icon }]}>
+            <Sparkles size={14} color={scheme.text} />
+          </View>
+          <View style={S.cubeActions}>
+            <TactileIconBtn
+              onPress={onEdit}
+              style={[AS.iconBtn, S.cubeActionCompact]}
+              shadowColor="rgba(120,89,0,0.2)"
+              accessibilityLabel={`ערוך ${deed.name}`}
+            >
+              <Pencil size={14} color={Colors.primaryDark} />
+            </TactileIconBtn>
+            <TactileIconBtn
+              onPress={onDelete}
+              style={[AS.iconBtnDanger, S.cubeActionCompact]}
+              shadowColor="rgba(186,26,26,0.2)"
+              accessibilityLabel={`מחק ${deed.name}`}
+            >
+              <Trash2 size={14} color={Colors.danger} />
+            </TactileIconBtn>
+          </View>
         </View>
-        <View style={S.cubeActions}>
-          <TactileIconBtn
-            onPress={onEdit}
-            style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
-            shadowColor="transparent"
-            accessibilityLabel={`ערוך ${deed.name}`}
-          >
-            <Pencil size={14} color={scheme.text} />
-          </TactileIconBtn>
-          <TactileIconBtn
-            onPress={onDelete}
-            style={[S.cubeActionBtn, S.cubeActionDanger]}
-            shadowColor="rgba(186,26,26,0.15)"
-            accessibilityLabel={`מחק ${deed.name}`}
-          >
-            <Trash2 size={14} color={Colors.danger} />
-          </TactileIconBtn>
+        <View style={S.cubeBody}>
+          <Text style={[S.pointsText, { color: scheme.text }]}>+{deed.amount}</Text>
+          <Text style={[S.cubeName, { color: scheme.text }]} numberOfLines={3}>
+            {deed.name}
+          </Text>
         </View>
-      </View>
-      <View style={S.cubeBody}>
-        <Text style={[S.pointsText, { color: scheme.text }]}>+{deed.amount}</Text>
-        <Text style={[S.cubeName, { color: scheme.text }]} numberOfLines={3}>
-          {deed.name}
-        </Text>
-      </View>
-      <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
-        <PrimarySwitch
-          variant={deed.is_active ? 'onColor' : 'default'}
-          thumbOnColor={scheme.thumbOn}
-          value={deed.is_active}
-          onValueChange={onToggle}
-          accessibilityLabel={`${deed.is_active ? 'השבת' : 'הפעל'} ${deed.name}`}
-          accessibilityState={{ checked: deed.is_active }}
-        />
-        <Text style={[S.cubeStatus, { color: scheme.sub }]}>
-          {deed.is_active ? 'פעיל' : 'מושבת'}
-        </Text>
+        <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
+          <PrimarySwitch
+            variant={deed.is_active ? 'onColor' : 'default'}
+            thumbOnColor={scheme.thumbOn}
+            value={deed.is_active}
+            onValueChange={onToggle}
+            accessibilityLabel={`${deed.is_active ? 'השבת' : 'הפעל'} ${deed.name}`}
+            accessibilityState={{ checked: deed.is_active }}
+          />
+          <Text style={[S.cubeStatus, { color: scheme.sub }]}>
+            {deed.is_active ? 'פעיל' : 'מושבת'}
+          </Text>
+        </View>
       </View>
     </View>
   );
 }
 
 export default function AdminDeedsScreen() {
-  const { listPad, pageContent, isDesktop } = useAdminLayout();
+  const { listPad, pageContent, pagePadX, isDesktop } = useAdminLayout();
   const { isLarge } = useBreakpoint();
   const { width: screenWidth } = useWindowDimensions();
   const { t } = useTranslation();
@@ -158,8 +164,13 @@ export default function AdminDeedsScreen() {
   const [amount, setAmount] = useState('1');
   const [saving, setSaving] = useState(false);
 
-  const cols = isLarge ? 3 : isDesktop ? 3 : 2;
-  const listPadX = isDesktop ? 48 : 32;
+  const cols = useMemo(() => {
+    if (isLarge) return 3;
+    if (isDesktop) return 3;
+    return 2;
+  }, [isLarge, isDesktop]);
+
+  const listPadX = pagePadX * 2;
   const contentWidth = Math.min(screenWidth - listPadX, GRID_MAX_W);
   const cubeWidth = Math.floor((contentWidth - GRID_GAP * (cols - 1)) / cols);
 
@@ -173,7 +184,13 @@ export default function AdminDeedsScreen() {
             width: '100%',
             direction: 'rtl',
           } as object)
-        : { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: GRID_GAP },
+        : {
+            flexDirection: 'row-reverse',
+            flexWrap: 'wrap',
+            gap: GRID_GAP,
+            width: '100%',
+            alignContent: 'flex-start',
+          },
     [cols],
   );
 
@@ -243,15 +260,12 @@ export default function AdminDeedsScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+            <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('deeds')}</Text>
           </View>
-          <TouchableOpacity onPress={openAdd} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מעשה חדש">
-            <Plus size={15} color={Colors.primaryDark} />
-            <Text style={AS.addBtnText}>הוספה</Text>
-          </TouchableOpacity>
+          <AddBtn onPress={openAdd} accessibilityLabel="הוסף מעשה חדש" />
         </View>
       </View>
 
@@ -284,7 +298,7 @@ export default function AdminDeedsScreen() {
                     deed={deed}
                     scheme={schemeForAmount(deed.amount, deed.is_active)}
                     isDesktop={isDesktop}
-                    cubeWidth={Platform.OS === 'web' ? undefined : cubeWidth}
+                    cubeWidth={cubeWidth}
                     onEdit={() => openEdit(deed)}
                     onDelete={() => handleDelete(deed)}
                     onToggle={() => handleToggleActive(deed)}
@@ -404,15 +418,10 @@ const S = StyleSheet.create({
     justifyContent: 'center',
   },
   cubeActions: { flexDirection: 'row-reverse', gap: 6 },
-  cubeActionBtn: {
+  cubeActionCompact: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cubeActionDanger: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
   },
 
   cubeBody: {

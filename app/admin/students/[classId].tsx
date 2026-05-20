@@ -192,14 +192,13 @@ export default function AdminClassStudentsScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity
+            <TactileIconBtn
               onPress={() => safeBack(router, '/admin/students')}
-              style={[AS.backBtn, webPointer]}
-              accessibilityRole="button"
+              style={AS.backBtn}
               accessibilityLabel="חזרה לרשימת כיתות"
             >
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <View>
               <Text style={AS.headerTitle} accessibilityRole="header">
                 {className || 'כיתה'}

@@ -2,7 +2,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Trophy, Gift as GiftIcon, ChevronRight, Plus, Trash2, AlertTriangle, Check } from 'lucide-react-native';
 import { confirmAction } from '@/lib/confirm';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import {
   View,
@@ -38,10 +38,34 @@ type RedemptionRound = Tables<'redemption_rounds'> & {
 
 const S = StyleSheet.create({
   infoBanner: {
-    backgroundColor: Colors.primarySurface, borderWidth: 1, borderColor: Colors.primaryLight,
-    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16,
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: Colors.successSurface,
+    borderWidth: 1,
+    borderColor: Colors.successLight,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 18,
   },
-  infoBannerText: { color: Colors.primaryDark, fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
+  infoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  infoBannerText: {
+    flex: 1,
+    color: Colors.success,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as any,
   redemptionRow: {
     backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 16,
     marginBottom: 12, borderWidth: 1, borderColor: '#f1f5f9',
@@ -256,15 +280,12 @@ export default function AdminRedemptionsScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+            <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('redemptions')}</Text>
           </View>
-          <TouchableOpacity onPress={() => setModalVisible(true)} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="רשום מתנה לכיתה">
-            <Plus size={15} color={Colors.primaryDark} />
-            <Text style={AS.addBtnText}>הוספה</Text>
-          </TouchableOpacity>
+          <AddBtn onPress={() => setModalVisible(true)} accessibilityLabel="רשום מתנה לכיתה" />
         </View>
       </View>
 
@@ -274,6 +295,9 @@ export default function AdminRedemptionsScreen() {
         <ScrollView style={AS.list} contentContainerStyle={listPad}>
           <View style={pageContent}>
             <View style={S.infoBanner}>
+              <View style={S.infoIcon}>
+                <Trophy size={18} color={Colors.success} />
+              </View>
               <Text style={S.infoBannerText}>
                 כשכיתה מגיעה למטרה ובוחרת מתנה — לחץ "רשום מתנה".{'\n'}
                 הנקודות של הכיתה יתאפסו אוטומטית. סמן "מומש" כשהפרס נמסר בפועל.

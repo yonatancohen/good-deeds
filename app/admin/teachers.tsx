@@ -1,8 +1,9 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback } from 'react';
 import { UserCheck, Trash2, Plus, ChevronRight, FileUp, Pencil } from 'lucide-react-native';
-import { Colors, TactileIconBtn } from '@/components/ui';
+import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
+import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import {
   View,
@@ -157,6 +158,7 @@ const S = StyleSheet.create({
 
 export default function AdminTeachersScreen() {
   const { listPad, pageContent } = useAdminLayout();
+  const { isDesktop } = useBreakpoint();
   const { t } = useTranslation();
   const router = useRouter();
   const [teachers, setTeachers] = useState<TeacherWithClasses[]>([]);
@@ -415,24 +417,23 @@ export default function AdminTeachersScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity onPress={() => safeBack(router, '/admin')} style={[AS.backBtn, webPointer]} accessibilityRole="button" accessibilityLabel="חזרה">
+            <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('teachers')}</Text>
           </View>
           <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}
-              style={[AS.addBtn, { backgroundColor: Colors.primaryLight, paddingHorizontal: 12 }, webPointer]}
-              accessibilityRole="button" accessibilityLabel="ייבוא מורים מ-CSV"
-            >
-              <FileUp size={15} color={Colors.primaryDark} />
-              <Text style={AS.addBtnText}>CSV</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setInviteVisible(true)} style={[AS.addBtn, webPointer]} accessibilityRole="button" accessibilityLabel="הוסף מורה חדש">
-              <Plus size={15} color={Colors.primaryDark} />
-              <Text style={AS.addBtnText}>הוספה</Text>
-            </TouchableOpacity>
+            {isDesktop && (
+              <AddBtn
+                onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}
+                light
+                accessibilityLabel="ייבוא מורים מ-CSV"
+              >
+                <FileUp size={18} color={Colors.primaryDark} />
+                <Text style={AS.addBtnText}>CSV</Text>
+              </AddBtn>
+            )}
+            <AddBtn onPress={() => setInviteVisible(true)} accessibilityLabel="הוסף מורה חדש" />
           </View>
         </View>
       </View>

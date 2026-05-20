@@ -11,13 +11,13 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import {
-  Trophy, Users, ChevronDown, ChevronUp, Star, LogIn,
+  Trophy, Users, ChevronDown, ChevronUp, Star, LogIn, Sparkles, PartyPopper,
 } from 'lucide-react-native';
 import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
 import { Skeleton, Colors } from '@/components/ui';
+import { DepthShell } from '@/lib/DepthShell';
 import { useBreakpoint } from '@/lib/responsive';
-import { cardDepthStyle, buttonDepthStatic } from '@/lib/cardDepth';
 import { shadow } from '@/lib/shadow';
 import { getClassColorScheme } from '@/lib/classColors';
 
@@ -93,7 +93,6 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
   const pct = item.goal > 0 ? Math.round((item.total / item.goal) * 100) : 0;
-  const liftY = pressed ? 4 : hovered ? -4 : 0;
   const scheme = getClassColorScheme(item.class.grade || item.class.name);
 
   const hoverProps =
@@ -116,14 +115,14 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
   }
 
   return (
-    <View style={S.cardOuterShell} {...hoverProps}>
-      <View
-        style={[
-          S.cardLift,
-          cardDepthStyle(pressed, hovered),
-          { transform: [{ translateY: liftY }] },
-        ]}
-      >
+    <DepthShell
+      depth={5}
+      borderRadius={20}
+      pressed={pressed}
+      hovered={hovered}
+      outerStyle={S.cardOuterShell}
+      {...hoverProps}
+    >
       <View style={S.card}>
       <TouchableOpacity
         onPress={() => setOpen(v => !v)}
@@ -201,16 +200,14 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
         </View>
       )}
       </View>
-      </View>
-    </View>
+    </DepthShell>
   );
 }
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 function CardSkeleton() {
   return (
-    <View style={S.cardOuterShell}>
-    <View style={[S.cardLift, cardDepthStyle(false, false)]}>
+    <DepthShell depth={5} borderRadius={20} outerStyle={S.cardOuterShell}>
     <View style={S.card}>
 
       {/* mirrors cardTop — row-reverse: name+grade on right, points on left */}
@@ -239,8 +236,7 @@ function CardSkeleton() {
       </View>
 
     </View>
-    </View>
-    </View>
+    </DepthShell>
   );
 }
 
@@ -267,21 +263,29 @@ export default function PublicScreen() {
               <Text style={S.headerSub}>שנת לימודים {settings.current_year}</Text>
             ) : null}
           </View>
-          <View style={S.trophyBox}>
-            <Trophy size={22} color={Colors.primaryDark} />
-          </View>
+          <DepthShell depth={3} borderRadius={14} flat>
+            <View style={S.trophyBox}>
+              <Trophy size={22} color={Colors.primaryDark} />
+            </View>
+          </DepthShell>
         </View>
       </View>
 
       {/* ── Hero (full-bleed yellow strip) ── */}
       <View style={S.hero}>
-        <View style={[S.heroInner, centreContent]}>
+        <View style={[S.heroInner, centreContent, isDesktop && S.heroInnerDesktop]}>
           <View style={[S.blob, { width: 130, height: 130, top: -45, right: -35 }]} />
           <View style={[S.blob, { width: 80, height: 80, bottom: -30, left: -20, opacity: 0.12 }]} />
           <View style={[S.blob, { width: 52, height: 52, top: 16, left: 50, opacity: 0.10 }]} />
           <View style={[S.blob, { width: 38, height: 38, bottom: 18, right: 90, opacity: 0.14 }]} />
-          <Text style={S.heroTitle}>✨ תפסתי אותך בטוב</Text>
-          <Text style={S.heroSub}>ביחד אוספים פונפונים ומגיעים למטרה 🎉</Text>
+          <View style={S.heroTitleRow}>
+            <Text style={[S.heroTitle, isDesktop && S.heroTitleDesktop]}>תפסתי אותך בטוב</Text>
+            <Sparkles size={isDesktop ? 24 : 20} color={Colors.primaryDark} />
+          </View>
+          <View style={S.heroSubRow}>
+            <Text style={S.heroSub}>ביחד אוספים פונפונים ומגיעים למטרה</Text>
+            <PartyPopper size={16} color={Colors.accent} />
+          </View>
         </View>
       </View>
 
@@ -356,7 +360,7 @@ const S = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 14,
   },
@@ -383,7 +387,6 @@ const S = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    ...buttonDepthStatic(3),
   },
 
   // Hero — full-bleed strip; text constrained via heroInner
@@ -396,10 +399,25 @@ const S = StyleSheet.create({
   heroInner: {
     width: '100%',
     paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 28,
+    paddingTop: 14,
+    paddingBottom: 14,
     alignItems: 'flex-end',
     position: 'relative',
+  },
+  heroInnerDesktop: {
+    paddingTop: 22,
+    paddingBottom: 24,
+  },
+  heroTitleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+  },
+  heroSubRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
   },
   blob: {
     position: 'absolute',
@@ -407,18 +425,20 @@ const S = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.22)',
   },
   heroTitle: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.primaryDark,
     fontFamily: 'Baloo2_700Bold',
     textAlign: 'right',
     writingDirection: 'rtl',
   } as any,
+  heroTitleDesktop: {
+    fontSize: 26,
+  } as any,
   heroSub: {
     fontSize: 13,
     color: Colors.muted,
     textAlign: 'right',
-    marginTop: 6,
     writingDirection: 'rtl',
   } as any,
 
@@ -430,13 +450,9 @@ const S = StyleSheet.create({
     gap: 18,
   } as any,
 
-  // Card — static shell catches hover; inner layer lifts + shadow
+  // Card
   cardOuterShell: {
     marginBottom: 14,
-    paddingBottom: 6,
-  },
-  cardLift: {
-    borderRadius: 20,
   },
   card: {
     backgroundColor: Colors.card,

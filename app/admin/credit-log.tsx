@@ -11,9 +11,9 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Pencil, Trash2 } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, Pencil, Trash2, Check } from 'lucide-react-native';
 import AdminSheet from '@/components/AdminSheet';
-import { Colors } from '@/components/ui';
+import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { safeBack } from '@/lib/navigation';
 import { confirmAction } from '@/lib/confirm';
@@ -53,7 +53,12 @@ const S = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
   } as any,
-  chipRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
+  chipRow: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignSelf: 'stretch',
+  },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -62,7 +67,60 @@ const S = StyleSheet.create({
   },
   chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   chipInactive: { backgroundColor: '#fff', borderColor: Colors.border },
-  chipText: { fontSize: 13, fontWeight: '600', writingDirection: 'rtl' } as any,
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as any,
+  selectField: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 48,
+  },
+  selectFieldText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as any,
+  searchInput: {
+    backgroundColor: Colors.bg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    textAlign: 'right',
+    fontSize: 14,
+    writingDirection: 'rtl',
+    marginBottom: 12,
+  } as any,
+  teacherRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    minHeight: 44,
+  },
+  teacherRowActive: { backgroundColor: Colors.primaryLight, borderColor: Colors.primary },
+  teacherRowInactive: { backgroundColor: '#fff', borderColor: Colors.border },
+  teacherRowText: { flex: 1, fontWeight: '600', fontSize: 14, textAlign: 'right', writingDirection: 'rtl' } as any,
+  teacherRowTextActive: { color: Colors.primaryDark },
+  teacherRowTextInactive: { color: '#334155' },
   logRow: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -118,6 +176,8 @@ export default function AdminCreditLogScreen() {
   const [filterTeacherId, setFilterTeacherId] = useState<string | 'all'>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [teacherPickerVisible, setTeacherPickerVisible] = useState(false);
+  const [teacherSearch, setTeacherSearch] = useState('');
 
   const [editing, setEditing] = useState<CreditLogEntry | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -209,6 +269,20 @@ export default function AdminCreditLogScreen() {
     load();
   }, [load]);
 
+  const selectedTeacherLabel = useMemo(() => {
+    if (filterTeacherId === 'all') return 'כל המורים';
+    return teachers.find((t) => t.id === filterTeacherId)?.display_name ?? 'כל המורים';
+  }, [filterTeacherId, teachers]);
+
+  const pickerTeachers = useMemo(() => {
+    const q = teacherSearch.trim().toLowerCase();
+    const sorted = [...teachers].sort((a, b) =>
+      a.display_name.localeCompare(b.display_name, 'he'),
+    );
+    if (!q) return sorted;
+    return sorted.filter((t) => t.display_name.toLowerCase().includes(q));
+  }, [teachers, teacherSearch]);
+
   const filtered = useMemo(() => {
     return entries.filter((e) => {
       if (filterClassId !== 'all' && e.class_id !== filterClassId) return false;
@@ -217,7 +291,18 @@ export default function AdminCreditLogScreen() {
       if (dateTo && e.created_at > `${dateTo}T23:59:59`) return false;
       return true;
     });
-  }, [entries, filterClassId, filterTeacherId, dateFrom, dateTo, teachers]);
+  }, [entries, filterClassId, filterTeacherId, dateFrom, dateTo]);
+
+  function selectTeacher(id: string | 'all') {
+    setFilterTeacherId(id);
+    setTeacherPickerVisible(false);
+    setTeacherSearch('');
+  }
+
+  function openTeacherPicker() {
+    setTeacherSearch('');
+    setTeacherPickerVisible(true);
+  }
 
   function openEdit(entry: CreditLogEntry) {
     setEditing(entry);
@@ -267,14 +352,13 @@ export default function AdminCreditLogScreen() {
       <View style={AS.header}>
         <View style={[AS.headerInner, pageContent]}>
           <View style={AS.headerLeft}>
-            <TouchableOpacity
+            <TactileIconBtn
               onPress={() => safeBack(router, '/admin')}
-              style={[AS.backBtn, webPointer]}
-              accessibilityRole="button"
+              style={AS.backBtn}
               accessibilityLabel="חזרה"
             >
               <ChevronRight size={20} color={Colors.primaryDark} />
-            </TouchableOpacity>
+            </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">יומן זיכויים</Text>
           </View>
         </View>
@@ -287,48 +371,43 @@ export default function AdminCreditLogScreen() {
           <View style={pageContent}>
             <View style={S.filters}>
               <Text style={S.filterLabel}>כיתה</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={S.chipRow}>
+              <View style={S.chipRow}>
+                <TouchableOpacity
+                  onPress={() => setFilterClassId('all')}
+                  style={[S.chip, filterClassId === 'all' ? S.chipActive : S.chipInactive, webPointer]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: filterClassId === 'all' }}
+                  accessibilityLabel="כל הכיתות"
+                >
+                  <Text style={[S.chipText, { color: filterClassId === 'all' ? '#fff' : '#334155' }]}>הכל</Text>
+                </TouchableOpacity>
+                {classes.map((c) => (
                   <TouchableOpacity
-                    onPress={() => setFilterClassId('all')}
-                    style={[S.chip, filterClassId === 'all' ? S.chipActive : S.chipInactive, webPointer]}
+                    key={c.id}
+                    onPress={() => setFilterClassId(c.id)}
+                    style={[S.chip, filterClassId === c.id ? S.chipActive : S.chipInactive, webPointer]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: filterClassId === c.id }}
+                    accessibilityLabel={c.name}
                   >
-                    <Text style={[S.chipText, { color: filterClassId === 'all' ? '#fff' : '#334155' }]}>הכל</Text>
+                    <Text style={[S.chipText, { color: filterClassId === c.id ? '#fff' : '#334155' }]}>
+                      {c.name}
+                    </Text>
                   </TouchableOpacity>
-                  {classes.map((c) => (
-                    <TouchableOpacity
-                      key={c.id}
-                      onPress={() => setFilterClassId(c.id)}
-                      style={[S.chip, filterClassId === c.id ? S.chipActive : S.chipInactive, webPointer]}
-                    >
-                      <Text style={[S.chipText, { color: filterClassId === c.id ? '#fff' : '#334155' }]}>{c.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+                ))}
+              </View>
 
               <Text style={[S.filterLabel, { marginTop: 8 }]}>מורה</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={S.chipRow}>
-                  <TouchableOpacity
-                    onPress={() => setFilterTeacherId('all')}
-                    style={[S.chip, filterTeacherId === 'all' ? S.chipActive : S.chipInactive, webPointer]}
-                  >
-                    <Text style={[S.chipText, { color: filterTeacherId === 'all' ? '#fff' : '#334155' }]}>הכל</Text>
-                  </TouchableOpacity>
-                  {teachers.map((t) => (
-                    <TouchableOpacity
-                      key={t.id}
-                      onPress={() => setFilterTeacherId(t.id)}
-                      style={[S.chip, filterTeacherId === t.id ? S.chipActive : S.chipInactive, webPointer]}
-                    >
-                      <Text style={[S.chipText, { color: filterTeacherId === t.id ? '#fff' : '#334155' }]}>
-                        {t.display_name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <TouchableOpacity
+                onPress={openTeacherPicker}
+                style={[S.selectField, webPointer]}
+                accessibilityRole="button"
+                accessibilityLabel={`מורה: ${selectedTeacherLabel}`}
+                accessibilityHint="פתח רשימת מורים"
+              >
+                <Text style={S.selectFieldText}>{selectedTeacherLabel}</Text>
+                <ChevronDown size={18} color={Colors.muted} />
+              </TouchableOpacity>
 
               <Text style={[S.filterLabel, { marginTop: 8 }]}>טווח תאריכים (YYYY-MM-DD)</Text>
               <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
@@ -359,7 +438,9 @@ export default function AdminCreditLogScreen() {
               filtered.map((e) => (
                 <View key={`${e.kind}-${e.id}`} style={S.logRow}>
                   <View style={S.logTop}>
-                    <Text style={S.logClass}>{e.class_name}</Text>
+                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                      <Text style={S.logClass}>{e.class_name}</Text>
+                    </View>
                     <Text style={S.logDate}>{moment(e.created_at).format('DD/MM/YY HH:mm')}</Text>
                   </View>
                   <Text style={S.logMeta}>
@@ -391,6 +472,84 @@ export default function AdminCreditLogScreen() {
           </View>
         </ScrollView>
       )}
+
+      <AdminSheet
+        visible={teacherPickerVisible}
+        onClose={() => {
+          setTeacherPickerVisible(false);
+          setTeacherSearch('');
+        }}
+        maxHeightFraction={0.75}
+      >
+        <Text style={AS.sheetTitle} accessibilityRole="header">בחירת מורה</Text>
+
+        <TextInput
+          value={teacherSearch}
+          onChangeText={setTeacherSearch}
+          placeholder="חיפוש מורה..."
+          placeholderTextColor="#94a3b8"
+          style={S.searchInput}
+          textAlign="right"
+          accessibilityLabel="חיפוש מורה"
+        />
+
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity
+            onPress={() => selectTeacher('all')}
+            style={[
+              S.teacherRow,
+              filterTeacherId === 'all' ? S.teacherRowActive : S.teacherRowInactive,
+              webPointer,
+            ]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: filterTeacherId === 'all' }}
+            accessibilityLabel="כל המורים"
+          >
+            <Text
+              style={[
+                S.teacherRowText,
+                filterTeacherId === 'all' ? S.teacherRowTextActive : S.teacherRowTextInactive,
+              ]}
+            >
+              כל המורים
+            </Text>
+            {filterTeacherId === 'all' ? (
+              <Check size={18} color={Colors.primaryDark} />
+            ) : (
+              <View style={{ width: 18 }} />
+            )}
+          </TouchableOpacity>
+
+          {pickerTeachers.length === 0 ? (
+            <Text style={[S.logMeta, { marginBottom: 12 }]}>לא נמצאו מורים</Text>
+          ) : (
+            pickerTeachers.map((t) => {
+              const active = filterTeacherId === t.id;
+              return (
+                <TouchableOpacity
+                  key={t.id}
+                  onPress={() => selectTeacher(t.id)}
+                  style={[S.teacherRow, active ? S.teacherRowActive : S.teacherRowInactive, webPointer]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={t.display_name}
+                >
+                  <Text
+                    style={[S.teacherRowText, active ? S.teacherRowTextActive : S.teacherRowTextInactive]}
+                  >
+                    {t.display_name}
+                  </Text>
+                  {active ? (
+                    <Check size={18} color={Colors.primaryDark} />
+                  ) : (
+                    <View style={{ width: 18 }} />
+                  )}
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
+      </AdminSheet>
 
       <AdminSheet visible={!!editing} onClose={() => setEditing(null)}>
         <Text style={AS.sheetTitle} accessibilityRole="header">עריכת זיכוי</Text>
