@@ -86,28 +86,10 @@ const S = StyleSheet.create({
   // ── Scroll content ──
   scrollContent: { paddingBottom: 40 },
 
-  // ── Section label row ──
-  sectionRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: GRID_PAD,
-    paddingTop: 24,
-    paddingBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 13, fontWeight: '700', color: Colors.muted,
-    letterSpacing: 0.6,
-    textAlign: 'right', writingDirection: 'rtl',
-  } as any,
-  classCount: {
-    fontSize: 12, color: Colors.outline,
-    textAlign: 'left', writingDirection: 'rtl',
-  } as any,
-
   // ── Card grid (layout applied inline for responsive cols) ──
   grid: {
     paddingHorizontal: GRID_PAD,
+    paddingTop: 24,
   },
 
   // ── Class card ──
@@ -460,27 +442,18 @@ export default function TeacherHome() {
             </View>
 
           ) : (
-            <>
-              {/* Section label */}
-              <View style={S.sectionRow}>
-                <Text style={S.sectionTitle}>הכיתות שלי</Text>
-                <Text style={S.classCount}>{classes.length} כיתות</Text>
-              </View>
-
-              {/* Grid */}
-              <View style={[S.grid, gridStyle]}>
-                {classes.map((item) => (
-                  <TeacherClassCard
-                    key={item.class.id}
-                    item={item}
-                    goal={goal}
-                    compact={cols >= 3}
-                    cardWidth={cardWidth}
-                    onPress={() => router.push(`/teacher/${item.class.id}`)}
-                  />
-                ))}
-              </View>
-            </>
+            <View style={[S.grid, gridStyle]}>
+              {classes.map((item) => (
+                <TeacherClassCard
+                  key={item.class.id}
+                  item={item}
+                  goal={goal}
+                  compact={cols >= 3}
+                  cardWidth={cardWidth}
+                  onPress={() => router.push(`/teacher/${item.class.id}`)}
+                />
+              ))}
+            </View>
           )}
         </View>
       </ScrollView>

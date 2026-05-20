@@ -20,6 +20,16 @@ export interface CreditEventWithDetails {
   given_by_user: Pick<UserRow, 'id' | 'display_name'> | null;
 }
 
+export interface ClassCreditEventWithDetails {
+  id: string;
+  class_id: string;
+  amount: number;
+  note: string | null;
+  given_by: string;
+  created_at: string;
+  given_by_user: Pick<UserRow, 'id' | 'display_name'> | null;
+}
+
 export interface StudentWithCredits {
   student: StudentRow;
   credits: number;
@@ -28,6 +38,7 @@ export interface StudentWithCredits {
 interface UseClassStudents {
   students: StudentWithCredits[];
   creditEvents: CreditEventWithDetails[];
+  classCreditEvents: ClassCreditEventWithDetails[];
   /** Sum of class_credit_events since last redemption (not attributed to students) */
   classLevelCredits: number;
   loading: boolean;
@@ -42,6 +53,7 @@ interface UseClassStudents {
 export function useClassStudents(classId: string | null): UseClassStudents {
   const [students, setStudents] = useState<StudentWithCredits[]>([]);
   const [creditEvents, setCreditEvents] = useState<CreditEventWithDetails[]>([]);
+  const [classCreditEvents, setClassCreditEvents] = useState<ClassCreditEventWithDetails[]>([]);
   const [classLevelCredits, setClassLevelCredits] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +65,7 @@ export function useClassStudents(classId: string | null): UseClassStudents {
     if (!classId) {
       setStudents([]);
       setCreditEvents([]);
+      setClassCreditEvents([]);
       setClassLevelCredits(0);
       hasData.current = false;
       return;
@@ -80,8 +93,17 @@ export function useClassStudents(classId: string | null): UseClassStudents {
       // Class-level credits since last redemption
       let classCreditsQuery = supabase
         .from('class_credit_events')
-        .select('amount, created_at')
-        .eq('class_id', classId);
+        .select(`
+          id,
+          class_id,
+          amount,
+          note,
+          given_by,
+          created_at,
+          users!class_credit_events_given_by_fkey ( id, display_name )
+        `)
+        .eq('class_id', classId)
+        .order('created_at', { ascending: false });
 
       if (lastRedemptionAt) {
         classCreditsQuery = classCreditsQuery.gt('created_at', lastRedemptionAt);
@@ -90,14 +112,33 @@ export function useClassStudents(classId: string | null): UseClassStudents {
       const classCreditsRes = await classCreditsQuery;
       if (classCreditsRes.error) throw classCreditsRes.error;
 
-      const classCreditsTotal = (classCreditsRes.data ?? []).reduce(
-        (sum, e) => sum + e.amount,
-        0,
-      );
+      type ClassCreditRow = {
+        id: string;
+        class_id: string;
+        amount: number;
+        note: string | null;
+        given_by: string | null;
+        created_at: string;
+        users: Pick<UserRow, 'id' | 'display_name'> | null;
+      };
+
+      const rawClassCredits = (classCreditsRes.data ?? []) as unknown as ClassCreditRow[];
+      const classEvents: ClassCreditEventWithDetails[] = rawClassCredits.map((c) => ({
+        id: c.id,
+        class_id: c.class_id,
+        amount: c.amount,
+        note: c.note,
+        given_by: c.given_by ?? '',
+        created_at: c.created_at,
+        given_by_user: c.users ?? null,
+      }));
+
+      const classCreditsTotal = classEvents.reduce((sum, e) => sum + e.amount, 0);
 
       if (classStudents.length === 0) {
         setStudents([]);
         setCreditEvents([]);
+        setClassCreditEvents([]);
         setClassLevelCredits(classCreditsTotal);
         setLoading(false);
         return;
@@ -175,6 +216,7 @@ export function useClassStudents(classId: string | null): UseClassStudents {
 
       setStudents(studentsWithCredits);
       setCreditEvents(events);
+      setClassCreditEvents(classEvents);
       setClassLevelCredits(classCreditsTotal);
       hasData.current = true;
       setError(null);
@@ -204,5 +246,5 @@ export function useClassStudents(classId: string | null): UseClassStudents {
     };
   }, [load, classId]);
 
-  return { students, creditEvents, classLevelCredits, loading, error, refetch: load };
+  return { students, creditEvents, classCreditEvents, classLevelCredits, loading, error, refetch: load };
 }

@@ -110,16 +110,23 @@ function DeedCube({
           <View style={S.cubeActions}>
             <TactileIconBtn
               onPress={onEdit}
-              style={[AS.iconBtn, S.cubeActionCompact]}
-              shadowColor="rgba(120,89,0,0.2)"
+              depth={0}
+              flat
+              style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
+              shadowColor="transparent"
               accessibilityLabel={`ערוך ${deed.name}`}
             >
-              <Pencil size={14} color={Colors.primaryDark} />
+              <Pencil size={14} color={scheme.text} />
             </TactileIconBtn>
             <TactileIconBtn
               onPress={onDelete}
-              style={[AS.iconBtnDanger, S.cubeActionCompact]}
-              shadowColor="rgba(186,26,26,0.2)"
+              depth={0}
+              flat
+              style={[
+                S.cubeActionBtn,
+                deed.is_active ? S.cubeActionDanger : S.cubeActionDangerMuted,
+              ]}
+              shadowColor="transparent"
               accessibilityLabel={`מחק ${deed.name}`}
             >
               <Trash2 size={14} color={Colors.danger} />
@@ -418,10 +425,22 @@ const S = StyleSheet.create({
     justifyContent: 'center',
   },
   cubeActions: { flexDirection: 'row-reverse', gap: 6 },
-  cubeActionCompact: {
+  cubeActionBtn: {
     width: 32,
     height: 32,
     borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  cubeActionDanger: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderColor: 'rgba(255,255,255,0.45)',
+  },
+  cubeActionDangerMuted: {
+    backgroundColor: Colors.dangerLight,
+    borderColor: 'rgba(186,26,26,0.12)',
   },
 
   cubeBody: {

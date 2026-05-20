@@ -8,7 +8,7 @@ import {
   SafeAreaView, View, Text, TouchableOpacity,
   TextInput, StyleSheet, Platform,
 } from 'react-native';
-import { PomPomJar } from '@/components/PomPomJar';
+import { PomPomJar } from '@/components/PomPomJarAnimated';
 import { Colors } from '@/components/ui';
 
 const GOAL = 100;

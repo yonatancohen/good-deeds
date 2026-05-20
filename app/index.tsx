@@ -20,50 +20,10 @@ import { DepthShell } from '@/lib/DepthShell';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { getClassColorScheme } from '@/lib/classColors';
+import { PompomJar, POMPOM_JAR_SM } from '@/components/PomPomJar';
 
 const webPtr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
 const MAX_CONTENT_W = 900;
-
-// ── Pompom jar ────────────────────────────────────────────────────────────────
-const POMPOM_COLORS = ['#EF4444','#F97316','#EAB308','#22C55E','#3B82F6','#8B5CF6','#EC4899','#06B6D4'];
-
-function PompomJar({ value, max }: { value: number; max: number }) {
-  const pct    = max > 0 ? Math.min(value / max, 1) : 0;
-  const fillH  = Math.round(pct * 38);          // inner fill height (max 38px)
-  const dots   = Math.max(0, Math.round(pct * 9)); // pompom dots inside
-
-  return (
-    <View style={{ alignItems: 'center', gap: 2 }}>
-      {/* Lid */}
-      <View style={{ width: 26, height: 5, backgroundColor: Colors.border, borderRadius: 3 }} />
-      {/* Jar body */}
-      <View style={{
-        width: 34, height: 44, borderWidth: 2, borderColor: Colors.border,
-        borderRadius: 6, overflow: 'hidden', backgroundColor: Colors.primarySurface,
-        justifyContent: 'flex-end',
-      }}>
-        {pct > 0 && (
-          <View style={{
-            height: fillH, backgroundColor: Colors.primaryLight,
-            flexDirection: 'row', flexWrap: 'wrap-reverse',
-            alignContent: 'flex-start', padding: 2, gap: 1,
-          }}>
-            {Array.from({ length: dots }, (_, i) => (
-              <View key={i} style={{
-                width: 7, height: 7, borderRadius: 4,
-                backgroundColor: POMPOM_COLORS[i % POMPOM_COLORS.length],
-              }} />
-            ))}
-          </View>
-        )}
-      </View>
-      {/* Count label */}
-      <Text style={{ fontSize: 10, fontWeight: '700', color: Colors.primary, fontFamily: 'Baloo2_700Bold' } as any}>
-        {value}
-      </Text>
-    </View>
-  );
-}
 
 // ── Progress bar ───────────────────────────────────────────────────────────────
 function ProgBar({ value, max }: { value: number; max: number }) {
@@ -229,8 +189,8 @@ function CardSkeleton() {
         </View>
         {/* mirrors PompomJar: lid + body + count */}
         <View style={{ alignItems: 'center', gap: 2 }}>
-          <Skeleton width={26} height={5} style={{ borderRadius: 3 }} />
-          <Skeleton width={34} height={44} style={{ borderRadius: 6 }} />
+          <Skeleton width={POMPOM_JAR_SM.lidW} height={POMPOM_JAR_SM.lidH} style={{ borderRadius: 3 }} />
+          <Skeleton width={POMPOM_JAR_SM.jarW} height={POMPOM_JAR_SM.jarH} style={{ borderRadius: 6 }} />
           <Skeleton width={18} height={11} />
         </View>
       </View>

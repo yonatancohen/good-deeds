@@ -3,7 +3,7 @@
  *
  * Layout (mobile, scrollable):
  *   1. Back header
- *   2. PomPomJar (class total vs. goal) — centred, top of content
+ *   2. PompomJar (class total vs. goal) — centred, top of content
  *   3. "הוספת נקודות לכיתה" CTA
  *   4. Student list (each row: name, credits, per-student actions)
  */
@@ -25,13 +25,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronRight, Plus, ClipboardList, Users, Trash2, Pencil, Trophy, Upload } from 'lucide-react-native';
 
-import { PomPomJar } from '@/components/PomPomJar';
+import { PompomJar } from '@/components/PomPomJar';
 import AdminSheet from '@/components/AdminSheet';
 import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
 import { Colors, TactileIconBtn, AddBtn, DepthPressable } from '@/components/ui';
 import { AS } from '@/lib/adminStyles';
 
-import { useClassStudents, CreditEventWithDetails } from '@/hooks/useClassStudents';
+import { useClassStudents, CreditEventWithDetails, ClassCreditEventWithDetails } from '@/hooks/useClassStudents';
 import { useDeeds } from '@/hooks/useDeeds';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -283,6 +283,232 @@ function ClassCreditSheet({
   );
 }
 
+// ── Edit class credit entry ───────────────────────────────────────────────────
+
+interface EditClassCreditSheetProps {
+  visible: boolean;
+  event: ClassCreditEventWithDetails | null;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function EditClassCreditSheet({ visible, event, onClose, onSaved }: EditClassCreditSheetProps) {
+  const [amount, setAmount] = useState<number | null>(null);
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (event) {
+      setAmount(event.amount);
+      setNote(event.note ?? '');
+    }
+  }, [event]);
+
+  async function handleSubmit() {
+    if (!event || !amount) return;
+    setSubmitting(true);
+    const { error } = await supabase
+      .from('class_credit_events')
+      .update({ amount, note: note.trim() || null })
+      .eq('id', event.id);
+    setSubmitting(false);
+    if (error) Alert.alert('שגיאה', error.message);
+    else onSaved();
+  }
+
+  function handleClose() {
+    setAmount(null);
+    setNote('');
+    onClose();
+  }
+
+  const canConfirm = !!amount && !submitting;
+
+  return (
+    <AdminSheet visible={visible} onClose={handleClose}>
+      <Text style={S.sheetTitle} accessibilityRole="header">עריכת נקודות לכיתה</Text>
+      <Text style={S.sheetSub}>עדכון כמות או הערה</Text>
+
+      <Text style={S.sectionLabel}>כמות נקודות</Text>
+      <View style={S.amountRow}>
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+          const active = amount === n;
+          return (
+            <TouchableOpacity
+              key={n}
+              onPress={() => setAmount(n)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active }}
+              accessibilityLabel={`${n} נקודות`}
+              style={[S.amountBtn, active ? S.amountBtnActive : S.amountBtnInactive, ptr]}
+            >
+              <Text style={[S.amountBtnText, active && S.amountBtnTextActive]}>{n}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <Text style={[S.sectionLabel, { marginTop: 8 }]}>הערה (אופציונלי)</Text>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder="הערה"
+        placeholderTextColor="#94a3b8"
+        textAlign="right"
+        multiline
+        numberOfLines={2}
+        style={S.noteInput}
+        accessibilityLabel="הערה"
+      />
+
+      <View style={[AS.sheetBtns, { marginTop: 4 }]}>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={!canConfirm}
+          style={[canConfirm ? AS.saveBtn : AS.saveBtnDisabled, ptr]}
+          accessibilityRole="button"
+          accessibilityLabel="שמור שינויים"
+        >
+          {submitting ? (
+            <ActivityIndicator color={Colors.primaryDark} />
+          ) : (
+            <Text style={AS.saveBtnText}>שמור</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleClose} style={[AS.cancelBtn, ptr]} accessibilityRole="button" accessibilityLabel="ביטול">
+          <Text style={AS.cancelBtnText}>ביטול</Text>
+        </TouchableOpacity>
+      </View>
+    </AdminSheet>
+  );
+}
+
+// ── Class credit history (inline list) ────────────────────────────────────────
+
+interface ClassCreditHistoryProps {
+  events: ClassCreditEventWithDetails[];
+  currentUserId: string;
+  isAdmin: boolean;
+  onEdit: (event: ClassCreditEventWithDetails) => void;
+  onDeleted: () => void;
+}
+
+function ClassCreditHistory({
+  events,
+  currentUserId,
+  isAdmin,
+  onEdit,
+  onDeleted,
+}: ClassCreditHistoryProps) {
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  async function handleDelete(eventId: string) {
+    confirmAction(
+      'מחיקת נקודות',
+      'למחוק את הנקודות שניתנו לכיתה?',
+      async () => {
+        setDeleting(eventId);
+        const { error } = await supabase.from('class_credit_events').delete().eq('id', eventId);
+        setDeleting(null);
+        if (error) Alert.alert('שגיאה', error.message);
+        else onDeleted();
+      },
+    );
+  }
+
+  if (events.length === 0) return null;
+
+  return (
+    <View style={S.classHistorySection}>
+      <View style={S.studentsHeaderRow}>
+        <Text style={S.studentsLabel}>
+          נקודות לכיתה ({events.length})
+        </Text>
+      </View>
+      {events.map((item) => {
+        const canManage = isAdmin || item.given_by === currentUserId;
+        return (
+          <ClassCreditItem
+            key={item.id}
+            item={item}
+            canManage={canManage}
+            deleting={deleting === item.id}
+            onEdit={() => onEdit(item)}
+            onDelete={() => handleDelete(item.id)}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+interface ClassCreditItemProps {
+  item: ClassCreditEventWithDetails;
+  canManage: boolean;
+  deleting: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function ClassCreditItem({
+  item,
+  canManage,
+  deleting,
+  onEdit,
+  onDelete,
+}: ClassCreditItemProps) {
+  const meta = `${moment(item.created_at).fromNow()} · ${item.given_by_user?.display_name ?? 'מורה'}`;
+
+  return (
+    <View
+      style={[AS.row, S.listRowInset]}
+      accessibilityLabel={`${item.amount} נקודות לכיתה, ${moment(item.created_at).fromNow()}`}
+    >
+      <View style={S.studentAvatar}>
+        <Text
+          style={[
+            S.studentAvatarText,
+            item.amount >= 10 && S.classCreditAvatarSm,
+          ]}
+        >
+          +{item.amount}
+        </Text>
+      </View>
+      <View style={AS.rowLeft}>
+        <Text style={AS.rowTitle}>נקודות לכיתה</Text>
+        {item.note ? <Text style={S.classCreditNote}>{item.note}</Text> : null}
+        <Text style={AS.rowSub}>
+          {item.amount} נקודות · {meta}
+        </Text>
+      </View>
+      {canManage && (
+        <View style={AS.rowActions}>
+          <TactileIconBtn
+            onPress={onEdit}
+            style={AS.iconBtn}
+            shadowColor="rgba(79,70,50,0.12)"
+            accessibilityLabel="ערוך נקודות לכיתה"
+          >
+            <Pencil size={16} color={Colors.muted} />
+          </TactileIconBtn>
+          <TactileIconBtn
+            onPress={() => { if (!deleting) onDelete(); }}
+            style={AS.iconBtnDanger}
+            shadowColor="rgba(186,26,26,0.18)"
+            accessibilityLabel="מחק נקודות לכיתה"
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color={Colors.danger} />
+            ) : (
+              <Trash2 size={16} color={Colors.danger} />
+            )}
+          </TactileIconBtn>
+        </View>
+      )}
+    </View>
+  );
+}
+
 // ── History Sheet (per student) ───────────────────────────────────────────────
 
 interface HistorySheetProps {
@@ -390,7 +616,7 @@ function StudentItem({ student, credits, onGiveCredit, onViewHistory, onEdit }: 
   const { first_name, last_name } = student;
   return (
     <View
-      style={AS.row}
+      style={[AS.row, S.listRowInset]}
       accessibilityLabel={`${first_name} ${last_name} — ${credits} נקודות`}
     >
       <View style={S.studentAvatar}>
@@ -456,6 +682,7 @@ export default function ClassDetailScreen() {
   const {
     students,
     creditEvents,
+    classCreditEvents,
     classLevelCredits,
     loading: studentsLoading,
     error: studentsError,
@@ -471,6 +698,7 @@ export default function ClassDetailScreen() {
 
   // Sheet visibility
   const [classCreditVisible, setClassCreditVisible] = useState(false);
+  const [editingClassCredit, setEditingClassCredit] = useState<ClassCreditEventWithDetails | null>(null);
   const [giveCreditStudent,  setGiveCreditStudent]  = useState<StudentRow | null>(null);
   const [historyStudent,     setHistoryStudent]     = useState<StudentRow | null>(null);
   const [studentSheetVisible,setStudentSheetVisible]= useState(false);
@@ -495,6 +723,12 @@ export default function ClassDetailScreen() {
   const studentTotal = visibleStudents.reduce((sum, s) => sum + s.credits, 0);
   const classTotal   = studentTotal + classLevelCredits + localClassCredits;
   const cappedTotal  = Math.min(classTotal, goal);
+
+  function refreshCredits() {
+    setLocalClassCredits(0);
+    setLocalCreditAdjustments({});
+    refetch();
+  }
 
   // ── Student CRUD ──────────────────────────────────────────────────────────
   function openAddStudent() {
@@ -593,7 +827,7 @@ export default function ClassDetailScreen() {
 
         {/* ── 1. PomPom Jar ── */}
         <View style={S.jarSection}>
-          <PomPomJar current={cappedTotal} goal={goal} />
+          <PompomJar value={cappedTotal} max={goal} size="lg" showHeroStats />
           {cappedTotal >= goal && (
             <View style={S.goalReachedBadge}>
               <Trophy size={14} color="#065f46" />
@@ -616,6 +850,15 @@ export default function ClassDetailScreen() {
             <Text style={S.classCtaBtnAltText}>הוספת נקודות לכיתה</Text>
           </DepthPressable>
         </View>
+
+        {/* ── 2b. Class credit history ── */}
+        <ClassCreditHistory
+          events={classCreditEvents}
+          currentUserId={user?.id ?? ''}
+          isAdmin={isAdmin}
+          onEdit={setEditingClassCredit}
+          onDeleted={refreshCredits}
+        />
 
         {/* ── 3. Student list ── */}
         <View style={S.studentsSection}>
@@ -695,10 +938,19 @@ export default function ClassDetailScreen() {
         userId={user?.id ?? ''}
         classId={classId}
         onClose={() => setClassCreditVisible(false)}
-        onSuccess={(amt) => {
+        onSuccess={() => {
           setClassCreditVisible(false);
-          setLocalClassCredits((prev) => prev + amt);
-          refetch();
+          refreshCredits();
+        }}
+      />
+
+      <EditClassCreditSheet
+        visible={!!editingClassCredit}
+        event={editingClassCredit}
+        onClose={() => setEditingClassCredit(null)}
+        onSaved={() => {
+          setEditingClassCredit(null);
+          refreshCredits();
         }}
       />
 
@@ -820,10 +1072,12 @@ const S = StyleSheet.create({
   // ── Jar section ──
   jarSection: {
     alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 24,
+    justifyContent: 'center',
+    paddingVertical: 32,
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.jarBand,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
@@ -835,7 +1089,7 @@ const S = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginTop: 16,
+    marginTop: 12,
   },
   goalReachedText: {
     color: '#065f46', fontWeight: '700', fontSize: 14,
@@ -847,6 +1101,22 @@ const S = StyleSheet.create({
     marginTop: 20,
     marginBottom: 8,
   },
+  classHistorySection: {
+    paddingTop: 20,
+  },
+  listRowInset: {
+    marginHorizontal: 16,
+  },
+  classCreditNote: {
+    fontSize: 12,
+    color: Colors.muted,
+    textAlign: 'right',
+    marginTop: 2,
+    writingDirection: 'rtl',
+  } as any,
+  classCreditAvatarSm: {
+    fontSize: 11,
+  } as any,
   classCtaBtnAlt: {
     flexDirection: 'row-reverse',
     alignItems: 'center',

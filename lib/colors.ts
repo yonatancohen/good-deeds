@@ -58,6 +58,8 @@ export const Colors = {
   // ── Surfaces & layout ─────────────────────────────────────────────────────
   /** Warm off-white page background */
   bg:          '#fff8f2',
+  /** Soft warm tint — jar hero band (between white header and page bg) */
+  jarBand:     '#fff3e8',
   /** White card face */
   card:        '#ffffff',
   /** Slightly tinted container surface (inside cards, modals) */

@@ -103,7 +103,8 @@ function GiftCube({
           <View style={S.cubeActions}>
             <TactileIconBtn
               onPress={onEdit}
-              depth={1}
+              depth={0}
+              flat
               style={[S.cubeActionBtn, { backgroundColor: scheme.bubble }]}
               shadowColor="transparent"
               accessibilityLabel={`ערוך ${gift.name}`}
@@ -112,14 +113,13 @@ function GiftCube({
             </TactileIconBtn>
             <TactileIconBtn
               onPress={onDelete}
-              depth={1}
+              depth={0}
+              flat
               style={[
                 S.cubeActionBtn,
                 gift.is_active ? S.cubeActionDanger : S.cubeActionDangerMuted,
               ]}
-              shadowColor={
-                gift.is_active ? 'rgba(186,26,26,0.12)' : 'rgba(186,26,26,0.15)'
-              }
+              shadowColor="transparent"
               accessibilityLabel={`מחק ${gift.name}`}
             >
               <Trash2 size={14} color={Colors.danger} />

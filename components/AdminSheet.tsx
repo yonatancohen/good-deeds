@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Keyboard,
   Modal,
   PanResponder,
   Platform,
@@ -45,6 +46,7 @@ export default function AdminSheet({
   // ── Shared ────────────────────────────────────────────────────────────────
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const [modalMounted, setModalMounted] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // ── Mobile-only ───────────────────────────────────────────────────────────
   const sheetTranslateY = useRef(new Animated.Value(SLIDE_HEIGHT)).current;
@@ -98,6 +100,26 @@ export default function AdminSheet({
         });
       }
     }
+  }, [visible, isDesktop]);
+
+  // Lift bottom sheet when the keyboard opens (mobile only).
+  useEffect(() => {
+    if (isDesktop || !visible) {
+      setKeyboardHeight(0);
+      return;
+    }
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const onShow = Keyboard.addListener(showEvt, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const onHide = Keyboard.addListener(hideEvt, () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
   }, [visible, isDesktop]);
 
   const panResponder = useRef(
@@ -214,6 +236,7 @@ export default function AdminSheet({
             S.sheet,
             { maxHeight: `${maxHeightFraction * 100}%` as any },
             { transform: [{ translateY }] },
+            keyboardHeight > 0 && { marginBottom: keyboardHeight },
           ]}
           accessibilityRole="none"
           {...(Platform.OS === 'web' ? { role: 'dialog', 'aria-modal': true } as any : {})}
@@ -227,7 +250,14 @@ export default function AdminSheet({
             <View style={S.handle} />
           </View>
 
-          {children}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            contentContainerStyle={S.sheetScrollContent}
+          >
+            {children}
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -252,8 +282,10 @@ const S = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingBottom: 40,
     overflow: 'hidden',
+  },
+  sheetScrollContent: {
+    paddingBottom: 40,
   },
   handleArea: {
     alignItems: 'center',

@@ -18,6 +18,7 @@
     },
     "android": {
       "package": "com.gooddeeds.app",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#ecdbfb",
         "foregroundImage": "./assets/android-icon-foreground.png",
