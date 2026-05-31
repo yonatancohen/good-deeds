@@ -13,7 +13,6 @@ import Animated, {
 
 export const SPLASH_BG = '#ecdbfb';
 
-const FADE_IN_MS = 280;
 const FADE_OUT_MS = 650;
 /** Minimum time the artwork stays fully visible after fade-in (before fade-out). */
 const MIN_VISIBLE_MS = 2000;
@@ -25,8 +24,8 @@ interface AppSplashProps {
 }
 
 export function AppSplash({ ready, onHidden }: AppSplashProps) {
-  const opacity = useSharedValue(0.18);
-  const scale = useSharedValue(0.97);
+  const opacity = useSharedValue(1);
+  const scale = useSharedValue(1);
   const mountedAt = useRef(Date.now());
   const finished = useRef(false);
 
@@ -35,11 +34,6 @@ export function AppSplash({ ready, onHidden }: AppSplashProps) {
     finished.current = true;
     onHidden();
   };
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: FADE_IN_MS });
-    scale.value = withTiming(1, { duration: FADE_IN_MS });
-  }, []);
 
   useEffect(() => {
     if (!ready) return;

@@ -25,9 +25,8 @@ export default function RootLayout() {
     injectWebCSS();
   }, []);
 
-  const { isMobile } = useBreakpoint();
+  const { width } = useBreakpoint();
   const [splashHidden, setSplashHidden] = useState(false);
-  const showSplash = !splashHidden && (Platform.OS !== 'web' || isMobile);
 
   const [fontsLoaded] = useFonts({
     Baloo2_700Bold,
@@ -37,6 +36,11 @@ export default function RootLayout() {
     Nunito_600SemiBold,
     Nunito_700Bold,
   });
+
+  // On web, width can be 0 on first paint — treat as mobile so we don't flash app UI before splash.
+  const usesSplash = Platform.OS !== 'web' || width < 768;
+  const showSplash = usesSplash && !splashHidden;
+  const showAppContent = fontsLoaded && (!usesSplash || splashHidden);
 
   // Hand off to branded AppSplash as soon as it mounts (don't wait for fonts).
   useEffect(() => {
@@ -59,7 +63,7 @@ export default function RootLayout() {
         Platform.OS === 'web' && styles.rootWeb,
       ]}
     >
-      {fontsLoaded ? (
+      {showAppContent ? (
         <SafeAreaProvider>
           <AuthProvider>
             <ConfirmProvider>

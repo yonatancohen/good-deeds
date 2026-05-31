@@ -38,7 +38,7 @@ The `deploy:setup` script will:
 2. Install `vercel` and `eas-cli` globally
 3. Log you in to Vercel (browser opens)
 4. Link this folder to a Vercel project
-5. Push your Supabase env vars to Vercel (production + preview + development)
+5. Push your Supabase env vars to Vercel (production + preview)
 6. Log you in to Expo
 7. Initialize the EAS project (writes `projectId` into `app.json`)
 8. Create the `production` and `preview` OTA channels
@@ -73,7 +73,7 @@ Routing is rewritten so `expo-router` deep links work (everything that isn't a s
    - `EXPO_PUBLIC_SUPABASE_URL`
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
    - `EXPO_PUBLIC_SITE_URL` (production URL, for teacher invite email links)
-   - (All three, for Production + Preview + Development)
+   - (All three, for Production + Preview only — not Development; use Preview for local `vercel dev` testing)
 5. From now on, every `git push` to `main` auto-deploys to production. Every `git push` to a branch creates a preview URL.
 
 > If you ran `npm run deploy:setup` first, the env vars are already pushed via CLI — you can skip step 4.

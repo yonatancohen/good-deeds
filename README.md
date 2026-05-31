@@ -225,9 +225,9 @@ For **standalone-app** behavior (real `.apk` on Android, no Expo Go needed), run
 
 | Var | Set in |
 |---|---|
-| `EXPO_PUBLIC_SUPABASE_URL` | `.env` locally; Vercel env vars in prod |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `.env` locally; Vercel env vars in prod |
-| `EXPO_PUBLIC_SITE_URL` | Production URL for auth email links (e.g. `https://good-omega-three.vercel.app`) |
+| `EXPO_PUBLIC_SUPABASE_URL` | `.env` locally; Vercel **Production + Preview** env vars |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `.env` locally; Vercel **Production + Preview** env vars |
+| `EXPO_PUBLIC_SITE_URL` | `.env` locally; Vercel **Production + Preview** (production URL for auth/invite links) |
 
 The `EXPO_PUBLIC_` prefix is required — Expo only exposes vars with that prefix to the client bundle.
 
