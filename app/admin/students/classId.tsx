@@ -49,9 +49,16 @@ const S = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 10,
+    width: '100%',
+    minWidth: 0,
+  },
+  manualInputWrap: {
+    flex: 1,
+    flexBasis: 0,
+    minWidth: 0,
   },
   manualInput: {
-    flex: 1,
+    width: '100%',
     backgroundColor: Colors.bg,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -69,6 +76,7 @@ const S = StyleSheet.create({
     backgroundColor: '#FEF2F2',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   addRowBtn: {
     flexDirection: HEBREW_ROW,
@@ -297,24 +305,28 @@ export default function AdminClassStudentsScreen() {
 
         {manualRows.map((row) => (
           <View key={row.id} style={S.manualRow}>
-            <TextInput
-              value={row.first_name}
-              onChangeText={(v) => updateRow(row.id, 'first_name', v)}
-              placeholder="שם פרטי"
-              placeholderTextColor="#94a3b8"
-              style={S.manualInput}
-              textAlign="right"
-              accessibilityLabel="שם פרטי"
-            />
-            <TextInput
-              value={row.last_name}
-              onChangeText={(v) => updateRow(row.id, 'last_name', v)}
-              placeholder="שם משפחה"
-              placeholderTextColor="#94a3b8"
-              style={S.manualInput}
-              textAlign="right"
-              accessibilityLabel="שם משפחה"
-            />
+            <View style={S.manualInputWrap}>
+              <TextInput
+                value={row.first_name}
+                onChangeText={(v) => updateRow(row.id, 'first_name', v)}
+                placeholder="שם פרטי"
+                placeholderTextColor="#94a3b8"
+                style={S.manualInput}
+                textAlign="right"
+                accessibilityLabel="שם פרטי"
+              />
+            </View>
+            <View style={S.manualInputWrap}>
+              <TextInput
+                value={row.last_name}
+                onChangeText={(v) => updateRow(row.id, 'last_name', v)}
+                placeholder="שם משפחה"
+                placeholderTextColor="#94a3b8"
+                style={S.manualInput}
+                textAlign="right"
+                accessibilityLabel="שם משפחה"
+              />
+            </View>
             <TouchableOpacity
               onPress={() => removeRow(row.id)}
               style={S.removeRowBtn}
