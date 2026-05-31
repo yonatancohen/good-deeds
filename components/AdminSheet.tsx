@@ -20,6 +20,7 @@ import { X } from 'lucide-react-native';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 
+import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 // useNativeDriver is unsupported on web — JS-based animation is fine there
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -319,7 +320,7 @@ const S = StyleSheet.create({
     ...shadow('#0f172a', 24, 48, 0.18, 30),
   },
   dialogHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,

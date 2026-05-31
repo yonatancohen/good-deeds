@@ -27,6 +27,7 @@ import type { Tables } from '@/types/supabase';
 import moment from 'moment';
 import 'moment/locale/he';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 moment.locale('he');
 
 type ClassRow = Tables<'classes'>;
@@ -38,7 +39,7 @@ type RedemptionRound = Tables<'redemption_rounds'> & {
 
 const S = StyleSheet.create({
   infoBanner: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'flex-start',
     gap: 12,
     backgroundColor: Colors.successSurface,
@@ -70,7 +71,7 @@ const S = StyleSheet.create({
     backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 16,
     marginBottom: 12, borderWidth: 1, borderColor: '#f1f5f9',
   },
-  redemptionTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  redemptionTop: { flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   redemptionClass: { fontSize: 15, fontWeight: '700', color: Colors.text, writingDirection: 'rtl' } as any,
   redemptionDate: { color: '#94a3b8', fontSize: 12 } as any,
   redemptionGift: { color: '#64748b', fontSize: 13, textAlign: 'right', marginBottom: 4, writingDirection: 'rtl' } as any,
@@ -79,7 +80,7 @@ const S = StyleSheet.create({
   redemptionTime: { color: '#cbd5e1', fontSize: 11, textAlign: 'right', marginTop: 4, writingDirection: 'rtl' } as any,
   addBtn: {
     backgroundColor: Colors.success, borderRadius: 12, height: 44,
-    paddingHorizontal: 16, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, flexDirection: HEBREW_ROW, alignItems: 'center', gap: 6,
   },
   addBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 } as any,
   sectionLabel: {
@@ -89,10 +90,10 @@ const S = StyleSheet.create({
     color: '#94a3b8', fontSize: 12, textAlign: 'right', marginBottom: 8, writingDirection: 'rtl',
   } as any,
   pillRow: {
-    flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16,
+    flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: 8, marginBottom: 16,
   },
   noGiftsBanner: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 10,
+    flexDirection: HEBREW_ROW, alignItems: 'center', gap: 10,
     backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FCD34D',
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16,
   },
@@ -127,7 +128,7 @@ const S = StyleSheet.create({
     paddingHorizontal: 4, marginBottom: 8,
   } as any,
   filterRow: {
-    flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16,
+    flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: 8, marginBottom: 16,
   },
   filterChip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5,
@@ -142,11 +143,11 @@ const S = StyleSheet.create({
   statusPending: { backgroundColor: '#FFEDD5' },
   statusText: { fontSize: 11, fontWeight: '700', writingDirection: 'rtl' } as any,
   fulfillRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginTop: 10,
+    flexDirection: HEBREW_ROW, alignItems: 'center', gap: 8, marginTop: 10,
     paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9',
   },
   fulfillBtn: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    flexDirection: HEBREW_ROW, alignItems: 'center', gap: 6,
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
     borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg,
   },
@@ -358,7 +359,7 @@ export default function AdminRedemptionsScreen() {
                             </Text>
                           </View>
                         </View>
-                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
+                        <View style={{ flexDirection: HEBREW_ROW, alignItems: 'center', gap: 8 }}>
                           <Text style={S.redemptionDate}>{moment(r.redeemed_at).format('DD/MM/YYYY')}</Text>
                           <TouchableOpacity
                             onPress={() => handleDelete(r)}

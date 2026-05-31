@@ -6,6 +6,7 @@ import { StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/lib/colors';
 import { shadow } from '@/lib/shadow';
 import { useBreakpoint } from '@/lib/responsive';
+import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 
 export function useAdminLayout() {
   const { isDesktop } = useBreakpoint();
@@ -36,11 +37,11 @@ export const AS = StyleSheet.create({
   headerInner: {
     paddingTop: 16,
     paddingBottom: 12,
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, flexShrink: 1 },
+  headerLeft: { flexDirection: HEADER_ROW, alignItems: 'center', gap: 12, flexShrink: 1 },
   backBtn: {
     width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.primaryLight,
@@ -56,7 +57,7 @@ export const AS = StyleSheet.create({
     borderRadius: 16,
     height: 44,
     paddingHorizontal: 18,
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    flexDirection: HEADER_ROW, alignItems: 'center', gap: 6,
   },
   /** Square header CTA on narrow screens — icon only, no label. */
   addBtnIconOnly: {
@@ -78,7 +79,7 @@ export const AS = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
     marginBottom: 8,
     ...shadow('#785900', 0, 8, 0.05, 12),   // soft warm shadow
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between',
   },
   rowLeft:  { flex: 1, marginLeft: 12 },
   rowTitle: {
@@ -88,8 +89,8 @@ export const AS = StyleSheet.create({
   rowSub: {
     fontSize: 12, color: Colors.muted, textAlign: 'right', marginTop: 2, writingDirection: 'rtl',
   } as any,
-  rowMeta:    { flexDirection: 'row-reverse', gap: 8, marginTop: 2 },
-  rowActions: { flexDirection: 'row-reverse', gap: 6 },
+  rowMeta:    { flexDirection: HEBREW_ROW, gap: 8, marginTop: 2 },
+  rowActions: { flexDirection: HEBREW_ROW, gap: 6 },
 
   // ── Row leading avatar circle (Stitch style) ──────────────────────────────
   rowAvatar: {
@@ -206,7 +207,7 @@ export const AS = StyleSheet.create({
   },
 
   // ── Sheet buttons ─────────────────────────────────────────────────────────
-  sheetBtns: { flexDirection: 'row-reverse', gap: 12, marginTop: 4 },
+  sheetBtns: { flexDirection: HEBREW_ROW, gap: 12, marginTop: 4 },
   saveBtn: {
     flex: 1, paddingVertical: 16,
     borderRadius: 16,

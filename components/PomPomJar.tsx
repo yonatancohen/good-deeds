@@ -7,6 +7,7 @@ import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { Colors } from '@/components/ui';
 import { shadow } from '@/lib/shadow';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 const POMPOM_COLORS = [
   '#EF4444', '#F97316', '#EAB308', '#22C55E',
   '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4',
@@ -563,7 +564,7 @@ const S = StyleSheet.create({
     paddingBottom: 2,
   },
   ballRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     justifyContent: 'center',
     alignItems: 'center',
   },

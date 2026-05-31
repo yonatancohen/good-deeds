@@ -17,6 +17,7 @@ import {
 import { Colors } from '@/components/ui';
 import { TriangleAlert } from 'lucide-react-native';
 import { shadow } from '@/lib/shadow';
+import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 
 // ── Module-level bridge (imperative API) ─────────────────────────────────────
 type ShowFn = (title: string, message: string, confirmLabel: string) => Promise<boolean>;
@@ -166,7 +167,7 @@ const S = StyleSheet.create({
     marginBottom: 4,
   } as any,
   btns: {
-    flexDirection: 'row-reverse', gap: 10, marginTop: 22, width: '100%',
+    flexDirection: HEADER_ROW, gap: 10, marginTop: 22, width: '100%',
   },
   btnCancel: {
     flex: 1, height: 46, borderRadius: 12,

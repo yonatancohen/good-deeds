@@ -20,6 +20,7 @@ import type { Tables } from '@/types/supabase';
 import { getClassColorScheme } from '@/lib/classColors';
 import { useBreakpoint } from '@/lib/responsive';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 type ClassRow = Tables<'classes'>;
 
 // ── Hebrew year helpers ───────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ function PillGroup({
 // ── Stepper ───────────────────────────────────────────────────────────────────
 function Stepper({ value, onChange, max = 4 }: { value: number; onChange: (v: number) => void; max?: number }) {
   return (
-    <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
+    <View style={{ flexDirection: HEBREW_ROW, alignItems: 'center', gap: 4 }}>
       <TouchableOpacity
         onPress={() => value > 0 && onChange(value - 1)}
         disabled={value <= 0}
@@ -275,7 +276,7 @@ export default function AdminClassesScreen() {
             </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('classes')}</Text>
           </View>
-          <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+          <View style={{ flexDirection: HEBREW_ROW, gap: 8 }}>
             {isDesktop && (
               <AddBtn
                 onPress={() => { setBulkVisible(true); setBulkCounts(EMPTY_COUNTS); }}
@@ -368,13 +369,13 @@ export default function AdminClassesScreen() {
           {/* Preview summary */}
           {bulkPreview.length > 0 && (
             <View style={S.bulkSummary}>
-              <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 8 }}>
+              <View style={{ flexDirection: HEBREW_ROW, justifyContent: 'space-between', marginBottom: 8 }}>
                 <Text style={S.bulkSummaryNew}>✓ {bulkNewCount} כיתות חדשות</Text>
                 {bulkSkipCount > 0 && (
                   <Text style={S.bulkSummarySkip}>{bulkSkipCount} כבר קיימות</Text>
                 )}
               </View>
-              <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 }}>
+              <View style={{ flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: 6 }}>
                 {bulkPreview.map(p => (
                   <View key={p.name} style={[S.bulkChip, p.status === 'skip' && S.bulkChipSkip]}>
                     <Text style={[S.bulkChipText, p.status === 'skip' && S.bulkChipTextSkip]}>
@@ -472,7 +473,7 @@ export default function AdminClassesScreen() {
 const S = StyleSheet.create({
   // Pill selector
   pillGroup: {
-    flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 6,
+    flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: 8, marginTop: 6,
   },
   pill: {
     height: 44, minWidth: 52, borderRadius: 10, borderWidth: 1.5,
@@ -529,7 +530,7 @@ const S = StyleSheet.create({
 
   // Grade row (bulk sheet)
   gradeRow: {
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: HEBREW_ROW, alignItems: 'center',
     paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 10,
   },
   gradeCircle: {

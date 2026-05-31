@@ -88,7 +88,7 @@ const S = StyleSheet.create({
   } as any,
 
   // ± buttons
-  btnRow:   { flexDirection: 'row-reverse', gap: 8, marginTop: 28 },
+  btnRow:   { flexDirection: 'row', gap: 8, marginTop: 28 },
   btn:      { width: 50, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
   btnPos:   { backgroundColor: '#EEF2FF', borderColor: '#818cf8' },
   btnNeg:   { backgroundColor: '#FEF2F2', borderColor: '#fca5a5' },
@@ -97,7 +97,7 @@ const S = StyleSheet.create({
   btnNegTxt:{ color: '#dc2626' },
 
   // Manual input row
-  inputRow: { flexDirection: 'row-reverse', gap: 8, marginTop: 14, alignItems: 'center' },
+  inputRow: { flexDirection: 'row', gap: 8, marginTop: 14, alignItems: 'center' },
   input: {
     width: 90, height: 42,
     borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10,

@@ -19,13 +19,13 @@ html, body {
   overscroll-behavior: none;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100%;
   direction: ltr;
 }
 /*
  * RTL on #root only — avoids iOS PWA viewport shift from dir=rtl on <html>.
- * Use column flex so the app shell stretches full width (row + direction:rtl
- * would pin content to the right edge with empty space on the left).
+ * Lock shell height so only in-app ScrollViews scroll, not the page body.
  */
 html, body {
   min-height: 100%;
@@ -39,7 +39,9 @@ html, body {
   width: 100%;
   max-width: 100%;
   min-width: 100%;
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   flex: 1;
   margin: 0;
 }
@@ -48,6 +50,8 @@ html, body {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
   width: 100%;
   max-width: 100%;
   min-width: 100%;
@@ -68,9 +72,6 @@ input, textarea, select, [contenteditable="true"] {
 body {
   user-select: none;
   -webkit-user-select: none;
-}
-#root, #root * {
-  overscroll-behavior-y: contain;
 }
 #root [style*="overflow"] {
   -webkit-overflow-scrolling: touch;

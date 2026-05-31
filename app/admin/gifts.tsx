@@ -28,6 +28,7 @@ import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import type { Tables } from '@/types/supabase';
 
+import { HEBREW_ROW, RTL_CHILD_ROW } from '@/lib/rtlLayout';
 type Gift = Tables<'gifts'>;
 
 type GiftScheme = {
@@ -192,7 +193,7 @@ export default function AdminGiftsScreen() {
             direction: 'rtl',
           } as object)
         : {
-            flexDirection: 'row-reverse',
+            flexDirection: HEBREW_ROW,
             flexWrap: 'wrap',
             gap: GRID_GAP,
             width: '100%',
@@ -365,7 +366,7 @@ export default function AdminGiftsScreen() {
 
 const S = StyleSheet.create({
   infoBanner: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'flex-start',
     gap: 12,
     backgroundColor: Colors.successSurface,
@@ -415,7 +416,7 @@ const S = StyleSheet.create({
   },
 
   cubeTop: {
-    flexDirection: 'row-reverse',
+    flexDirection: RTL_CHILD_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
@@ -428,7 +429,7 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cubeActions: { flexDirection: 'row-reverse', gap: 6 },
+  cubeActions: { flexDirection: RTL_CHILD_ROW, gap: 6 },
   cubeActionBtn: {
     width: 32,
     height: 32,
@@ -472,7 +473,7 @@ const S = StyleSheet.create({
   } as any,
 
   cubeFooter: {
-    flexDirection: 'row-reverse',
+    flexDirection: RTL_CHILD_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: 12,

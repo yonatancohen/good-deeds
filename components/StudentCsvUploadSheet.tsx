@@ -16,6 +16,7 @@ import AdminSheet from '@/components/AdminSheet';
 import { Colors } from '@/components/ui';
 import { AS, webPointer } from '@/lib/adminStyles';
 import { useBreakpoint } from '@/lib/responsive';
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 import {
   parseCsvText,
   previewStudents,
@@ -93,7 +94,7 @@ const S = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
   } as any,
-  summaryRow: { flexDirection: 'row-reverse', gap: 12, marginBottom: 16 },
+  summaryRow: { flexDirection: HEBREW_ROW, gap: 12, marginBottom: 16 },
   summaryCard: {
     flex: 1,
     borderRadius: 12,
@@ -119,7 +120,7 @@ const S = StyleSheet.create({
     marginBottom: 16,
   },
   tableHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -134,7 +135,7 @@ const S = StyleSheet.create({
     writingDirection: 'rtl',
   } as any,
   tableRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -157,7 +158,7 @@ const S = StyleSheet.create({
   },
   statusTextNew: { color: '#065f46', fontSize: 12, fontWeight: '600' } as any,
   statusTextSkip: { color: '#94a3b8', fontSize: 12, fontWeight: '600' } as any,
-  actionRow: { flexDirection: 'row-reverse', gap: 12, marginBottom: 8 },
+  actionRow: { flexDirection: HEBREW_ROW, gap: 12, marginBottom: 8 },
   importBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   importBtnActive: { backgroundColor: Colors.primary },
   importBtnDisabled: { backgroundColor: Colors.surfaceDim },

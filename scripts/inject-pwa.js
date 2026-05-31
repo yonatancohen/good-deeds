@@ -17,7 +17,7 @@ const DIST = path.resolve(__dirname, '..', 'dist');
 const INDEX = path.join(DIST, 'index.html');
 
 const APP_NAME = 'תפסתי אותך בטוב';
-const SHORT_NAME = 'תפסתי בטוב';
+const SHORT_NAME = 'תפסתי אותך בטוב';
 const DESCRIPTION =
   'מערכת לעידוד מעשים טובים בבית הספר — מורים מעניקים נקודות לתלמידים על מעשים טובים, והכיתות צוברות נקודות לקראת מתנה.';
 const THEME_COLOR = '#fff8f2';

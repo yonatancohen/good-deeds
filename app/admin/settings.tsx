@@ -23,6 +23,7 @@ import { safeBack } from '@/lib/navigation';
 import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 // ── Hebrew year helpers (shared with classes screen) ─────────────────────────
 const HEB_UNITS: Record<number, string> = {
   1: 'א', 2: 'ב', 3: 'ג', 4: 'ד', 5: 'ה', 6: 'ו', 7: 'ז', 8: 'ח', 9: 'ט',
@@ -70,7 +71,7 @@ function PillGroup({
   );
 }
 const P = StyleSheet.create({
-  group: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  group: { flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: 8, marginTop: 8 },
   groupFull: { flexWrap: 'nowrap', width: '100%' },
   pill: {
     height: 44, borderRadius: 10, borderWidth: 1.5,

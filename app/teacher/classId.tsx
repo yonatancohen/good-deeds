@@ -46,6 +46,7 @@ import type { Tables } from '@/types/supabase';
 import moment from 'moment';
 import 'moment/locale/he';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 moment.locale('he');
 
 type StudentRow = Tables<'students'>;
@@ -1094,7 +1095,7 @@ const S = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   goalReachedBadge: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#d1fae5',
@@ -1130,7 +1131,7 @@ const S = StyleSheet.create({
     fontSize: 11,
   } as any,
   classCtaBtnAlt: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -1147,7 +1148,7 @@ const S = StyleSheet.create({
     writingDirection: 'rtl',
   } as any,
   amountRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     flexWrap: 'wrap',
     gap: 8,
     marginBottom: 16,
@@ -1170,7 +1171,7 @@ const S = StyleSheet.create({
     paddingTop: 20,
   },
   studentsHeaderRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
@@ -1228,7 +1229,7 @@ const S = StyleSheet.create({
     textAlign: 'right', marginBottom: 4, writingDirection: 'rtl',
   } as any,
   deedRowWrap: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     flexWrap: 'wrap',
     gap: 8,
     marginBottom: 16,
@@ -1267,12 +1268,12 @@ const S = StyleSheet.create({
   // ── History items ──
   historyHeader: { alignItems: 'flex-end', marginBottom: 4 },
   historyItem: {
-    flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between',
+    flexDirection: HEBREW_ROW, alignItems: 'flex-start', justifyContent: 'space-between',
     backgroundColor: Colors.bg, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
     marginBottom: 8, borderWidth: 1, borderColor: '#f1f5f9',
   },
   historyItemLeft: { flex: 1, marginLeft: 12 },
-  historyTopRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: 2 },
+  historyTopRow: { flexDirection: HEBREW_ROW, alignItems: 'center', gap: 8, marginBottom: 2 },
   historyAmtBadge: {
     backgroundColor: '#DBEAFE', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 2,
   },
@@ -1284,7 +1285,7 @@ const S = StyleSheet.create({
   historyNote: {
     color: '#64748b', fontSize: 12, textAlign: 'right', marginTop: 2, writingDirection: 'rtl',
   } as any,
-  historyMeta: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginTop: 4 },
+  historyMeta: { flexDirection: HEBREW_ROW, alignItems: 'center', gap: 4, marginTop: 4 },
   historyMetaText: { color: '#94a3b8', fontSize: 12, writingDirection: 'rtl' } as any,
   historyMetaDot:  { color: '#cbd5e1', fontSize: 12 },
   deleteBtn: {

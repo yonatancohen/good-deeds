@@ -24,6 +24,7 @@ import { studentCountLabel } from '@/lib/studentCountLabel';
 import { confirmAction } from '@/lib/confirm';
 import type { Tables } from '@/types/supabase';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 type ClassRow = Tables<'classes'>;
 type StudentRow = Tables<'students'>;
 
@@ -44,7 +45,7 @@ const S = StyleSheet.create({
     fontFamily: 'Baloo2_700Bold',
   } as any,
   manualRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 8,
     marginBottom: 10,
@@ -70,7 +71,7 @@ const S = StyleSheet.create({
     justifyContent: 'center',
   },
   addRowBtn: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-end',

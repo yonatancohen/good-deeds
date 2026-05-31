@@ -22,6 +22,7 @@ import { Button, Colors, FormField, Card } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 type Tab = 'password' | 'magic';
 
 // ── Background blob (web: CSS radial gradient; native: tinted circle) ─────────
@@ -93,13 +94,13 @@ const S = StyleSheet.create({
 
   // ── Tab switcher ──────────────────────────────────────────────────────────
   tabRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     backgroundColor: '#f5ede2',
     borderRadius: 999, padding: 4, marginBottom: 24,
   },
   tab: {
     flex: 1, paddingVertical: 12, borderRadius: 999,
-    alignItems: 'center', flexDirection: 'row-reverse',
+    alignItems: 'center', flexDirection: HEBREW_ROW,
     justifyContent: 'center', minHeight: 44,
   },
   tabActive: {
@@ -112,13 +113,17 @@ const S = StyleSheet.create({
   tabTextActive:   { color: Colors.primaryDark },
   tabTextInactive: { color: Colors.muted },
 
-  // ── Pill input row ────────────────────────────────────────────────────────
+  // ── Pill input row (icon pinned to the physical right edge) ─────────────
   inputRow: {
-    flexDirection: 'row-reverse', alignItems: 'center',
-    backgroundColor: '#f4ece7',     // surface-container warm
-    borderWidth: 2, borderColor: '#e9e1db',
-    borderRadius: 999,              // pill
-    paddingHorizontal: 18, minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f4ece7',
+    borderWidth: 2,
+    borderColor: '#e9e1db',
+    borderRadius: 999,
+    paddingLeft: 18,
+    paddingRight: 46,
+    minHeight: 54,
   },
   inputRowFocused: {
     borderColor: Colors.primary,
@@ -128,9 +133,21 @@ const S = StyleSheet.create({
       : {}),
   },
   inputText: {
-    flex: 1, color: Colors.text, fontSize: 16, paddingVertical: 14,
+    flex: 1,
+    color: Colors.text,
+    fontSize: 16,
+    paddingVertical: 14,
+    textAlign: 'right',
+    writingDirection: 'rtl',
     ...(Platform.OS === 'web' ? { outlineWidth: 0, outlineStyle: 'none' } as any : {}),
   } as any,
+  inputIcon: {
+    position: 'absolute',
+    right: 18,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
 
   // ── Forgot / link ─────────────────────────────────────────────────────────
   forgotBtn: { alignItems: 'center', marginTop: 16, minHeight: 44, justifyContent: 'center' },
@@ -141,7 +158,7 @@ const S = StyleSheet.create({
 
   // ── Back to public ────────────────────────────────────────────────────────
   backToPublic: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
+    flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'center',
     gap: 6, marginTop: 24, minHeight: 44,
   },
   backToPublicText: {
@@ -281,7 +298,7 @@ export default function LoginScreen() {
                     accessibilityLabel={tabId === 'password' ? 'כניסה עם סיסמה' : 'כניסה עם קישור לאימייל'}
                     style={[S.tab, active && S.tabActive, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
                   >
-                    <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }}>
+                    <View style={{ flexDirection: HEBREW_ROW, alignItems: 'center', gap: 6 }}>
                       {tabId === 'password'
                         ? <Lock size={14} color={active ? Colors.primaryDark : Colors.muted} />
                         : <Mail size={14} color={active ? Colors.primaryDark : Colors.muted} />
@@ -303,7 +320,6 @@ export default function LoginScreen() {
                 <View>
                   <FormField label={t('email')} hint="כתובת האימייל שרשומה בבית הספר" required>
                     <View style={[S.inputRow, focusedField === 'email-pw' && S.inputRowFocused]}>
-                      <Mail size={18} color={focusedField === 'email-pw' ? Colors.primary : Colors.muted} style={{ marginLeft: 10 }} />
                       <TextInput
                         value={email}
                         onChangeText={setEmail}
@@ -318,12 +334,14 @@ export default function LoginScreen() {
                         onBlur={() => setFocusedField(null)}
                         accessibilityLabel="שדה כתובת אימייל"
                       />
+                      <View style={S.inputIcon} pointerEvents="none">
+                        <Mail size={18} color={focusedField === 'email-pw' ? Colors.primary : Colors.muted} />
+                      </View>
                     </View>
                   </FormField>
 
                   <FormField label={t('password')} hint="הסיסמה שקיבלת מהמנהל בעת ההצטרפות" required>
                     <View style={[S.inputRow, focusedField === 'password' && S.inputRowFocused]}>
-                      <Lock size={18} color={focusedField === 'password' ? Colors.primary : Colors.muted} style={{ marginLeft: 10 }} />
                       <TextInput
                         value={password}
                         onChangeText={setPassword}
@@ -338,6 +356,9 @@ export default function LoginScreen() {
                         onSubmitEditing={handlePasswordLogin}
                         returnKeyType="go"
                       />
+                      <View style={S.inputIcon} pointerEvents="none">
+                        <Lock size={18} color={focusedField === 'password' ? Colors.primary : Colors.muted} />
+                      </View>
                     </View>
                   </FormField>
 
@@ -384,7 +405,6 @@ export default function LoginScreen() {
                         required
                       >
                         <View style={[S.inputRow, focusedField === 'email-magic' && S.inputRowFocused]}>
-                          <Mail size={18} color={focusedField === 'email-magic' ? Colors.primary : Colors.muted} style={{ marginLeft: 10 }} />
                           <TextInput
                             value={email}
                             onChangeText={setEmail}
@@ -401,6 +421,9 @@ export default function LoginScreen() {
                             onSubmitEditing={handleMagicLink}
                             returnKeyType="send"
                           />
+                          <View style={S.inputIcon} pointerEvents="none">
+                            <Mail size={18} color={focusedField === 'email-magic' ? Colors.primary : Colors.muted} />
+                          </View>
                         </View>
                       </FormField>
                       <Button label={t('sendMagicLink')} onPress={handleMagicLink} loading={submitting} />

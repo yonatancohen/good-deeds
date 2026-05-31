@@ -19,6 +19,7 @@ import {
   Platform,
   StyleProp,
 } from 'react-native';
+import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 import { shadow } from '@/lib/shadow';
 
 // ── Color tokens — re-exported for backward compatibility ─────────────────────
@@ -41,7 +42,7 @@ const S = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 28,
     minHeight: 54,
-    flexDirection: 'row-reverse' as const,
+    flexDirection: HEBREW_ROW as const,
     gap: 8,
   },
   btnFull: { alignSelf: 'stretch' as const },
@@ -112,7 +113,7 @@ const S = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   headerRow: {
-    flexDirection: 'row-reverse' as const,
+    flexDirection: HEADER_ROW as const,
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
   },
@@ -470,7 +471,7 @@ export function ScreenHeader({ title, subtitle, left, right }: ScreenHeaderProps
             <Text style={[S.headerSub, { writingDirection: 'rtl' }]}>{subtitle}</Text>
           )}
         </View>
-        {right && <View style={{ flexDirection: 'row-reverse', gap: 8 }}>{right}</View>}
+        {right && <View style={{ flexDirection: HEADER_ROW, gap: 8 }}>{right}</View>}
         {left && <View>{left}</View>}
       </View>
     </View>

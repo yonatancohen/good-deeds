@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     ...(Platform.OS === 'web'
-      ? ({ direction: 'rtl', minWidth: '100%', alignSelf: 'stretch' } as object)
+      ? ({ direction: 'rtl', minWidth: '100%', alignSelf: 'stretch', minHeight: 0, overflow: 'hidden' } as object)
       : {}),
   },
   bootPlaceholder: { flex: 1, backgroundColor: SPLASH_BG },

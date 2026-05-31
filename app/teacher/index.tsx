@@ -32,6 +32,7 @@ import '@/lib/i18n';
 import { getClassColorScheme } from '@/lib/classColors';
 import { BP } from '@/lib/responsive';
 
+import { HEBREW_ROW, HEADER_ROW, RTL_CHILD_ROW } from '@/lib/rtlLayout';
 // ── Layout constants ──────────────────────────────────────────────────────────
 const MAX_CONTENT_W = 960;
 
@@ -56,14 +57,14 @@ const S = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   headerInner: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 14,
   },
-  headerText: { alignItems: 'flex-end' },
+  headerText: { flex: 1 },
   headerTitle: {
     fontSize: 20, fontWeight: '700', color: Colors.primaryDark,
     fontFamily: 'Baloo2_700Bold',
@@ -73,19 +74,20 @@ const S = StyleSheet.create({
     fontSize: 12, color: Colors.muted, marginTop: 1,
     textAlign: 'right', writingDirection: 'rtl',
   } as any,
-  headerBtns: { flexDirection: 'row-reverse', gap: 8 },
+  headerBtns: { flexDirection: HEADER_ROW, gap: 8 },
   headerIconBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   headerBtn: {
     backgroundColor: Colors.primaryLight, borderRadius: 16, paddingHorizontal: 14,
-    height: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    height: 44, flexDirection: HEADER_ROW, alignItems: 'center', gap: 6,
   },
   headerBtnText: { color: Colors.primaryDark, fontSize: 14, fontWeight: '700', fontFamily: 'Baloo2_700Bold' } as any,
 
   // ── Scroll content ──
-  scrollContent: { paddingBottom: 40 },
+  scrollBody: { flexGrow: 1 },
+  scrollContent: { paddingBottom: 40, width: '100%' },
 
   // ── Card grid (layout applied inline for responsive cols) ──
   grid: {
@@ -110,7 +112,7 @@ const S = StyleSheet.create({
   },
 
   cardTop: {
-    flexDirection: 'row-reverse',
+    flexDirection: RTL_CHILD_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
@@ -135,7 +137,7 @@ const S = StyleSheet.create({
     writingDirection: 'rtl',
   } as any,
   cardStudentRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: RTL_CHILD_ROW,
     alignItems: 'center',
     gap: 4,
     flexShrink: 1,
@@ -150,7 +152,7 @@ const S = StyleSheet.create({
   // Bottom: score row + progress bar
   cardBottom: { marginTop: 14 },
   cardScoreRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: RTL_CHILD_ROW,
     alignItems: 'baseline',
     justifyContent: 'space-between',
     marginBottom: 8,
@@ -265,51 +267,25 @@ function TeacherClassCard({
         style={[S.card, compact && S.cardCompact, ptr]}
       >
           <View style={S.cardTop}>
-            {Platform.OS === 'web' ? (
-              <>
-                <View
-                  style={[S.classCircle, { backgroundColor: scheme.bg }]}
-                  accessibilityLabel={`כיתה ${item.class.name}`}
-                >
-                  <Text
-                    style={[S.classCircleText, { color: scheme.text }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
-                    {item.class.name}
-                  </Text>
-                </View>
-                <View style={S.cardStudentRow}>
-                  <Users size={12} color={Colors.muted} />
-                  <Text style={S.cardStudents}>
-                    {item.studentCount} תלמידים
-                  </Text>
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={S.cardStudentRow}>
-                  <Users size={12} color={Colors.muted} />
-                  <Text style={S.cardStudents}>
-                    {item.studentCount} תלמידים
-                  </Text>
-                </View>
-                <View
-                  style={[S.classCircle, { backgroundColor: scheme.bg }]}
-                  accessibilityLabel={`כיתה ${item.class.name}`}
-                >
-                  <Text
-                    style={[S.classCircleText, { color: scheme.text }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
-                    {item.class.name}
-                  </Text>
-                </View>
-              </>
-            )}
+            <View
+              style={[S.classCircle, { backgroundColor: scheme.bg }]}
+              accessibilityLabel={`כיתה ${item.class.name}`}
+            >
+              <Text
+                style={[S.classCircleText, { color: scheme.text }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {item.class.name}
+              </Text>
+            </View>
+            <View style={S.cardStudentRow}>
+              <Users size={12} color={Colors.muted} />
+              <Text style={S.cardStudents}>
+                {item.studentCount} תלמידים
+              </Text>
+            </View>
           </View>
 
           <View style={S.cardBottom}>
@@ -362,7 +338,7 @@ export default function TeacherHome() {
             width: '100%',
             direction: 'rtl',
           } as object)
-        : { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: GRID_GAP },
+        : { flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: GRID_GAP },
     [cols],
   );
 
@@ -423,10 +399,10 @@ export default function TeacherHome() {
 
       {/* ── Body ── */}
       <ScrollView
-        contentContainerStyle={S.scrollContent}
+        contentContainerStyle={S.scrollBody}
         showsVerticalScrollIndicator={false}
       >
-        <View style={centreStyle}>
+        <View style={[S.scrollContent, centreStyle]}>
           {error ? (
             <View style={S.errorBanner}>
               <Text style={S.errorText}>{error}</Text>

@@ -24,6 +24,7 @@ import { getClassColorScheme } from '@/lib/classColors';
 import { studentCountLabel } from '@/lib/studentCountLabel';
 import type { Tables } from '@/types/supabase';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 type ClassRow = Tables<'classes'>;
 
 const S = StyleSheet.create({
@@ -42,12 +43,12 @@ const S = StyleSheet.create({
   } as any,
   rowPress: {
     flex: 1,
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     minWidth: 0,
   },
   manualRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 8,
     marginBottom: 10,
@@ -73,7 +74,7 @@ const S = StyleSheet.create({
     justifyContent: 'center',
   },
   addRowBtn: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-end',

@@ -28,6 +28,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import type { Tables } from '@/types/supabase';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 type UserRow = Tables<'users'>;
 type ClassRow = Tables<'classes'>;
 
@@ -50,7 +51,7 @@ const S = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(212,197,171,0.4)',
     ...shadow('#785900', 0, 8, 0.05, 12),
   },
-  teacherTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  teacherTop: { flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between' },
   teacherAvatar: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: Colors.secondarySurface,
@@ -65,13 +66,13 @@ const S = StyleSheet.create({
   teacherInfo: { flex: 1 },
   teacherName: { fontSize: 15, fontWeight: '700', color: Colors.text, textAlign: 'right', writingDirection: 'rtl' } as any,
   teacherEmail: { color: '#94a3b8', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginTop: 1 } as any,
-  teacherActions: { flexDirection: 'row-reverse', gap: 6 },
+  teacherActions: { flexDirection: HEBREW_ROW, gap: 6 },
   assignBtn: {
     backgroundColor: Colors.surface, borderRadius: 14, paddingHorizontal: 12, height: 44,
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    flexDirection: HEBREW_ROW, alignItems: 'center', gap: 6,
   },
   assignBtnText: { color: Colors.muted, fontSize: 12, fontWeight: '600' } as any,
-  classChipRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 },
+  classChipRow: { flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: 6 },
   classChip: {
     backgroundColor: Colors.primaryLight, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
   },
@@ -80,7 +81,7 @@ const S = StyleSheet.create({
   assignSub: { color: '#94a3b8', fontSize: 13, textAlign: 'right', marginBottom: 4, writingDirection: 'rtl' } as any,
   assignHint: { color: '#64748b', fontSize: 12, textAlign: 'right', marginBottom: 12, writingDirection: 'rtl' } as any,
   classRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8, borderRadius: 12, borderWidth: 1, minHeight: 44,
   },
   classRowActive:   { backgroundColor: Colors.primaryLight, borderColor: Colors.primary },
@@ -95,7 +96,7 @@ const S = StyleSheet.create({
   checkboxInactive: { borderColor: '#cbd5e1' },
   checkmark: { color: '#fff', fontSize: 11, fontWeight: '700' } as any,
   selectAllRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12, marginBottom: 10,
     borderRadius: 12, borderWidth: 1.5, borderColor: Colors.primary,
     backgroundColor: Colors.primaryLight,
@@ -124,7 +125,7 @@ const S = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12,
   },
   csvErrorText: { color: '#dc2626', fontSize: 13, textAlign: 'right', writingDirection: 'rtl' } as any,
-  csvSummaryRow: { flexDirection: 'row-reverse', gap: 10, marginBottom: 12 },
+  csvSummaryRow: { flexDirection: HEBREW_ROW, gap: 10, marginBottom: 12 },
   csvSummaryCard: { flex: 1, borderRadius: 12, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
   csvSummaryNew:  { backgroundColor: '#ECFDF5', borderColor: '#6EE7B7' },
   csvSummarySkip: { backgroundColor: Colors.surface, borderColor: Colors.border },
@@ -139,13 +140,13 @@ const S = StyleSheet.create({
     borderColor: '#f1f5f9', overflow: 'hidden', marginBottom: 12,
   },
   csvTableHead: {
-    flexDirection: 'row-reverse', justifyContent: 'space-between',
+    flexDirection: HEBREW_ROW, justifyContent: 'space-between',
     paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#f8fafc',
     borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
   },
   csvTableHeadText: { color: Colors.muted, fontSize: 12, fontWeight: '700', writingDirection: 'rtl' } as any,
   csvTableRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 14, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: '#f8fafc',
   },
@@ -429,7 +430,7 @@ export default function AdminTeachersScreen() {
             </TactileIconBtn>
             <Text style={AS.headerTitle} accessibilityRole="header">{t('teachers')}</Text>
           </View>
-          <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+          <View style={{ flexDirection: HEBREW_ROW, gap: 8 }}>
             {isDesktop && (
               <AddBtn
                 onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}

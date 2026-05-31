@@ -299,7 +299,7 @@ Admin screens:
 | Tables | **`@tanstack/react-table`** | `^8.21` | Headless table logic for admin lists |
 | Dates | **`moment`** + Hebrew locale (`moment/locale/he`) | `^2.30` | Date formatting and parsing |
 | Toasts | **`sonner-native`** | `^0.24` | Non-blocking notifications |
-| i18n / RTL | **`i18next`** + `react-i18next` + explicit RTL (`row-reverse`, `#root` direction) | `^26` + `^17` | Hebrew translations + RTL layout |
+| i18n / RTL | **`i18next`** + `react-i18next` + `I18nManager.forceRTL(true)` | `^26` + `^17` | Hebrew translations + RTL layout |
 | CSV parsing | **`papaparse`** + `@types/papaparse` | `^5.5` | Robust CSV parsing in the browser/native |
 | File picker | **`expo-document-picker`** | `~55.0.13` | CSV file selection |
 | Image picker | **`expo-image-picker`** | Phase 2 only — not yet installed | Gift image upload |

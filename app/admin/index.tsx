@@ -23,6 +23,7 @@ import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { DepthShell } from '@/lib/DepthShell';
 import { confirmAction } from '@/lib/confirm';
+import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 import type { Tables } from '@/types/supabase';
 
 moment.locale('he');
@@ -692,6 +693,7 @@ export default function AdminHomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={[S.scrollContent, isDesktop && S.scrollContentDesktop]}>
         <ScrollReveal index={0}>
           <Text style={[S.pageTitle, isDesktop && S.pageTitleDesktop]} accessibilityRole="header">
             לוח בקרה מנהלי
@@ -730,6 +732,7 @@ export default function AdminHomeScreen() {
             {renderPublicLink()}
           </>
         )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -746,7 +749,7 @@ const S = StyleSheet.create({
     ...shadow('#000', 1, 4, 0.06, 2),
   },
   headerInner: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -755,7 +758,7 @@ const S = StyleSheet.create({
     width: '100%',
   },
   headerBrand: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     gap: 12,
     flex: 1,
@@ -784,13 +787,13 @@ const S = StyleSheet.create({
     writingDirection: 'rtl',
     textAlign: 'right',
   } as any,
-  headerActions: { flexDirection: 'row-reverse', gap: 8 },
+  headerActions: { flexDirection: HEADER_ROW, gap: 8 },
   headerBtn: {
     backgroundColor: Colors.primaryLight,
     borderRadius: 16,
     paddingHorizontal: 14,
     height: 44,
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     gap: 6,
   },
@@ -809,9 +812,14 @@ const S = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ── Scroll body ──
-  scrollBody: { paddingHorizontal: 20, paddingBottom: 32 },
-  scrollBodyDesktop: { paddingHorizontal: 32, paddingBottom: 48 },
+  // ── Scroll body — RTL wrapper + plain `row` for horizontal bars inside ──
+  scrollBody: { flexGrow: 1, paddingBottom: 32 },
+  scrollBodyDesktop: { paddingBottom: 48 },
+  scrollContent: {
+    paddingHorizontal: 20,
+    width: '100%',
+  },
+  scrollContentDesktop: { paddingHorizontal: 32 },
 
   pageTitle: {
     fontSize: 28,
@@ -834,7 +842,7 @@ const S = StyleSheet.create({
 
   // ── Stats ──
   statsRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     gap: 14,
     marginTop: 16,
     marginBottom: 28,
@@ -870,13 +878,14 @@ const S = StyleSheet.create({
   sectionCompact: { marginBottom: 20 },
   sectionLast: { marginBottom: 0 },
   sectionHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
+    width: '100%',
   },
   sectionTitleRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 8,
   },
@@ -892,7 +901,7 @@ const S = StyleSheet.create({
     textAlign: 'right',
     color: Colors.primaryDark,
   },
-  sectionLink: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2 },
+  sectionLink: { flexDirection: HEBREW_ROW, alignItems: 'center', gap: 2 },
   sectionLinkText: {
     fontSize: 13,
     fontWeight: '600',
@@ -912,7 +921,7 @@ const S = StyleSheet.create({
     borderColor: Colors.border,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 12,
     overflow: 'hidden',
@@ -964,7 +973,7 @@ const S = StyleSheet.create({
 
   // ── Menu grid (public-page card style) ──
   grid: { gap: 16 },
-  gridRow: { flexDirection: 'row-reverse', gap: 16, alignItems: 'stretch' },
+  gridRow: { flexDirection: HEBREW_ROW, gap: 16, alignItems: 'stretch' },
   tileOuter: {
     marginBottom: 4,
     paddingBottom: 6,
@@ -1035,10 +1044,11 @@ const S = StyleSheet.create({
     marginBottom: 0,
   },
   activityHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 16,
+    width: '100%',
   },
   activityTitle: {
     fontSize: 16,
@@ -1066,7 +1076,7 @@ const S = StyleSheet.create({
     overflow: 'hidden',
   },
   activityRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 14,
@@ -1095,7 +1105,7 @@ const S = StyleSheet.create({
   activityTimelineScrollContent: { flexGrow: 1 },
   activityTimeline: { gap: 0 },
   timelineRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     gap: 12,
   },
   timelineRail: {
@@ -1145,7 +1155,7 @@ const S = StyleSheet.create({
 
   // ── Desktop split ──
   desktopSplit: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     gap: 28,
     alignItems: 'flex-start',
   },
@@ -1167,7 +1177,7 @@ const S = StyleSheet.create({
     borderColor: 'rgba(120,89,0,0.25)',
     paddingHorizontal: 18,
     paddingVertical: 18,
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     gap: 12,
     marginBottom: 8,

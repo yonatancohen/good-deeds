@@ -22,6 +22,7 @@ import type { Tables } from '@/types/supabase';
 import moment from 'moment';
 import 'moment/locale/he';
 
+import { HEBREW_ROW } from '@/lib/rtlLayout';
 moment.locale('he');
 
 type ClassRow = Tables<'classes'>;
@@ -54,7 +55,7 @@ const S = StyleSheet.create({
     writingDirection: 'rtl',
   } as any,
   chipRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     flexWrap: 'wrap',
     gap: 8,
     alignSelf: 'stretch',
@@ -74,7 +75,7 @@ const S = StyleSheet.create({
     writingDirection: 'rtl',
   } as any,
   selectField: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#fff',
@@ -106,7 +107,7 @@ const S = StyleSheet.create({
     marginBottom: 12,
   } as any,
   teacherRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -130,7 +131,7 @@ const S = StyleSheet.create({
     borderColor: '#f1f5f9',
   },
   logTop: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEBREW_ROW,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 6,
@@ -139,7 +140,7 @@ const S = StyleSheet.create({
   logDate: { fontSize: 11, color: '#94a3b8' } as any,
   logMeta: { fontSize: 13, color: '#64748b', textAlign: 'right', writingDirection: 'rtl' } as any,
   logNote: { fontSize: 12, color: '#94a3b8', textAlign: 'right', marginTop: 4, writingDirection: 'rtl' } as any,
-  logActions: { flexDirection: 'row-reverse', gap: 8, marginTop: 10 },
+  logActions: { flexDirection: HEBREW_ROW, gap: 8, marginTop: 10 },
   iconBtn: {
     width: 36,
     height: 36,
@@ -410,7 +411,7 @@ export default function AdminCreditLogScreen() {
               </TouchableOpacity>
 
               <Text style={[S.filterLabel, { marginTop: 8 }]}>טווח תאריכים (YYYY-MM-DD)</Text>
-              <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <View style={{ flexDirection: HEBREW_ROW, gap: 8 }}>
                 <TextInput
                   value={dateFrom}
                   onChangeText={setDateFrom}

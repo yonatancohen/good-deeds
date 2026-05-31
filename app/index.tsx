@@ -1,4 +1,4 @@
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Animated, {
   FadeInDown,
-  FadeOut,
+  FadeOutUp,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -18,22 +18,23 @@ import Animated, {
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import {
-  Trophy, Users, ChevronDown, Star, LogIn, Sparkles, PartyPopper,
+  Trophy, Users, ChevronDown, Star, User, Sparkles, PartyPopper,
 } from 'lucide-react-native';
 import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
-import { Skeleton, Colors } from '@/components/ui';
+import { Skeleton, Colors, DepthPressable } from '@/components/ui';
 import { DepthShell } from '@/lib/DepthShell';
 import { useBreakpoint, desktopContentStyle, desktopRowCenter } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { getClassColorScheme } from '@/lib/classColors';
 import { PompomJar, POMPOM_JAR_SM } from '@/components/PomPomJar';
+import { HEBREW_ROW, HEADER_ROW, RTL_CHILD_ROW } from '@/lib/rtlLayout';
 import { StaggeredItem } from '@/components/StaggeredItem';
 
 const webPtr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
 
 const EXPAND_ENTER = FadeInDown.springify().damping(20).stiffness(280);
-const EXPAND_EXIT = FadeOut.duration(220);
+const EXPAND_EXIT = FadeOutUp.duration(160);
 
 // ── Progress bar ───────────────────────────────────────────────────────────────
 function ProgBar({ value, max }: { value: number; max: number }) {
@@ -199,19 +200,19 @@ function CardSkeleton() {
     <DepthShell depth={5} borderRadius={20} outerStyle={S.cardOuterShell}>
     <View style={S.card}>
 
-      {/* mirrors cardTop — row-reverse: name+grade on right, points on left */}
+      {/* mirrors cardTop — row: name+grade on right, points on left */}
       <View style={S.cardTop}>
-        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flex: 1 }}>
+        <View style={{ flexDirection: RTL_CHILD_ROW, alignItems: 'center', gap: 10, flex: 1 }}>
           <Skeleton width={52} height={52} style={{ borderRadius: 26 }} />
         </View>
         <Skeleton width={52} height={15} />
       </View>
 
-      {/* mirrors cardProg — row-reverse: bar+row on right, jar on left */}
+      {/* mirrors cardProg — row: bar+row on right, jar on left */}
       <View style={S.cardProg}>
         <View style={{ flex: 1 }}>
           <Skeleton width="100%" height={8} rounded />
-          <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 6 }}>
+          <View style={{ flexDirection: RTL_CHILD_ROW, justifyContent: 'space-between', marginTop: 6 }}>
             <Skeleton width={28} height={12} />
             <Skeleton width={110} height={12} />
           </View>
@@ -238,7 +239,6 @@ export default function PublicScreen() {
 
   const contentCol = desktopContentStyle(isDesktop);
   const rowCenter = desktopRowCenter(isDesktop);
-  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
@@ -254,11 +254,23 @@ export default function PublicScreen() {
               <Text style={S.headerSub}>שנת לימודים {settings.current_year}</Text>
             ) : null}
           </View>
-          <DepthShell depth={3} borderRadius={14} flat>
-            <View style={S.trophyBox}>
-              <Trophy size={22} color={Colors.primaryDark} />
-            </View>
-          </DepthShell>
+          <View style={S.headerActions}>
+            <DepthPressable
+              onPress={() => router.push('/auth/login')}
+              style={[S.headerIconBtn, webPtr]}
+              depth={3}
+              borderRadius={14}
+              accessibilityLabel="כניסה לצוות בית הספר"
+              accessibilityRole="link"
+            >
+              <User size={22} color={Colors.primaryDark} />
+            </DepthPressable>
+            <DepthShell depth={3} borderRadius={14} flat>
+              <View style={S.trophyBox}>
+                <Trophy size={22} color={Colors.primaryDark} />
+              </View>
+            </DepthShell>
+          </View>
         </View>
       </View>
 
@@ -280,14 +292,14 @@ export default function PublicScreen() {
         </View>
       </View>
 
-      {/* ── Scrollable content + footer (footer pinned to bottom when list is short) ── */}
-      <View style={[S.page, rowCenter]}>
+      {/* ── Class list (only this section scrolls) ── */}
       <ScrollView
-        style={[S.pageScroll, contentCol]}
+        style={S.pageScroll}
         contentContainerStyle={S.scrollBody}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[S.listContent, isDesktop ? S.grid : undefined]}>
+        <View style={contentCol}>
+          <View style={[S.listContent, isDesktop ? S.grid : undefined]}>
           {loading && Array.from({ length: 6 }, (_, i) => (
             <CardSkeleton key={i} />
           ))}
@@ -312,21 +324,9 @@ export default function PublicScreen() {
               <ClassCard item={item} />
             </StaggeredItem>
           ))}
+          </View>
         </View>
-
-        <View style={S.scrollSpacer} />
-
-        <TouchableOpacity
-          onPress={() => router.push('/auth/login')}
-          accessibilityRole="link"
-          accessibilityLabel="כניסה לצוות בית הספר"
-          style={[S.staffLink, webPtr, { paddingBottom: 18 + insets.bottom }]}
-        >
-          <LogIn size={12} color={Colors.outline} />
-          <Text style={S.staffLinkText}>כניסה לצוות בית הספר</Text>
-        </TouchableOpacity>
       </ScrollView>
-      </View>
 
     </SafeAreaView>
   );
@@ -335,10 +335,8 @@ export default function PublicScreen() {
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
-  page: { flex: 1, width: '100%' },
-  pageScroll: { flex: 1, backgroundColor: Colors.bg },
-  scrollBody: { flexGrow: 1 },
-  scrollSpacer: { flexGrow: 1, minHeight: 0 },
+  pageScroll: { flex: 1, minHeight: 0, width: '100%', backgroundColor: Colors.bg },
+  scrollBody: { paddingBottom: 24 },
 
   // Header — matches teacher screen
   headerBar: {
@@ -347,14 +345,23 @@ const S = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   headerInner: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 14,
   },
-  headerText: { flex: 1, alignItems: 'flex-end' },
+  headerText: { flex: 1 },
+  headerActions: { flexDirection: HEADER_ROW, alignItems: 'center', gap: 8 },
+  headerIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
@@ -391,7 +398,7 @@ const S = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 14,
     paddingBottom: 14,
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     position: 'relative',
   },
   heroInnerDesktop: {
@@ -399,12 +406,12 @@ const S = StyleSheet.create({
     paddingBottom: 24,
   },
   heroTitleRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     gap: 8,
   },
   heroSubRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     gap: 6,
     marginTop: 4,
@@ -456,11 +463,11 @@ const S = StyleSheet.create({
     overflow: 'hidden',
   },
   cardTop: {
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: RTL_CHILD_ROW, alignItems: 'center',
     justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
   },
   cardTopLeft: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flex: 1, flexWrap: 'wrap',
+    flexDirection: RTL_CHILD_ROW, alignItems: 'center', gap: 10, flex: 1, flexWrap: 'wrap',
   },
   classCircle: {
     width: 52,
@@ -481,10 +488,10 @@ const S = StyleSheet.create({
     textAlign: 'center',
     writingDirection: 'rtl',
   } as any,
-  cardTopRight: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
+  cardTopRight: { flexDirection: RTL_CHILD_ROW, alignItems: 'center', gap: 8 },
   cardPoints: { color: Colors.muted, fontSize: 14, fontWeight: '600' } as any,
   goalBadge: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 4,
+    flexDirection: RTL_CHILD_ROW, alignItems: 'center', gap: 4,
     backgroundColor: Colors.primarySurface, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
     borderWidth: 1, borderColor: Colors.border,
   },
@@ -509,12 +516,12 @@ const S = StyleSheet.create({
   // Progress
   cardProg: {
     paddingHorizontal: 16, paddingBottom: 14,
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 12,
+    flexDirection: RTL_CHILD_ROW, alignItems: 'center', gap: 12,
   },
   progBg: { height: 8, backgroundColor: Colors.surfaceDim, borderRadius: 999 },
   progFill: { height: 8, borderRadius: 999 },
   cardProgRow: {
-    flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 6,
+    flexDirection: RTL_CHILD_ROW, justifyContent: 'space-between', marginTop: 6,
   },
   cardProgPct: { color: Colors.primary, fontSize: 12, fontWeight: '700' } as any,
   cardProgHint: {
@@ -528,13 +535,13 @@ const S = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   noStudentsRow: {
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: RTL_CHILD_ROW, alignItems: 'center',
     justifyContent: 'center', paddingVertical: 8, gap: 6,
   },
   noStudentsText: { color: Colors.outline, fontSize: 13, writingDirection: 'rtl' } as any,
-  pillGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
+  pillGrid: { flexDirection: RTL_CHILD_ROW, flexWrap: 'wrap', gap: 8 },
   pill: {
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: RTL_CHILD_ROW, alignItems: 'center',
     backgroundColor: Colors.primaryLight, borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 6, gap: 6,
   },
@@ -570,17 +577,4 @@ const S = StyleSheet.create({
   errorText: {
     color: Colors.danger, fontSize: 14, textAlign: 'center', writingDirection: 'rtl',
   } as any,
-
-  // Staff link — sits below cards; scrolls with content when list is long
-  staffLink: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingTop: 18,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.card,
-  },
-  staffLinkText: { color: Colors.muted, fontSize: 13, writingDirection: 'rtl' } as any,
 });

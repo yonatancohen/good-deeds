@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { Colors } from '@/components/ui';
 import { webPointer } from '@/lib/adminStyles';
 
+import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 type IconComponent = React.ComponentType<{ size?: number; color?: string }>;
 
 interface NavItem {
@@ -156,7 +157,7 @@ const S = StyleSheet.create({
 
   // ── Logo ──
   logoSection: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 20,
@@ -203,7 +204,7 @@ const S = StyleSheet.create({
     paddingHorizontal: 8,
   },
   navItem: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 12,
@@ -241,7 +242,7 @@ const S = StyleSheet.create({
     paddingBottom: 16,
   },
   userRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: HEADER_ROW,
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 12,
