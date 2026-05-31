@@ -17,13 +17,13 @@ import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
 import { Skeleton, Colors } from '@/components/ui';
 import { DepthShell } from '@/lib/DepthShell';
-import { useBreakpoint } from '@/lib/responsive';
+import { useBreakpoint, desktopContentStyle, desktopRowCenter } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { getClassColorScheme } from '@/lib/classColors';
 import { PompomJar, POMPOM_JAR_SM } from '@/components/PomPomJar';
+import { StaggeredItem } from '@/components/StaggeredItem';
 
 const webPtr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
-const MAX_CONTENT_W = 900;
 
 // ── Progress bar ───────────────────────────────────────────────────────────────
 function ProgBar({ value, max }: { value: number; max: number }) {
@@ -207,14 +207,15 @@ export default function PublicScreen() {
   const { data, settings, loading, error } = usePublicData();
   const { isDesktop } = useBreakpoint();
 
-  const centreContent = isDesktop ? S.centreContent : undefined;
+  const contentCol = desktopContentStyle(isDesktop);
+  const rowCenter = desktopRowCenter(isDesktop);
 
   return (
     <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
 
       {/* ── Header (full-bleed bar, like teacher) ── */}
-      <View style={S.headerBar}>
-        <View style={[S.headerInner, centreContent]}>
+      <View style={[S.headerBar, rowCenter]}>
+        <View style={[S.headerInner, contentCol]}>
           <View style={S.headerText}>
             <Text style={S.headerTitle} accessibilityRole="header">
               {settings?.school_name ?? t('appName')}
@@ -232,8 +233,8 @@ export default function PublicScreen() {
       </View>
 
       {/* ── Hero (full-bleed yellow strip) ── */}
-      <View style={S.hero}>
-        <View style={[S.heroInner, centreContent, isDesktop && S.heroInnerDesktop]}>
+      <View style={[S.hero, rowCenter]}>
+        <View style={[S.heroInner, contentCol, isDesktop && S.heroInnerDesktop]}>
           <View style={[S.blob, { width: 130, height: 130, top: -45, right: -35 }]} />
           <View style={[S.blob, { width: 80, height: 80, bottom: -30, left: -20, opacity: 0.12 }]} />
           <View style={[S.blob, { width: 52, height: 52, top: 16, left: 50, opacity: 0.10 }]} />
@@ -250,9 +251,9 @@ export default function PublicScreen() {
       </View>
 
       {/* ── Scrollable content ── */}
-      <View style={[S.page, centreContent]}>
+      <View style={[S.page, rowCenter]}>
         <ScrollView
-          style={{ flex: 1 }}
+          style={[S.pageScroll, contentCol]}
           contentContainerStyle={S.listContent}
           showsVerticalScrollIndicator={false}
         >
@@ -263,13 +264,13 @@ export default function PublicScreen() {
             ))}
 
             {!loading && error && (
-              <View style={S.errorCard}>
+              <View style={[S.errorCard, isDesktop && S.gridFullSpan]}>
                 <Text style={S.errorText}>{error}</Text>
               </View>
             )}
 
             {!loading && !error && data.length === 0 && (
-              <View style={S.empty}>
+              <View style={[S.empty, isDesktop && S.gridFullSpan]}>
                 <View style={S.emptyIcon}>
                   <Star size={26} color={Colors.muted} />
                 </View>
@@ -277,8 +278,10 @@ export default function PublicScreen() {
               </View>
             )}
 
-            {!loading && !error && data.map(item => (
-              <ClassCard key={item.class.id} item={item} />
+            {!loading && !error && data.map((item, index) => (
+              <StaggeredItem key={item.class.id} index={index}>
+                <ClassCard item={item} />
+              </StaggeredItem>
             ))}
 
           </View>
@@ -304,11 +307,7 @@ export default function PublicScreen() {
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
   page: { flex: 1, backgroundColor: Colors.bg },
-  centreContent: {
-    maxWidth: MAX_CONTENT_W,
-    alignSelf: 'center',
-    width: '100%',
-  } as any,
+  pageScroll: { flex: 1 },
 
   // Header — matches teacher screen
   headerBar: {
@@ -408,6 +407,10 @@ const S = StyleSheet.create({
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
     gap: 18,
+    direction: 'rtl',
+  } as any,
+  gridFullSpan: {
+    gridColumn: '1 / -1',
   } as any,
 
   // Card

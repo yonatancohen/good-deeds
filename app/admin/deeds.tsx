@@ -16,6 +16,7 @@ import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { BookOpen, Pencil, Trash2, Plus, ChevronRight, Sparkles } from 'lucide-react-native';
 import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
+import { StaggeredItem } from '@/components/StaggeredItem';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -299,17 +300,18 @@ export default function AdminDeedsScreen() {
               </View>
             ) : (
               <View style={[S.grid, gridStyle]}>
-                {sortedDeeds.map((deed) => (
-                  <DeedCube
-                    key={deed.id}
-                    deed={deed}
-                    scheme={schemeForAmount(deed.amount, deed.is_active)}
-                    isDesktop={isDesktop}
-                    cubeWidth={cubeWidth}
-                    onEdit={() => openEdit(deed)}
-                    onDelete={() => handleDelete(deed)}
-                    onToggle={() => handleToggleActive(deed)}
-                  />
+                {sortedDeeds.map((deed, index) => (
+                  <StaggeredItem key={deed.id} index={index}>
+                    <DeedCube
+                      deed={deed}
+                      scheme={schemeForAmount(deed.amount, deed.is_active)}
+                      isDesktop={isDesktop}
+                      cubeWidth={cubeWidth}
+                      onEdit={() => openEdit(deed)}
+                      onDelete={() => handleDelete(deed)}
+                      onToggle={() => handleToggleActive(deed)}
+                    />
+                  </StaggeredItem>
                 ))}
               </View>
             )}

@@ -13,7 +13,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+          content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
         />
         {/* Tailwind CSS – generated via `npm run tw:build` */}
         <link rel="stylesheet" href="/tailwind.css" />
@@ -25,6 +25,7 @@ export default function Root({ children }: PropsWithChildren) {
         <style dangerouslySetInnerHTML={{
           __html: `
             html, body, #root { height: 100%; }
+            html, body { background-color: #ecdbfb; }
             * { box-sizing: border-box; }
           `
         }} />

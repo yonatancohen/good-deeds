@@ -231,7 +231,12 @@ export default function AdminStudentsScreen() {
                 return (
                   <View key={cls.id} style={AS.row}>
                     <TouchableOpacity
-                      onPress={() => router.push(`/admin/students/${cls.id}`)}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/admin/students/classId',
+                          params: { classId: cls.id },
+                        })
+                      }
                       style={[S.rowPress, webPointer]}
                       accessibilityRole="button"
                       accessibilityLabel={`כיתה ${cls.name}, ${studentCountLabel(count)}`}

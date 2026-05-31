@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
 export default function AdminLayout() {
   const { session, user, loading, isAdmin } = useAuth();
@@ -33,6 +33,10 @@ export default function AdminLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: '#fff8f2' },
+        animation: 'slide_from_right',
+        animationDuration: 280,
+        gestureEnabled: true,
+        fullScreenGestureEnabled: Platform.OS === 'ios',
       }}
     />
   );

@@ -25,6 +25,7 @@ import { shadow } from '@/lib/shadow';
 export { Colors } from '@/lib/colors';
 import { Colors } from '@/lib/colors';
 import { DepthShell } from '@/lib/DepthShell';
+import { hapticLight } from '@/lib/haptics';
 import { AS } from '@/lib/adminStyles';
 import { useBreakpoint } from '@/lib/responsive';
 import { Plus } from 'lucide-react-native';
@@ -211,6 +212,7 @@ export function Button({
   const pressScale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
+    hapticLight();
     setPressed(true);
     Animated.spring(pressScale, {
       toValue: 0.96,
@@ -590,7 +592,10 @@ export function TactileIconBtn({
     <DepthShell depth={depth} borderRadius={borderRadius} pressed={pressed} flat={flat}>
       <TouchableOpacity
         onPress={onPress}
-        onPressIn={() => setPressed(true)}
+        onPressIn={() => {
+          hapticLight();
+          setPressed(true);
+        }}
         onPressOut={() => setPressed(false)}
         activeOpacity={1}
         accessibilityRole="button"
@@ -649,7 +654,10 @@ export function AddBtn({
     <DepthShell depth={5} borderRadius={16} pressed={pressed} flat outerStyle={style}>
       <TouchableOpacity
         onPress={onPress}
-        onPressIn={() => setPressed(true)}
+        onPressIn={() => {
+          hapticLight();
+          setPressed(true);
+        }}
         onPressOut={() => setPressed(false)}
         activeOpacity={1}
         style={[
@@ -698,7 +706,10 @@ export function DepthPressable({
     <DepthShell depth={depth} borderRadius={br as number} pressed={pressed} flat={flat} color={color}>
       <TouchableOpacity
         onPress={onPress}
-        onPressIn={() => setPressed(true)}
+        onPressIn={() => {
+          if (!disabled) hapticLight();
+          setPressed(true);
+        }}
         onPressOut={() => setPressed(false)}
         disabled={disabled}
         activeOpacity={1}

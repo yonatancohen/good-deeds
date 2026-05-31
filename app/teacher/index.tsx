@@ -21,6 +21,7 @@ import { LogOut, ClipboardList, ShieldCheck, Users } from 'lucide-react-native';
 
 import { AS } from '@/lib/adminStyles';
 import { Colors, DepthPressable } from '@/components/ui';
+import { StaggeredItem } from '@/components/StaggeredItem';
 import { DepthShell } from '@/lib/DepthShell';
 import { shadow } from '@/lib/shadow';
 import { useAuth } from '@/contexts/AuthContext';
@@ -443,15 +444,21 @@ export default function TeacherHome() {
 
           ) : (
             <View style={[S.grid, gridStyle]}>
-              {classes.map((item) => (
-                <TeacherClassCard
-                  key={item.class.id}
-                  item={item}
-                  goal={goal}
-                  compact={cols >= 3}
-                  cardWidth={cardWidth}
-                  onPress={() => router.push(`/teacher/${item.class.id}`)}
-                />
+              {classes.map((item, index) => (
+                <StaggeredItem key={item.class.id} index={index}>
+                  <TeacherClassCard
+                    item={item}
+                    goal={goal}
+                    compact={cols >= 3}
+                    cardWidth={cardWidth}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/teacher/classId',
+                        params: { classId: item.class.id },
+                      })
+                    }
+                  />
+                </StaggeredItem>
               ))}
             </View>
           )}

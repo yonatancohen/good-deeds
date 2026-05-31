@@ -16,6 +16,7 @@ import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { Gift as GiftIcon, Pencil, Trash2, Plus, ChevronRight } from 'lucide-react-native';
 import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
+import { StaggeredItem } from '@/components/StaggeredItem';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -298,17 +299,18 @@ export default function AdminGiftsScreen() {
               </View>
             ) : (
               <View style={[S.grid, gridStyle]}>
-                {sortedGifts.map((gift) => (
-                  <GiftCube
-                    key={gift.id}
-                    gift={gift}
-                    scheme={schemeForGift(gift.is_active)}
-                    isDesktop={isDesktop}
-                    cubeWidth={cubeWidth}
-                    onEdit={() => openEdit(gift)}
-                    onDelete={() => handleDelete(gift)}
-                    onToggle={() => handleToggleActive(gift)}
-                  />
+                {sortedGifts.map((gift, index) => (
+                  <StaggeredItem key={gift.id} index={index}>
+                    <GiftCube
+                      gift={gift}
+                      scheme={schemeForGift(gift.is_active)}
+                      isDesktop={isDesktop}
+                      cubeWidth={cubeWidth}
+                      onEdit={() => openEdit(gift)}
+                      onDelete={() => handleDelete(gift)}
+                      onToggle={() => handleToggleActive(gift)}
+                    />
+                  </StaggeredItem>
                 ))}
               </View>
             )}

@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { Colors, DepthPressable } from '@/components/ui';
+import { StaggeredItem } from '@/components/StaggeredItem';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { DepthShell } from '@/lib/DepthShell';
@@ -486,13 +487,14 @@ export default function AdminHomeScreen() {
           <PendingEmptyCard />
         ) : (
           <View style={S.pendingList}>
-            {pendingRedemptions.slice(0, isDesktop ? 3 : 5).map((r) => (
-              <PendingRedemptionCard
-                key={r.id}
-                item={r}
-                fulfilling={fulfillingId === r.id}
-                onMarkFulfilled={() => handleMarkFulfilled(r)}
-              />
+            {pendingRedemptions.slice(0, isDesktop ? 3 : 5).map((r, index) => (
+              <StaggeredItem key={r.id} index={index}>
+                <PendingRedemptionCard
+                  item={r}
+                  fulfilling={fulfillingId === r.id}
+                  onMarkFulfilled={() => handleMarkFulfilled(r)}
+                />
+              </StaggeredItem>
             ))}
           </View>
         )}
@@ -505,19 +507,27 @@ export default function AdminHomeScreen() {
       <View style={[S.section, compact && S.sectionLast]}>
         <Text style={[S.sectionTitle, S.sectionTitleStandalone]}>ניהול מערכת</Text>
         <View style={[S.grid, isDesktop && { gap: 18 }]}>
-          {menuRows.map((row, i) => (
-            <View key={i} style={[S.gridRow, isDesktop && { gap: 18 }]}>
-              {row.map((tile) => (
-                <MenuTileCard
-                  key={tile.route}
-                  tile={tile}
-                  onPress={() => router.push(tile.route as any)}
-                  style={[
-                    { flex: 1, minWidth: 0 },
-                    !compact && { width: tileWidth, flex: undefined },
-                  ]}
-                />
-              ))}
+          {menuRows.map((row, rowIndex) => (
+            <View key={rowIndex} style={[S.gridRow, isDesktop && { gap: 18 }]}>
+              {row.map((tile, colIndex) => {
+                const staggerIndex = rowIndex * menuCols + colIndex;
+                return (
+                  <StaggeredItem
+                    key={tile.route}
+                    index={staggerIndex}
+                    style={[
+                      { flex: 1, minWidth: 0 },
+                      !compact && { width: tileWidth, flex: undefined },
+                    ]}
+                  >
+                    <MenuTileCard
+                      tile={tile}
+                      onPress={() => router.push(tile.route as any)}
+                      style={{ flex: 1, minWidth: 0, width: !compact ? tileWidth : undefined }}
+                    />
+                  </StaggeredItem>
+                );
+              })}
               {row.length < menuCols &&
                 Array.from({ length: menuCols - row.length }).map((_, j) => (
                   <View key={`pad-${j}`} style={{ flex: 1 }} />

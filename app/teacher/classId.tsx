@@ -1,5 +1,5 @@
 /**
- * Class Detail Screen — /teacher/[classId]
+ * Class Detail Screen — /teacher/classId
  *
  * Layout (mobile, scrollable):
  *   1. Back header
@@ -26,6 +26,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronRight, Plus, ClipboardList, Users, Trash2, Pencil, Trophy, Upload } from 'lucide-react-native';
 
 import { PompomJar } from '@/components/PomPomJar';
+import { hapticSuccess } from '@/lib/haptics';
+import { StaggeredItem } from '@/components/StaggeredItem';
 import AdminSheet from '@/components/AdminSheet';
 import StudentCsvUploadSheet from '@/components/StudentCsvUploadSheet';
 import { Colors, TactileIconBtn, AddBtn, DepthPressable } from '@/components/ui';
@@ -90,6 +92,7 @@ function GiveCreditSheet({ visible, student, deeds, userId, onClose, onSuccess }
     } else {
       setSelectedDeedId(null);
       setNote('');
+      hapticSuccess();
       onSuccess(student.id, selectedDeed.amount);
     }
   }
@@ -212,6 +215,7 @@ function ClassCreditSheet({
     } else {
       setAmount(null);
       setNote('');
+      hapticSuccess();
       onSuccess(amount);
     }
   }
@@ -900,15 +904,16 @@ export default function ClassDetailScreen() {
               </TactileIconBtn>
             </View>
           ) : (
-            visibleStudents.map(({ student, credits }) => (
-              <StudentItem
-                key={student.id}
-                student={student}
-                credits={credits}
-                onGiveCredit={() => setGiveCreditStudent(student)}
-                onViewHistory={() => setHistoryStudent(student)}
-                onEdit={() => openEditStudent(student)}
-              />
+            visibleStudents.map(({ student, credits }, index) => (
+              <StaggeredItem key={student.id} index={index}>
+                <StudentItem
+                  student={student}
+                  credits={credits}
+                  onGiveCredit={() => setGiveCreditStudent(student)}
+                  onViewHistory={() => setHistoryStudent(student)}
+                  onEdit={() => openEditStudent(student)}
+                />
+              </StaggeredItem>
             ))
           )}
         </View>
