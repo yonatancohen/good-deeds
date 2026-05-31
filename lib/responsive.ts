@@ -18,7 +18,7 @@ export function useBreakpoint() {
 /** Max-width column for desktop web content. Pair with desktopRowCenter on the parent. */
 export function desktopContentStyle(isDesktop: boolean): ViewStyle | undefined {
   if (!isDesktop) return undefined;
-  return { maxWidth: MAX_CONTENT_W, width: '100%' };
+  return { maxWidth: MAX_CONTENT_W, width: '100%', alignSelf: 'center' };
 }
 
 /** Centers a max-width child inside a full-bleed row (header, hero, etc.). */

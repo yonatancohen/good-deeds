@@ -22,19 +22,32 @@ html, body {
   overflow-x: hidden;
   direction: ltr;
 }
-/* RTL on #root only — avoids iOS PWA viewport shift from dir=rtl on <html> */
+/*
+ * RTL on #root only — avoids iOS PWA viewport shift from dir=rtl on <html>.
+ * Use column flex so the app shell stretches full width (row + direction:rtl
+ * would pin content to the right edge with empty space on the left).
+ */
+html, body {
+  min-height: 100%;
+}
 #root {
   direction: rtl;
   unicode-bidi: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   max-width: 100%;
   min-width: 100%;
   min-height: 100dvh;
-  align-self: stretch;
+  flex: 1;
   margin: 0;
-  inset-inline: 0;
 }
 #root > div {
+  direction: rtl;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   width: 100%;
   max-width: 100%;
   min-width: 100%;

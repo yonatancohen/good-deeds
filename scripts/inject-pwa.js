@@ -54,9 +54,9 @@ function main() {
   }
 
   const splashPaint = `<style id="splash-paint">
-html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden;background-color:${SPLASH_BG};direction:ltr}
-#root{direction:rtl;unicode-bidi:isolate;width:100%;max-width:100%;min-width:100%;min-height:100%;min-height:100dvh;display:flex;flex:1;margin:0}
-#root>div{width:100%;max-width:100%;min-width:100%}
+html,body{margin:0;padding:0;width:100%;max-width:100%;min-height:100%;overflow-x:hidden;background-color:${SPLASH_BG};direction:ltr}
+#root{direction:rtl;unicode-bidi:isolate;display:flex;flex-direction:column;align-items:stretch;width:100%;max-width:100%;min-width:100%;min-height:100dvh;flex:1;margin:0}
+#root>div{direction:rtl;display:flex;flex-direction:column;flex:1;width:100%;max-width:100%;min-width:100%}
 </style>`;
   const block = `\n    ${MARKER}\n    ${splashPaint}\n    ${TAGS}\n    <!-- pwa:end -->\n  `;
 

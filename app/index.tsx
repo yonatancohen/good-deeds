@@ -281,8 +281,9 @@ export default function PublicScreen() {
       </View>
 
       {/* ── Scrollable content + footer (footer pinned to bottom when list is short) ── */}
+      <View style={[S.page, rowCenter]}>
       <ScrollView
-        style={[S.pageScroll, contentCol, rowCenter]}
+        style={[S.pageScroll, contentCol]}
         contentContainerStyle={S.scrollBody}
         showsVerticalScrollIndicator={false}
       >
@@ -325,6 +326,7 @@ export default function PublicScreen() {
           <Text style={S.staffLinkText}>כניסה לצוות בית הספר</Text>
         </TouchableOpacity>
       </ScrollView>
+      </View>
 
     </SafeAreaView>
   );
@@ -333,6 +335,7 @@ export default function PublicScreen() {
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
+  page: { flex: 1, width: '100%' },
   pageScroll: { flex: 1, backgroundColor: Colors.bg },
   scrollBody: { flexGrow: 1 },
   scrollSpacer: { flexGrow: 1, minHeight: 0 },

@@ -25,9 +25,15 @@ export default function Root({ children }: PropsWithChildren) {
         <style dangerouslySetInnerHTML={{
           __html: `
             html, body, #root { height: 100%; width: 100%; max-width: 100%; margin: 0; padding: 0; }
-            html, body { background-color: #ecdbfb; overflow-x: hidden; direction: ltr; }
-            #root { direction: rtl; unicode-bidi: isolate; min-height: 100dvh; display: flex; flex: 1; min-width: 100%; }
-            #root > div { width: 100%; min-width: 100%; }
+            html, body { background-color: #ecdbfb; overflow-x: hidden; direction: ltr; min-height: 100%; }
+            #root {
+              direction: rtl; unicode-bidi: isolate; min-height: 100dvh;
+              display: flex; flex-direction: column; align-items: stretch; flex: 1; min-width: 100%;
+            }
+            #root > div {
+              direction: rtl; display: flex; flex-direction: column; flex: 1;
+              width: 100%; min-width: 100%;
+            }
             * { box-sizing: border-box; }
           `
         }} />
