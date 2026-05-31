@@ -166,7 +166,7 @@ const S = StyleSheet.create({
     marginBottom: 4,
   } as any,
   btns: {
-    flexDirection: 'row', gap: 10, marginTop: 22, width: '100%',
+    flexDirection: 'row-reverse', gap: 10, marginTop: 22, width: '100%',
   },
   btnCancel: {
     flex: 1, height: 46, borderRadius: 12,

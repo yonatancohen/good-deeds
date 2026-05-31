@@ -4,7 +4,8 @@
  */
 import { useRouter } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
-import { I18nManager, Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import { APP_IS_RTL } from '@/lib/rtl';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -23,7 +24,7 @@ export function SwipeBackGesture() {
   const router = useRouter();
   const canGoBackRef = useRef(false);
   const translateX = useSharedValue(0);
-  const isRTL = I18nManager.isRTL;
+  const isRTL = APP_IS_RTL;
 
   const refreshCanGoBack = useCallback(() => {
     canGoBackRef.current = router.canGoBack();

@@ -358,7 +358,7 @@ export default function AdminRedemptionsScreen() {
                             </Text>
                           </View>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                           <Text style={S.redemptionDate}>{moment(r.redeemed_at).format('DD/MM/YYYY')}</Text>
                           <TouchableOpacity
                             onPress={() => handleDelete(r)}

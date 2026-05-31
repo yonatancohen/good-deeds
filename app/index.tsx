@@ -481,7 +481,7 @@ const S = StyleSheet.create({
     textAlign: 'center',
     writingDirection: 'rtl',
   } as any,
-  cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTopRight: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
   cardPoints: { color: Colors.muted, fontSize: 14, fontWeight: '600' } as any,
   goalBadge: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 4,
@@ -532,7 +532,7 @@ const S = StyleSheet.create({
     justifyContent: 'center', paddingVertical: 8, gap: 6,
   },
   noStudentsText: { color: Colors.outline, fontSize: 13, writingDirection: 'rtl' } as any,
-  pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pillGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
   pill: {
     flexDirection: 'row-reverse', alignItems: 'center',
     backgroundColor: Colors.primaryLight, borderRadius: 8,

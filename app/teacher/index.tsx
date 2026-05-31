@@ -73,7 +73,7 @@ const S = StyleSheet.create({
     fontSize: 12, color: Colors.muted, marginTop: 1,
     textAlign: 'right', writingDirection: 'rtl',
   } as any,
-  headerBtns: { flexDirection: 'row', gap: 8 },
+  headerBtns: { flexDirection: 'row-reverse', gap: 8 },
   headerIconBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center',
@@ -110,11 +110,10 @@ const S = StyleSheet.create({
   },
 
   cardTop: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    ...(Platform.OS === 'web' ? ({ direction: 'rtl' } as object) : null),
   },
   classCircle: {
     width: 52,

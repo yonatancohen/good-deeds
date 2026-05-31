@@ -84,7 +84,7 @@ function PillGroup({
 // ── Stepper ───────────────────────────────────────────────────────────────────
 function Stepper({ value, onChange, max = 4 }: { value: number; onChange: (v: number) => void; max?: number }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+    <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
       <TouchableOpacity
         onPress={() => value > 0 && onChange(value - 1)}
         disabled={value <= 0}

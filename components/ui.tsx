@@ -41,7 +41,7 @@ const S = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 28,
     minHeight: 54,
-    flexDirection: 'row' as const,
+    flexDirection: 'row-reverse' as const,
     gap: 8,
   },
   btnFull: { alignSelf: 'stretch' as const },
