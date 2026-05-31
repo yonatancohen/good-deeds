@@ -221,22 +221,31 @@ export default function AdminDeedsScreen() {
   function openAdd()  { setEditingDeed(null); setName(''); setAmount('1'); setModalVisible(true); }
   function openEdit(deed: Deed) { setEditingDeed(deed); setName(deed.name); setAmount(String(deed.amount)); setModalVisible(true); }
 
+  function closeDeedModal() {
+    setModalVisible(false);
+    setEditingDeed(null);
+    setName('');
+    setAmount('1');
+  }
+
   async function handleSave() {
     const amountNum = parseInt(amount, 10);
     if (!name.trim()) { Alert.alert('שגיאה', 'שם המעשה הוא שדה חובה'); return; }
     if (isNaN(amountNum) || amountNum < 1 || amountNum > 10) { Alert.alert('שגיאה', 'הערך חייב להיות בין 1 ל-10'); return; }
 
     setSaving(true);
+    let error: { message: string } | null = null;
     if (editingDeed) {
-      const { error } = await supabase.from('deeds').update({ name: name.trim(), amount: amountNum }).eq('id', editingDeed.id);
-      if (error) Alert.alert('שגיאה', error.message);
+      ({ error } = await supabase.from('deeds').update({ name: name.trim(), amount: amountNum }).eq('id', editingDeed.id));
     } else {
-      const { error } = await supabase.from('deeds').insert({ name: name.trim(), amount: amountNum, is_active: true });
-      if (error) Alert.alert('שגיאה', error.message);
+      ({ error } = await supabase.from('deeds').insert({ name: name.trim(), amount: amountNum, is_active: true }));
     }
     setSaving(false);
-    setModalVisible(false);
-    loadDeeds();
+    if (error) Alert.alert('שגיאה', error.message);
+    else {
+      closeDeedModal();
+      loadDeeds();
+    }
   }
 
   async function handleToggleActive(deed: Deed) {
@@ -319,7 +328,7 @@ export default function AdminDeedsScreen() {
         </ScrollView>
       )}
 
-      <AdminSheet visible={modalVisible} onClose={() => setModalVisible(false)}>
+      <AdminSheet visible={modalVisible} onClose={closeDeedModal}>
         <Text style={AS.sheetTitle} accessibilityRole="header">
           {editingDeed ? `ערוך: ${editingDeed.name}` : t('addDeed')}
         </Text>
@@ -352,7 +361,7 @@ export default function AdminDeedsScreen() {
           <TouchableOpacity onPress={handleSave} disabled={saving} style={[saving ? AS.saveBtnDisabled : AS.saveBtn, webPointer]} accessibilityRole="button" accessibilityLabel="שמור">
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>{t('save')}</Text>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setModalVisible(false)} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
+          <TouchableOpacity onPress={closeDeedModal} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
             <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
           </TouchableOpacity>
         </View>

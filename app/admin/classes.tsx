@@ -202,6 +202,13 @@ export default function AdminClassesScreen() {
     setModalVisible(true);
   }
 
+  function closeClassModal() {
+    setModalVisible(false);
+    setEditingClass(null);
+    setSelGrade('');
+    setSelNum('');
+  }
+
   async function handleSave() {
     if (!canSave) { Alert.alert('שגיאה', 'יש לבחור שכבה ומספר כיתה'); return; }
     setSaving(true);
@@ -211,17 +218,19 @@ export default function AdminClassesScreen() {
       year:  currentYear || bulkEffectiveYear || null,
     };
 
+    let error: { message: string } | null = null;
     if (editingClass) {
-      const { error } = await supabase.from('classes').update(payload).eq('id', editingClass.id);
-      if (error) Alert.alert('שגיאה', error.message);
+      ({ error } = await supabase.from('classes').update(payload).eq('id', editingClass.id));
     } else {
-      const { error } = await supabase.from('classes').insert(payload);
-      if (error) Alert.alert('שגיאה', error.message);
+      ({ error } = await supabase.from('classes').insert(payload));
     }
 
     setSaving(false);
-    setModalVisible(false);
-    loadClasses();
+    if (error) Alert.alert('שגיאה', error.message);
+    else {
+      closeClassModal();
+      loadClasses();
+    }
   }
 
   async function handleDelete(cls: ClassRow) {
@@ -401,7 +410,7 @@ export default function AdminClassesScreen() {
         </ScrollView>
       </AdminSheet>
 
-      <AdminSheet visible={modalVisible} onClose={() => setModalVisible(false)}>
+      <AdminSheet visible={modalVisible} onClose={closeClassModal}>
             <Text style={AS.sheetTitle} accessibilityRole="header">
               {editingClass ? `ערוך — כיתה ${editingClass.name}` : 'הוסף כיתה'}
             </Text>
@@ -441,7 +450,7 @@ export default function AdminClassesScreen() {
               >
                 {saving ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>{t('save')}</Text>}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
+              <TouchableOpacity onPress={closeClassModal} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
                 <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
               </TouchableOpacity>
             </View>

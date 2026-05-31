@@ -122,8 +122,15 @@ export default function AdminClassStudentsScreen() {
     }, [load]),
   );
 
+  const emptyManualRows = (): ManualRow[] => [{ id: '1', first_name: '', last_name: '' }];
+
+  function closeManualSheet() {
+    setManualVisible(false);
+    setManualRows(emptyManualRows());
+  }
+
   function openManual() {
-    setManualRows([{ id: '1', first_name: '', last_name: '' }]);
+    setManualRows(emptyManualRows());
     setManualVisible(true);
   }
 
@@ -166,7 +173,7 @@ export default function AdminClassStudentsScreen() {
       Alert.alert('שגיאה', error);
     } else {
       Alert.alert('✅', `${count} תלמידים נוספו`);
-      setManualVisible(false);
+      closeManualSheet();
       load();
     }
   }
@@ -282,7 +289,7 @@ export default function AdminClassStudentsScreen() {
         </ScrollView>
       )}
 
-      <AdminSheet visible={manualVisible} onClose={() => setManualVisible(false)}>
+      <AdminSheet visible={manualVisible} onClose={closeManualSheet}>
         <Text style={AS.sheetTitle} accessibilityRole="header">
           הוספת תלמידים — {className}
         </Text>
@@ -343,7 +350,7 @@ export default function AdminClassStudentsScreen() {
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setManualVisible(false)}
+            onPress={closeManualSheet}
             style={[AS.cancelBtn, webPointer]}
             accessibilityRole="button"
             accessibilityLabel="ביטול"

@@ -735,6 +735,13 @@ export default function ClassDetailScreen() {
   }
 
   // ── Student CRUD ──────────────────────────────────────────────────────────
+  function closeStudentSheet() {
+    setStudentSheetVisible(false);
+    setEditingStudent(null);
+    setStudentFirstName('');
+    setStudentLastName('');
+  }
+
   function openAddStudent() {
     setEditingStudent(null);
     setStudentFirstName('');
@@ -775,7 +782,7 @@ export default function ClassDetailScreen() {
       if (error) { Alert.alert('שגיאה', error.message); return; }
       setLocallyAddedStudents((prev) => [...prev, { student: newStudent, credits: 0 }]);
     }
-    setStudentSheetVisible(false);
+    closeStudentSheet();
   }
 
   // ── Loading / error states ────────────────────────────────────────────────
@@ -988,7 +995,7 @@ export default function ClassDetailScreen() {
       />
 
       {/* ── Add / Edit Student Sheet ── */}
-      <AdminSheet visible={studentSheetVisible} onClose={() => setStudentSheetVisible(false)}>
+      <AdminSheet visible={studentSheetVisible} onClose={closeStudentSheet}>
         <Text style={S.sheetTitle} accessibilityRole="header">
           {editingStudent
             ? `ערוך תלמיד — ${editingStudent.first_name} ${editingStudent.last_name}`
@@ -1041,7 +1048,7 @@ export default function ClassDetailScreen() {
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setStudentSheetVisible(false)}
+            onPress={closeStudentSheet}
             accessibilityRole="button"
             accessibilityLabel="ביטול"
             style={[AS.cancelBtn, ptr]}

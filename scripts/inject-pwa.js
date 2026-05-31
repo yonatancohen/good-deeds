@@ -53,7 +53,11 @@ function main() {
     return;
   }
 
-  const splashPaint = `<style id="splash-paint">html,body{background-color:${SPLASH_BG}}</style>`;
+  const splashPaint = `<style id="splash-paint">
+html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden;background-color:${SPLASH_BG};direction:ltr}
+#root{direction:rtl;unicode-bidi:isolate;width:100%;max-width:100%;min-width:100%;min-height:100%;min-height:100dvh;display:flex;flex:1;margin:0}
+#root>div{width:100%;max-width:100%;min-width:100%}
+</style>`;
   const block = `\n    ${MARKER}\n    ${splashPaint}\n    ${TAGS}\n    <!-- pwa:end -->\n  `;
 
   if (!html.includes('</head>')) {
@@ -73,11 +77,10 @@ function main() {
     html = html.replace('</head>', `    <meta name="viewport" content="${VIEWPORT}" />\n  </head>`);
   }
 
-  // RTL + Hebrew for production SPA (app/+html.tsx is not used in metro web export)
+  // Hebrew lang only — do not set dir=rtl on <html> (breaks full-width layout on iOS PWA)
   html = html.replace(/<html([^>]*)>/i, (match, attrs) => {
-    let next = attrs || '';
+    let next = (attrs || '').replace(/\sdir=(["'])(rtl|ltr)\1/i, '');
     if (!/\blang=/i.test(next)) next += ' lang="he"';
-    if (!/\bdir=/i.test(next)) next += ' dir="rtl"';
     return `<html${next}>`;
   });
 

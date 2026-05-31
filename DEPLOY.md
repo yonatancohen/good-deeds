@@ -72,7 +72,8 @@ Routing is rewritten so `expo-router` deep links work (everything that isn't a s
 4. **Add the env vars** in Vercel dashboard → Project → Settings → Environment Variables:
    - `EXPO_PUBLIC_SUPABASE_URL`
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-   - (Both, for Production + Preview + Development)
+   - `EXPO_PUBLIC_SITE_URL` (production URL, for teacher invite email links)
+   - (All three, for Production + Preview + Development)
 5. From now on, every `git push` to `main` auto-deploys to production. Every `git push` to a branch creates a preview URL.
 
 > If you ran `npm run deploy:setup` first, the env vars are already pushed via CLI — you can skip step 4.
@@ -128,6 +129,7 @@ This is what you'll run after a feature is ready: it deploys the web build to Ve
 |-----|-----------------|----------------|
 | `EXPO_PUBLIC_SUPABASE_URL` | Expo app (web + native) | `.env` locally, Vercel env vars in prod |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Expo app (web + native) | `.env` locally, Vercel env vars in prod |
+| `EXPO_PUBLIC_SITE_URL` | Auth email redirect links | `.env` locally, Vercel env vars in prod |
 
 > The `EXPO_PUBLIC_` prefix is required — it's how Expo exposes vars to the client bundle.
 > Never put secrets here — only the public anon key. Server-only secrets stay on Supabase.
@@ -150,6 +152,49 @@ Open browser devtools — most likely env vars aren't set on Vercel. Re-run `npm
 
 **iOS / Android standalone builds**
 Expo Go is enough for a single school. If you ever want real installable apps, see Apple Developer Program ($99/yr) and Google Play ($25 once). Build with `eas build -p ios --profile production` or `eas build -p android --profile production`.
+
+---
+
+## Teacher invite emails (Supabase Auth)
+
+When an admin invites a teacher, the app creates the user and asks Supabase to send a **password setup** email. If teachers never receive mail, check these in order:
+
+### 1. Redirect URLs (required)
+
+Supabase Dashboard → **Authentication** → **URL Configuration**
+
+| Field | Example |
+| ----- | ------- |
+| **Site URL** | `https://good-omega-three.vercel.app` |
+| **Redirect URLs** | `https://good-omega-three.vercel.app/**` |
+| Local dev | `http://localhost:8081/**` (or your Expo web port) |
+
+The invite link must land on `/auth/set-password` on your deployed site. Without allowlisted redirect URLs, Supabase may accept the API call but **not send** email, or the link in the email will be rejected.
+
+Set the same origin in Vercel env:
+
+```bash
+EXPO_PUBLIC_SITE_URL=https://good-omega-three.vercel.app
+```
+
+### 2. Confirm email setting
+
+**Authentication** → **Providers** → **Email**
+
+- If **Confirm email** is **ON**: the teacher gets a **confirmation** email from `signUp`, not a separate “set password” mail. They must click that link first. The admin UI explains this in the success alert.
+- For the simpler flow (one “set your password” email), turn **Confirm email** **OFF**, then invite again.
+
+### 3. Email delivery (spam / SMTP)
+
+Default mail is sent from `noreply@mail.supabase.io` (free tier has rate limits). Ask teachers to check **spam**. For production, configure **Custom SMTP** under **Project Settings** → **Authentication** (or use a school domain on Supabase Pro).
+
+### 4. Auth logs
+
+**Authentication** → **Logs** — look for `user.signup`, `user.recovery`, or errors when you invite.
+
+### 5. Teacher already exists
+
+Re-inviting the same email sends a **password recovery** email instead of creating a duplicate user. If the teacher still cannot log in, use **Forgot password** on the login screen (after redirect URLs are fixed).
 
 ---
 

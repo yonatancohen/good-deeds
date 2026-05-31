@@ -220,22 +220,31 @@ export default function AdminGiftsScreen() {
   function openAdd() { setEditingGift(null); setName(''); setDescription(''); setModalVisible(true); }
   function openEdit(gift: Gift) { setEditingGift(gift); setName(gift.name); setDescription(gift.description ?? ''); setModalVisible(true); }
 
+  function closeGiftModal() {
+    setModalVisible(false);
+    setEditingGift(null);
+    setName('');
+    setDescription('');
+  }
+
   async function handleSave() {
     if (!name.trim()) { Alert.alert('שגיאה', 'שם הפרס הוא שדה חובה'); return; }
     setSaving(true);
+    let error: { message: string } | null = null;
     if (editingGift) {
-      const { error } = await supabase.from('gifts')
+      ({ error } = await supabase.from('gifts')
         .update({ name: name.trim(), description: description.trim() || null })
-        .eq('id', editingGift.id);
-      if (error) Alert.alert('שגיאה', error.message);
+        .eq('id', editingGift.id));
     } else {
-      const { error } = await supabase.from('gifts')
-        .insert({ name: name.trim(), description: description.trim() || null, is_active: true });
-      if (error) Alert.alert('שגיאה', error.message);
+      ({ error } = await supabase.from('gifts')
+        .insert({ name: name.trim(), description: description.trim() || null, is_active: true }));
     }
     setSaving(false);
-    setModalVisible(false);
-    loadGifts();
+    if (error) Alert.alert('שגיאה', error.message);
+    else {
+      closeGiftModal();
+      loadGifts();
+    }
   }
 
   async function handleToggleActive(gift: Gift) {
@@ -318,7 +327,7 @@ export default function AdminGiftsScreen() {
         </ScrollView>
       )}
 
-      <AdminSheet visible={modalVisible} onClose={() => setModalVisible(false)}>
+      <AdminSheet visible={modalVisible} onClose={closeGiftModal}>
         <Text style={AS.sheetTitle} accessibilityRole="header">
           {editingGift ? 'ערוך פרס' : 'הוסף פרס'}
         </Text>
@@ -345,7 +354,7 @@ export default function AdminGiftsScreen() {
           <TouchableOpacity onPress={handleSave} disabled={saving} style={[saving ? AS.saveBtnDisabled : AS.saveBtn, webPointer]} accessibilityRole="button" accessibilityLabel="שמור">
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>{t('save')}</Text>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setModalVisible(false)} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
+          <TouchableOpacity onPress={closeGiftModal} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
             <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
           </TouchableOpacity>
         </View>

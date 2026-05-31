@@ -1,8 +1,9 @@
 import '../global.css';
 import 'react-native-reanimated';
+import '@/lib/rtl';
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
-import { I18nManager, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as ExpoSplashScreen from 'expo-splash-screen';
@@ -15,10 +16,6 @@ import { injectWebCSS } from '@/lib/injectWebCSS';
 import '@/lib/i18n';
 import { ConfirmProvider } from '@/components/ConfirmDialog';
 import { AuthProvider } from '@/contexts/AuthContext';
-
-// Force RTL for Hebrew
-I18nManager.allowRTL(true);
-I18nManager.forceRTL(true);
 
 ExpoSplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -41,21 +38,32 @@ export default function RootLayout() {
     Nunito_700Bold,
   });
 
+  // Hand off to branded AppSplash as soon as it mounts (don't wait for fonts).
   useEffect(() => {
-    if (fontsLoaded && (!showSplash || splashHidden)) {
+    if (showSplash) {
+      ExpoSplashScreen.hideAsync().catch(() => {});
+      return;
+    }
+    if (fontsLoaded) {
       ExpoSplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsLoaded, showSplash, splashHidden]);
+  }, [showSplash, fontsLoaded]);
 
   const appBg = Platform.OS === 'web' ? '#f0e8df' : '#fff8f2';
 
   return (
-    <GestureHandlerRootView style={[styles.root, { backgroundColor: showSplash ? SPLASH_BG : appBg }]}>
+    <GestureHandlerRootView
+      style={[
+        styles.root,
+        { backgroundColor: showSplash ? SPLASH_BG : appBg },
+        Platform.OS === 'web' && styles.rootWeb,
+      ]}
+    >
       {fontsLoaded ? (
         <SafeAreaProvider>
           <AuthProvider>
             <ConfirmProvider>
-              <View style={{ flex: 1, backgroundColor: appBg }}>
+              <View style={[styles.appRoot, { backgroundColor: appBg }]}>
                 <Stack
                   screenOptions={{
                     headerShown: false,
@@ -85,5 +93,13 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  rootWeb: { width: '100%', maxWidth: '100%', alignSelf: 'stretch' } as object,
+  appRoot: {
+    flex: 1,
+    width: '100%',
+    ...(Platform.OS === 'web'
+      ? ({ direction: 'rtl', minWidth: '100%', alignSelf: 'stretch' } as object)
+      : {}),
+  },
   bootPlaceholder: { flex: 1, backgroundColor: SPLASH_BG },
 });

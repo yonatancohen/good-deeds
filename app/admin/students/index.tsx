@@ -144,9 +144,16 @@ export default function AdminStudentsScreen() {
 
   const visibleClasses = classes;
 
+  const emptyManualRows = (): ManualRow[] => [{ id: '1', first_name: '', last_name: '' }];
+
+  function closeManualSheet() {
+    setSelectedClass(null);
+    setManualRows(emptyManualRows());
+  }
+
   function openManual(cls: ClassRow) {
     setSelectedClass(cls);
-    setManualRows([{ id: '1', first_name: '', last_name: '' }]);
+    setManualRows(emptyManualRows());
   }
 
   function addManualRow() {
@@ -187,8 +194,9 @@ export default function AdminStudentsScreen() {
     if (error) {
       Alert.alert('שגיאה', error);
     } else {
-      Alert.alert('✅', `${count} תלמידים נוספו לכיתה ${selectedClass.name}`);
-      setSelectedClass(null);
+      const className = selectedClass.name;
+      closeManualSheet();
+      Alert.alert('✅', `${count} תלמידים נוספו לכיתה ${className}`);
       loadClasses();
     }
   }
@@ -292,7 +300,7 @@ export default function AdminStudentsScreen() {
         />
       ) : null}
 
-      <AdminSheet visible={!!selectedClass} onClose={() => setSelectedClass(null)}>
+      <AdminSheet visible={!!selectedClass} onClose={closeManualSheet}>
         <Text style={AS.sheetTitle} accessibilityRole="header">
           הוספת תלמידים — {selectedClass?.name}
         </Text>
@@ -353,7 +361,7 @@ export default function AdminStudentsScreen() {
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setSelectedClass(null)}
+            onPress={closeManualSheet}
             style={[AS.cancelBtn, webPointer]}
             accessibilityRole="button"
             accessibilityLabel="ביטול"

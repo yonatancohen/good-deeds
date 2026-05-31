@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { inviteTeacher } from '@/lib/teacherInvite';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
 import * as DocumentPicker from 'expo-document-picker';
@@ -207,6 +208,25 @@ export default function AdminTeachersScreen() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  function closeInviteSheet() {
+    setInviteVisible(false);
+    setInviteEmail('');
+    setInviteName('');
+  }
+
+  function openInviteSheet() {
+    setInviteEmail('');
+    setInviteName('');
+    setInviteVisible(true);
+  }
+
+  function closeEditSheet() {
+    setEditVisible(false);
+    setEditingTeacher(null);
+    setEditName('');
+    setEditEmail('');
+  }
+
   async function handleInvite() {
     if (!inviteEmail.trim() || !inviteName.trim()) {
       Alert.alert('שגיאה', 'יש למלא שם ואימייל');
@@ -214,35 +234,26 @@ export default function AdminTeachersScreen() {
     }
     setInviting(true);
 
-    // Create user with a random password (teacher will set their own via email link)
-    const randomPwd = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: inviteEmail.trim().toLowerCase(),
-      password: randomPwd,
-      options: { data: { display_name: inviteName.trim() } },
+    const result = await inviteTeacher({
+      email: inviteEmail,
+      displayName: inviteName,
     });
 
-    if (authError) { setInviting(false); Alert.alert('שגיאה', authError.message); return; }
+    setInviting(false);
 
-    const newUserId = authData.user?.id;
-    if (newUserId) {
-      const { error: insertError } = await supabase.from('users').insert({
-        id: newUserId,
-        email: inviteEmail.trim().toLowerCase(),
-        display_name: inviteName.trim(),
-        role: 'teacher',
-      });
-      if (insertError) { setInviting(false); Alert.alert('שגיאה', insertError.message); return; }
+    if (!result.ok) {
+      Alert.alert('לא הושלם', result.message);
+      return;
     }
 
-    // Send password-reset email so the teacher can set their own password
-    await supabase.auth.resetPasswordForEmail(inviteEmail.trim().toLowerCase());
-
-    setInviting(false);
-    setInviteVisible(false);
-    setInviteEmail(''); setInviteName('');
-    Alert.alert('✅', `הזמנה נשלחה ל-${inviteName.trim()} — ישלח מייל לקביעת סיסמה`);
+    closeInviteSheet();
     loadData();
+
+    const title = result.emailSent ? '✅ המורה נוסף' : '⚠️ המורה נוסף — בעיה במייל';
+    Alert.alert(
+      title,
+      result.adminHint ? `${result.message}\n\n${result.adminHint}` : result.message,
+    );
   }
 
   async function handlePickTeacherCsv() {
@@ -293,24 +304,17 @@ export default function AdminTeachersScreen() {
     const errors: string[] = [];
 
     for (const teacher of toCreate) {
-      const randomPwd = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const result = await inviteTeacher({
         email: teacher.email,
-        password: randomPwd,
-        options: { data: { display_name: teacher.display_name } },
+        displayName: teacher.display_name,
       });
-      if (authError || !authData.user) { errors.push(`${teacher.email}: ${authError?.message ?? 'שגיאה'}`); continue; }
-
-      const { error: insertError } = await supabase.from('users').insert({
-        id: authData.user.id,
-        email: teacher.email,
-        display_name: teacher.display_name,
-        role: 'teacher',
-      });
-      if (insertError) { errors.push(`${teacher.email}: ${insertError.message}`); continue; }
-
-      await supabase.auth.resetPasswordForEmail(teacher.email);
+      if (!result.ok) {
+        errors.push(`${teacher.email}: ${result.message}`);
+        continue;
+      }
+      if (!result.emailSent) {
+        errors.push(`${teacher.email}: נוסף ללא מייל — ${result.message}`);
+      }
       created++;
     }
 
@@ -320,7 +324,11 @@ export default function AdminTeachersScreen() {
     if (created > 0) {
       setCsvVisible(false);
       setCsvPreview(null);
-      Alert.alert('✅', `${created} מורים נוצרו — נשלח להם מייל לקביעת סיסמה`);
+      const emailNote =
+        errors.length > 0
+          ? `\n\nשימו לב: ${errors.length} שורות עם בעיות (כולל מייל שלא נשלח).`
+          : '\n\nאם מייל לא מגיע — בדקו ספאם והגדרות Supabase (ראו DEPLOY.md).';
+      Alert.alert('✅', `${created} מורים נוספו.${emailNote}`);
       loadData();
     }
   }
@@ -353,8 +361,7 @@ export default function AdminTeachersScreen() {
       Alert.alert('שגיאה', msg);
       return;
     }
-    setEditVisible(false);
-    setEditingTeacher(null);
+    closeEditSheet();
     loadData();
   }
 
@@ -433,7 +440,7 @@ export default function AdminTeachersScreen() {
                 <Text style={AS.addBtnText}>CSV</Text>
               </AddBtn>
             )}
-            <AddBtn onPress={() => setInviteVisible(true)} accessibilityLabel="הוסף מורה חדש" />
+            <AddBtn onPress={openInviteSheet} accessibilityLabel="הוסף מורה חדש" />
           </View>
         </View>
       </View>
@@ -491,7 +498,7 @@ export default function AdminTeachersScreen() {
       )}
 
       {/* Edit Teacher Sheet */}
-      <AdminSheet visible={editVisible} onClose={() => setEditVisible(false)}>
+      <AdminSheet visible={editVisible} onClose={closeEditSheet}>
         <Text style={AS.sheetTitle} accessibilityRole="header">
           {editingTeacher ? `ערוך — ${editingTeacher.display_name}` : 'ערוך מורה'}
         </Text>
@@ -533,7 +540,7 @@ export default function AdminTeachersScreen() {
             {editSaving ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>{t('save')}</Text>}
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setEditVisible(false)}
+            onPress={closeEditSheet}
             style={[AS.cancelBtn, webPointer]}
             accessibilityRole="button"
             accessibilityLabel="ביטול"
@@ -544,12 +551,12 @@ export default function AdminTeachersScreen() {
       </AdminSheet>
 
       {/* Invite Sheet */}
-      <AdminSheet visible={inviteVisible} onClose={() => setInviteVisible(false)}>
+      <AdminSheet visible={inviteVisible} onClose={closeInviteSheet}>
         <Text style={AS.sheetTitle} accessibilityRole="header">{t('inviteTeacher')}</Text>
 
         <View style={{ backgroundColor: '#EFF6FF', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#BFDBFE' }}>
-          <Text style={{ color: '#3b82f6', fontSize: 12, textAlign: 'right', writingDirection: 'rtl' } as any}>
-            המורה יקבל מייל עם קישור לקביעת סיסמה
+          <Text style={{ color: '#3b82f6', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', lineHeight: 18 } as any}>
+            המורה אמור לקבל מייל עם קישור לקביעת סיסמה. אם לא מגיע — בדקו ספאם והגדרות אימייל ב-Supabase (Redirect URLs + SMTP).
           </Text>
         </View>
 
@@ -570,7 +577,7 @@ export default function AdminTeachersScreen() {
           >
             {inviting ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>שלח הזמנה</Text>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setInviteVisible(false)} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
+          <TouchableOpacity onPress={closeInviteSheet} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
             <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
           </TouchableOpacity>
         </View>

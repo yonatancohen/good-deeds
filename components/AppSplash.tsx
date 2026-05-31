@@ -13,9 +13,10 @@ import Animated, {
 
 export const SPLASH_BG = '#ecdbfb';
 
-const FADE_IN_MS = 450;
-const FADE_OUT_MS = 550;
-const MIN_VISIBLE_MS = 1000;
+const FADE_IN_MS = 280;
+const FADE_OUT_MS = 650;
+/** Minimum time the artwork stays fully visible after fade-in (before fade-out). */
+const MIN_VISIBLE_MS = 2000;
 
 interface AppSplashProps {
   /** App finished bootstrapping (e.g. fonts loaded) */
@@ -24,8 +25,8 @@ interface AppSplashProps {
 }
 
 export function AppSplash({ ready, onHidden }: AppSplashProps) {
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.94);
+  const opacity = useSharedValue(0.18);
+  const scale = useSharedValue(0.97);
   const mountedAt = useRef(Date.now());
   const finished = useRef(false);
 
@@ -87,7 +88,18 @@ const styles = StyleSheet.create({
     zIndex: 10000,
     elevation: 10000,
     ...(Platform.OS === 'web'
-      ? ({ position: 'fixed' as const, inset: 0 } as object)
+      ? ({
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          minHeight: '100dvh',
+          // Isolate from document RTL so splash stays centered on iOS PWA
+          direction: 'ltr',
+        } as object)
       : {}),
   },
   content: {

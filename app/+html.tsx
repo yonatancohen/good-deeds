@@ -7,7 +7,7 @@ import type { PropsWithChildren } from 'react';
  */
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang="he" dir="rtl">
+    <html lang="he">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -24,8 +24,10 @@ export default function Root({ children }: PropsWithChildren) {
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{
           __html: `
-            html, body, #root { height: 100%; }
-            html, body { background-color: #ecdbfb; }
+            html, body, #root { height: 100%; width: 100%; max-width: 100%; margin: 0; padding: 0; }
+            html, body { background-color: #ecdbfb; overflow-x: hidden; direction: ltr; }
+            #root { direction: rtl; unicode-bidi: isolate; min-height: 100dvh; display: flex; flex: 1; min-width: 100%; }
+            #root > div { width: 100%; min-width: 100%; }
             * { box-sizing: border-box; }
           `
         }} />

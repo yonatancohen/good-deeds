@@ -97,9 +97,11 @@ push_env() {
   printf "%s" "$value" | vercel env add "$key" "$env" >/dev/null
   ok "  $key → $env"
 }
+SITE_URL="${EXPO_PUBLIC_SITE_URL:-https://good-omega-three.vercel.app}"
 for env in production preview development; do
   push_env "EXPO_PUBLIC_SUPABASE_URL"      "$EXPO_PUBLIC_SUPABASE_URL"      "$env"
   push_env "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$EXPO_PUBLIC_SUPABASE_ANON_KEY" "$env"
+  push_env "EXPO_PUBLIC_SITE_URL"          "$SITE_URL"                      "$env"
 done
 
 # ---------- EAS ----------

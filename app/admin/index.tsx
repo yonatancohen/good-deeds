@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { Colors, DepthPressable } from '@/components/ui';
-import { StaggeredItem } from '@/components/StaggeredItem';
+import { ScrollReveal } from '@/components/ScrollReveal';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { DepthShell } from '@/lib/DepthShell';
@@ -431,35 +431,39 @@ export default function AdminHomeScreen() {
   function renderStats() {
     return (
       <View style={[S.statsRow, isLarge && S.statsRowDesktop]}>
-        <DepthShell depth={4} borderRadius={14} outerStyle={S.statOuter}>
-          <View style={[S.statCard, S.statCardPrimary]}>
-            <Star size={isDesktop ? 36 : 32} color={Colors.primaryDark} />
-            {statsLoading ? (
-              <ActivityIndicator size="small" color={Colors.primaryDark} style={{ marginVertical: 8 }} />
-            ) : (
-              <Text style={S.statValue}>{todayPoints.toLocaleString('he-IL')}</Text>
-            )}
-            <Text style={S.statLabel}>נקודות היום</Text>
-          </View>
-        </DepthShell>
-        <DepthShell depth={4} borderRadius={14} outerStyle={S.statOuter}>
-          <View style={[S.statCard, S.statCardSecondary]}>
-            <School size={isDesktop ? 36 : 32} color="#003e73" />
-            {statsLoading ? (
-              <ActivityIndicator size="small" color="#003e73" style={{ marginVertical: 8 }} />
-            ) : (
-              <Text style={[S.statValue, { color: '#003e73' }]}>{activeClasses}</Text>
-            )}
-            <Text style={[S.statLabel, { color: '#003e73' }]}>כיתות פעילות</Text>
-          </View>
-        </DepthShell>
+        <ScrollReveal index={0} style={S.statOuter}>
+          <DepthShell depth={4} borderRadius={14} outerStyle={{ flex: 1 }}>
+            <View style={[S.statCard, S.statCardPrimary]}>
+              <Star size={isDesktop ? 36 : 32} color={Colors.primaryDark} />
+              {statsLoading ? (
+                <ActivityIndicator size="small" color={Colors.primaryDark} style={{ marginVertical: 8 }} />
+              ) : (
+                <Text style={S.statValue}>{todayPoints.toLocaleString('he-IL')}</Text>
+              )}
+              <Text style={S.statLabel}>נקודות היום</Text>
+            </View>
+          </DepthShell>
+        </ScrollReveal>
+        <ScrollReveal index={1} style={S.statOuter}>
+          <DepthShell depth={4} borderRadius={14} outerStyle={{ flex: 1 }}>
+            <View style={[S.statCard, S.statCardSecondary]}>
+              <School size={isDesktop ? 36 : 32} color="#003e73" />
+              {statsLoading ? (
+                <ActivityIndicator size="small" color="#003e73" style={{ marginVertical: 8 }} />
+              ) : (
+                <Text style={[S.statValue, { color: '#003e73' }]}>{activeClasses}</Text>
+              )}
+              <Text style={[S.statLabel, { color: '#003e73' }]}>כיתות פעילות</Text>
+            </View>
+          </DepthShell>
+        </ScrollReveal>
       </View>
     );
   }
 
   function renderPending(compact?: boolean) {
     return (
-      <View style={[S.section, compact && S.sectionCompact]}>
+      <ScrollReveal index={2} style={[S.section, compact && S.sectionCompact]}>
         <View style={S.sectionHeader}>
           <View style={S.sectionTitleRow}>
             <AlertCircle size={20} color={Colors.success} />
@@ -487,24 +491,24 @@ export default function AdminHomeScreen() {
           <PendingEmptyCard />
         ) : (
           <View style={S.pendingList}>
-            {pendingRedemptions.slice(0, isDesktop ? 3 : 5).map((r, index) => (
-              <StaggeredItem key={r.id} index={index}>
+            {pendingRedemptions.slice(0, isDesktop ? 3 : 5).map((r, i) => (
+              <ScrollReveal key={r.id} index={i + 1}>
                 <PendingRedemptionCard
                   item={r}
                   fulfilling={fulfillingId === r.id}
                   onMarkFulfilled={() => handleMarkFulfilled(r)}
                 />
-              </StaggeredItem>
+              </ScrollReveal>
             ))}
           </View>
         )}
-      </View>
+      </ScrollReveal>
     );
   }
 
   function renderMenuGrid(compact?: boolean) {
     return (
-      <View style={[S.section, compact && S.sectionLast]}>
+      <ScrollReveal index={3} style={[S.section, compact && S.sectionLast]}>
         <Text style={[S.sectionTitle, S.sectionTitleStandalone]}>ניהול מערכת</Text>
         <View style={[S.grid, isDesktop && { gap: 18 }]}>
           {menuRows.map((row, rowIndex) => (
@@ -512,7 +516,7 @@ export default function AdminHomeScreen() {
               {row.map((tile, colIndex) => {
                 const staggerIndex = rowIndex * menuCols + colIndex;
                 return (
-                  <StaggeredItem
+                  <ScrollReveal
                     key={tile.route}
                     index={staggerIndex}
                     style={[
@@ -525,7 +529,7 @@ export default function AdminHomeScreen() {
                       onPress={() => router.push(tile.route as any)}
                       style={{ flex: 1, minWidth: 0, width: !compact ? tileWidth : undefined }}
                     />
-                  </StaggeredItem>
+                  </ScrollReveal>
                 );
               })}
               {row.length < menuCols &&
@@ -535,7 +539,7 @@ export default function AdminHomeScreen() {
             </View>
           ))}
         </View>
-      </View>
+      </ScrollReveal>
     );
   }
 
@@ -543,7 +547,8 @@ export default function AdminHomeScreen() {
     return (
       <View style={S.activityTimeline}>
         {activity.map((item, idx) => (
-          <View key={item.id} style={S.timelineRow}>
+          <ScrollReveal key={item.id} index={idx % 8}>
+          <View style={S.timelineRow}>
             <View style={S.timelineRail}>
               <View style={[S.timelineDot, { backgroundColor: ACTIVITY_ICON_BG[item.tone] }]}>
                 <Plus size={14} color={ACTIVITY_DOT[item.tone]} />
@@ -556,6 +561,7 @@ export default function AdminHomeScreen() {
               <Text style={S.timelineTime}>{moment(item.created_at).fromNow()}</Text>
             </View>
           </View>
+          </ScrollReveal>
         ))}
       </View>
     );
@@ -563,7 +569,7 @@ export default function AdminHomeScreen() {
 
   function renderActivityLog(sidebar?: boolean) {
     return (
-      <View style={[S.activityPanel, sidebar && S.activityPanelSidebar]}>
+      <ScrollReveal index={4} style={[S.activityPanel, sidebar && S.activityPanelSidebar]}>
         <View style={S.activityHeader}>
           <Text style={S.activityTitle}>יומן פעילות</Text>
           <TouchableOpacity
@@ -591,21 +597,24 @@ export default function AdminHomeScreen() {
           </ScrollView>
         ) : (
           <View style={S.activityList}>
-            {activity.map((item) => (
-              <View key={item.id} style={S.activityRow}>
-                <View style={[S.activityDot, { backgroundColor: ACTIVITY_DOT[item.tone] }]} />
-                <Text style={S.activityTime}>{moment(item.created_at).format('HH:mm')}</Text>
-                <Text style={S.activityText} numberOfLines={2}>{item.text}</Text>
-              </View>
+            {activity.map((item, idx) => (
+              <ScrollReveal key={item.id} index={idx % 8}>
+                <View style={S.activityRow}>
+                  <View style={[S.activityDot, { backgroundColor: ACTIVITY_DOT[item.tone] }]} />
+                  <Text style={S.activityTime}>{moment(item.created_at).format('HH:mm')}</Text>
+                  <Text style={S.activityText} numberOfLines={2}>{item.text}</Text>
+                </View>
+              </ScrollReveal>
             ))}
           </View>
         )}
-      </View>
+      </ScrollReveal>
     );
   }
 
   function renderPublicLink() {
     return (
+      <ScrollReveal index={5}>
       <TouchableOpacity
         onPress={() => router.push('/')}
         style={[S.publicLink, pointer]}
@@ -621,6 +630,7 @@ export default function AdminHomeScreen() {
         </View>
         <ChevronLeft size={18} color={Colors.muted} />
       </TouchableOpacity>
+      </ScrollReveal>
     );
   }
 
@@ -682,11 +692,15 @@ export default function AdminHomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[S.pageTitle, isDesktop && S.pageTitleDesktop]} accessibilityRole="header">
-          לוח בקרה מנהלי
-        </Text>
+        <ScrollReveal index={0}>
+          <Text style={[S.pageTitle, isDesktop && S.pageTitleDesktop]} accessibilityRole="header">
+            לוח בקרה מנהלי
+          </Text>
+        </ScrollReveal>
         {!isDesktop && user?.display_name && (
-          <Text style={S.pageGreeting}>שלום, {user.display_name}</Text>
+          <ScrollReveal index={1}>
+            <Text style={S.pageGreeting}>שלום, {user.display_name}</Text>
+          </ScrollReveal>
         )}
 
         {renderStats()}

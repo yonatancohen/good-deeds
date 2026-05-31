@@ -1,5 +1,5 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useState } from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,17 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
+import Animated, {
+  FadeInDown,
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import {
-  Trophy, Users, ChevronDown, ChevronUp, Star, LogIn, Sparkles, PartyPopper,
+  Trophy, Users, ChevronDown, Star, LogIn, Sparkles, PartyPopper,
 } from 'lucide-react-native';
 import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
@@ -24,6 +31,9 @@ import { PompomJar, POMPOM_JAR_SM } from '@/components/PomPomJar';
 import { StaggeredItem } from '@/components/StaggeredItem';
 
 const webPtr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
+
+const EXPAND_ENTER = FadeInDown.springify().damping(20).stiffness(280);
+const EXPAND_EXIT = FadeOut.duration(220);
 
 // ── Progress bar ───────────────────────────────────────────────────────────────
 function ProgBar({ value, max }: { value: number; max: number }) {
@@ -52,8 +62,17 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
+  const chevronRotation = useSharedValue(0);
   const pct = item.goal > 0 ? Math.round((item.total / item.goal) * 100) : 0;
   const scheme = getClassColorScheme(item.class.grade || item.class.name);
+
+  useEffect(() => {
+    chevronRotation.value = withSpring(open ? 180 : 0, { damping: 18, stiffness: 220 });
+  }, [open]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.value}deg` }],
+  }));
 
   const hoverProps =
     Platform.OS === 'web'
@@ -128,7 +147,9 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
           ) : (
             <Text style={S.cardPoints}>{item.total} / {item.goal}</Text>
           )}
-          {open ? <ChevronUp size={16} color={Colors.muted} /> : <ChevronDown size={16} color={Colors.muted} />}
+          <Animated.View style={chevronStyle}>
+            <ChevronDown size={16} color={Colors.muted} />
+          </Animated.View>
         </View>
       </TouchableOpacity>
 
@@ -146,7 +167,11 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
       </View>
 
       {open && (
-        <View style={S.studentsWrap}>
+        <Animated.View
+          entering={EXPAND_ENTER}
+          exiting={EXPAND_EXIT}
+          style={S.studentsWrap}
+        >
           {item.students.length === 0 ? (
             <View style={S.noStudentsRow}>
               <Users size={15} color={Colors.muted} />
@@ -154,10 +179,14 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
             </View>
           ) : (
             <View style={S.pillGrid}>
-              {item.students.map(s => <StudentPill key={s.id} s={s} />)}
+              {item.students.map((s, index) => (
+                <StaggeredItem key={s.id} index={index}>
+                  <StudentPill s={s} />
+                </StaggeredItem>
+              ))}
             </View>
           )}
-        </View>
+        </Animated.View>
       )}
       </View>
     </DepthShell>
@@ -209,6 +238,7 @@ export default function PublicScreen() {
 
   const contentCol = desktopContentStyle(isDesktop);
   const rowCenter = desktopRowCenter(isDesktop);
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
@@ -250,54 +280,51 @@ export default function PublicScreen() {
         </View>
       </View>
 
-      {/* ── Scrollable content ── */}
-      <View style={[S.page, rowCenter]}>
-        <ScrollView
-          style={[S.pageScroll, contentCol]}
-          contentContainerStyle={S.listContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={isDesktop ? S.grid : undefined}>
-
-            {loading && Array.from({ length: 6 }, (_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-
-            {!loading && error && (
-              <View style={[S.errorCard, isDesktop && S.gridFullSpan]}>
-                <Text style={S.errorText}>{error}</Text>
-              </View>
-            )}
-
-            {!loading && !error && data.length === 0 && (
-              <View style={[S.empty, isDesktop && S.gridFullSpan]}>
-                <View style={S.emptyIcon}>
-                  <Star size={26} color={Colors.muted} />
-                </View>
-                <Text style={S.emptyText}>{t('noClasses')}</Text>
-              </View>
-            )}
-
-            {!loading && !error && data.map((item, index) => (
-              <StaggeredItem key={item.class.id} index={index}>
-                <ClassCard item={item} />
-              </StaggeredItem>
-            ))}
-
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* ── Staff login — full-bleed footer strip ── */}
-      <TouchableOpacity
-        onPress={() => router.push('/auth/login')}
-        accessibilityRole="link"
-        accessibilityLabel="כניסה לצוות בית הספר"
-        style={[S.staffLink, webPtr]}
+      {/* ── Scrollable content + footer (footer pinned to bottom when list is short) ── */}
+      <ScrollView
+        style={[S.pageScroll, contentCol, rowCenter]}
+        contentContainerStyle={S.scrollBody}
+        showsVerticalScrollIndicator={false}
       >
-        <LogIn size={12} color={Colors.outline} />
-        <Text style={S.staffLinkText}>כניסה לצוות בית הספר</Text>
-      </TouchableOpacity>
+        <View style={[S.listContent, isDesktop ? S.grid : undefined]}>
+          {loading && Array.from({ length: 6 }, (_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+
+          {!loading && error && (
+            <View style={[S.errorCard, isDesktop && S.gridFullSpan]}>
+              <Text style={S.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {!loading && !error && data.length === 0 && (
+            <View style={[S.empty, isDesktop && S.gridFullSpan]}>
+              <View style={S.emptyIcon}>
+                <Star size={26} color={Colors.muted} />
+              </View>
+              <Text style={S.emptyText}>{t('noClasses')}</Text>
+            </View>
+          )}
+
+          {!loading && !error && data.map((item, index) => (
+            <StaggeredItem key={item.class.id} index={index}>
+              <ClassCard item={item} />
+            </StaggeredItem>
+          ))}
+        </View>
+
+        <View style={S.scrollSpacer} />
+
+        <TouchableOpacity
+          onPress={() => router.push('/auth/login')}
+          accessibilityRole="link"
+          accessibilityLabel="כניסה לצוות בית הספר"
+          style={[S.staffLink, webPtr, { paddingBottom: 18 + insets.bottom }]}
+        >
+          <LogIn size={12} color={Colors.outline} />
+          <Text style={S.staffLinkText}>כניסה לצוות בית הספר</Text>
+        </TouchableOpacity>
+      </ScrollView>
 
     </SafeAreaView>
   );
@@ -306,8 +333,9 @@ export default function PublicScreen() {
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
-  page: { flex: 1, backgroundColor: Colors.bg },
-  pageScroll: { flex: 1 },
+  pageScroll: { flex: 1, backgroundColor: Colors.bg },
+  scrollBody: { flexGrow: 1 },
+  scrollSpacer: { flexGrow: 1, minHeight: 0 },
 
   // Header — matches teacher screen
   headerBar: {
@@ -402,7 +430,7 @@ const S = StyleSheet.create({
   } as any,
 
   // List
-  listContent: { padding: 16, paddingBottom: 32 },
+  listContent: { padding: 16, paddingBottom: 0 },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
@@ -540,13 +568,13 @@ const S = StyleSheet.create({
     color: Colors.danger, fontSize: 14, textAlign: 'center', writingDirection: 'rtl',
   } as any,
 
-  // Staff link — fixed bottom
+  // Staff link — sits below cards; scrolls with content when list is long
   staffLink: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingVertical: 18,
+    paddingTop: 18,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     backgroundColor: Colors.card,

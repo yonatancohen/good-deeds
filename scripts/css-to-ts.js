@@ -17,6 +17,27 @@ const NATIVE_FEEL_CSS = `
 /* Native-feel PWA: touch, scroll, selection (appended before Tailwind) */
 html, body {
   overscroll-behavior: none;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  direction: ltr;
+}
+/* RTL on #root only — avoids iOS PWA viewport shift from dir=rtl on <html> */
+#root {
+  direction: rtl;
+  unicode-bidi: isolate;
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+  min-height: 100dvh;
+  align-self: stretch;
+  margin: 0;
+  inset-inline: 0;
+}
+#root > div {
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
 }
 * {
   -webkit-tap-highlight-color: transparent;
