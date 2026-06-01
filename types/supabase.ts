@@ -376,6 +376,10 @@ export type Database = {
         Args: { p_user_id: string; p_display_name: string; p_email: string }
         Returns: undefined
       }
+      admin_ensure_teacher: {
+        Args: { p_email: string; p_display_name: string }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
     }

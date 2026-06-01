@@ -12,6 +12,7 @@ export type InviteTeacherResult =
       ok: false;
       message: string;
       teacherCreated: boolean;
+      adminHint?: string;
     };
 
 function mapAuthError(message: string): string {
@@ -28,6 +29,18 @@ function mapAuthError(message: string): string {
   return message;
 }
 
+function isDuplicateKeyError(error: { code?: string; message?: string }): boolean {
+  return error.code === '23505' || !!error.message?.toLowerCase().includes('duplicate');
+}
+
+function isAuthUserFkError(error: { code?: string; message?: string }): boolean {
+  return (
+    error.code === '23503' ||
+    !!error.message?.toLowerCase().includes('foreign key') ||
+    !!error.message?.includes('users_id_fkey')
+  );
+}
+
 /** Sends "set your password" recovery email (requires redirect URL in Supabase). */
 export async function sendTeacherSetupEmail(
   email: string,
@@ -36,6 +49,54 @@ export async function sendTeacherSetupEmail(
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) return { ok: false, message: mapAuthError(error.message) };
   return { ok: true };
+}
+
+/** Links auth.users → public.users when invite hit a duplicate / fake signUp id. */
+async function linkExistingAuthTeacher(
+  email: string,
+  displayName: string,
+): Promise<{ linked: boolean }> {
+  const { data, error } = await supabase.rpc('admin_ensure_teacher', {
+    p_email: email,
+    p_display_name: displayName,
+  });
+  if (error) return { linked: false };
+  return { linked: data != null };
+}
+
+async function recoverExistingTeacherInvite(params: {
+  email: string;
+  displayName: string;
+  linked: boolean;
+}): Promise<InviteTeacherResult> {
+  const { email, displayName, linked } = params;
+  const emailResult = await sendTeacherSetupEmail(email);
+
+  if (!emailResult.ok) {
+    return {
+      ok: false,
+      teacherCreated: linked,
+      message: linked
+        ? `המורה קושר למערכת, אך לא ניתן לשלוח מייל:\n${emailResult.message}`
+        : `לא ניתן לשלוח מייל:\n${emailResult.message}`,
+    };
+  }
+
+  if (linked) {
+    return {
+      ok: true,
+      emailSent: true,
+      message: `המורה ${displayName} קושר למערכת.\n\nנשלח מייל ל-${email} עם קישור לקביעת סיסמה.`,
+    };
+  }
+
+  return {
+    ok: true,
+    emailSent: true,
+    message: `האימייל ${email} כבר רשום ב-Auth.\n\nנשלח מייל עם קישור לקביעת סיסמה.`,
+    adminHint:
+      'אם המורה עדיין לא מופיע ברשימה, הריצו מיגרציה admin_ensure_teacher ב-Supabase או פנו לתמיכה.',
+  };
 }
 
 /**
@@ -66,21 +127,8 @@ export async function inviteTeacher(params: {
       authError.message.toLowerCase().includes('already been registered');
 
     if (already) {
-      const emailResult = await sendTeacherSetupEmail(normalized);
-      if (!emailResult.ok) {
-        return {
-          ok: false,
-          teacherCreated: false,
-          message: `האימייל כבר רשום במערכת, ולא ניתן לשלוח מייל:\n${emailResult.message}`,
-        };
-      }
-      return {
-        ok: true,
-        emailSent: true,
-        message: `האימייל ${normalized} כבר רשום.\n\nנשלח מייל עם קישור לקביעת סיסמה.`,
-        adminHint:
-          'אם המורה כבר קיים אך לא מופיע ברשימה, עדכנו אותו ידנית או פנו לתמיכה.',
-      };
+      const { linked } = await linkExistingAuthTeacher(normalized, displayName);
+      return recoverExistingTeacherInvite({ email: normalized, displayName, linked });
     }
 
     return { ok: false, teacherCreated: false, message: mapAuthError(authError.message) };
@@ -88,11 +136,17 @@ export async function inviteTeacher(params: {
 
   const newUserId = authData.user?.id;
   if (!newUserId) {
+    const { linked } = await linkExistingAuthTeacher(normalized, displayName);
+    if (linked) {
+      return recoverExistingTeacherInvite({ email: normalized, displayName, linked });
+    }
     return {
       ok: false,
       teacherCreated: false,
       message:
         'המשתמש לא נוצר (ייתכן שאימות אימייל מופעל ב-Supabase). בדקו את לוח הבקרה → Authentication → Providers → Email.',
+      adminHint:
+        'אם Confirm email פעיל והאימייל כבר רשום, Supabase לא יוצר משתמש חדש — נסו שוב לאחר אימות או כבו Confirm email.',
     };
   }
 
@@ -104,12 +158,20 @@ export async function inviteTeacher(params: {
   });
 
   if (insertError) {
+    if (isDuplicateKeyError(insertError)) {
+      const { linked } = await linkExistingAuthTeacher(normalized, displayName);
+      return recoverExistingTeacherInvite({ email: normalized, displayName, linked });
+    }
+
+    if (isAuthUserFkError(insertError)) {
+      const { linked } = await linkExistingAuthTeacher(normalized, displayName);
+      return recoverExistingTeacherInvite({ email: normalized, displayName, linked });
+    }
+
     return {
       ok: false,
       teacherCreated: false,
-      message: insertError.message.includes('duplicate')
-        ? 'המורה כבר קיים במערכת'
-        : insertError.message,
+      message: insertError.message,
     };
   }
 
