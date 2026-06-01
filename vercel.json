@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "./node_modules/.bin/expo export -p web && node scripts/inject-pwa.js",
+  "buildCommand": "./node_modules/.bin/expo export -p web && node scripts/inject-pwa.js && node scripts/spa-route-html.js",
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
@@ -16,7 +16,7 @@
       "destination": "/api/app?channel=:channel"
     },
     {
-      "source": "/((?!_expo|assets|favicon.ico|api|install|.*\\..*).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],

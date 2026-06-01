@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "tw:build": "tailwindcss -i global.css -o public/tailwind.css --minify && node scripts/css-to-ts.js",
     "tw:watch": "tailwindcss -i global.css -o public/tailwind.css --watch",
-    "build:web": "expo export -p web && node scripts/inject-pwa.js",
+    "build:web": "expo export -p web && node scripts/inject-pwa.js && node scripts/spa-route-html.js",
     "deploy:web": "vercel",
     "deploy:web:prod": "vercel --prod",
     "deploy:setup": "bash scripts/deploy-setup.sh",
