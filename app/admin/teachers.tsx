@@ -243,12 +243,13 @@ export default function AdminTeachersScreen() {
     setInviting(false);
 
     if (!result.ok) {
+      if (result.teacherCreated) await loadData();
       Alert.alert('לא הושלם', result.message);
       return;
     }
 
+    await loadData();
     closeInviteSheet();
-    loadData();
 
     const title = result.emailSent ? '✅ המורה נוסף' : '⚠️ המורה נוסף — בעיה במייל';
     Alert.alert(
