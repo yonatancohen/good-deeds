@@ -23,6 +23,7 @@ import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 
 import { HEBREW_ROW } from '@/lib/rtlLayout';
+import { getHomeRouteForRole } from '@/lib/navigation';
 type Tab = 'password' | 'magic';
 
 // ── Background blob (web: CSS radial gradient; native: tinted circle) ─────────
@@ -205,7 +206,7 @@ export default function LoginScreen() {
   useEffect(() => {
     if (authLoading) return;
     if (session && user) {
-      router.replace(user.role === 'admin' ? '/admin' : '/teacher');
+      router.replace(getHomeRouteForRole(user.role));
     }
   }, [session, user, authLoading, router]);
 

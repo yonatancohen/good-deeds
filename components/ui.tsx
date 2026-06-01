@@ -209,25 +209,30 @@ export function Button({
   fullWidth = true,
 }: ButtonProps) {
   const isOff = disabled || loading;
+  const useDepthShell = variant === 'primary' && !isOff;
   const [pressed, setPressed] = useState(false);
   const pressScale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
     hapticLight();
     setPressed(true);
-    Animated.spring(pressScale, {
-      toValue: 0.96,
-      useNativeDriver: USE_ND,
-      tension: 400, friction: 20,
-    }).start();
+    if (!useDepthShell) {
+      Animated.spring(pressScale, {
+        toValue: 0.96,
+        useNativeDriver: USE_ND,
+        tension: 400, friction: 20,
+      }).start();
+    }
   }
   function handlePressOut() {
     setPressed(false);
-    Animated.spring(pressScale, {
-      toValue: 1,
-      useNativeDriver: USE_ND,
-      tension: 300, friction: 18,
-    }).start();
+    if (!useDepthShell) {
+      Animated.spring(pressScale, {
+        toValue: 1,
+        useNativeDriver: USE_ND,
+        tension: 300, friction: 18,
+      }).start();
+    }
   }
 
   const bg: ViewStyle =
@@ -246,16 +251,14 @@ export function Button({
     variant === 'secondary' || variant === 'ghost' ? Colors.primaryDark : Colors.primaryDark;
 
   const primaryWrap =
-    variant === 'primary' && !isOff ? (
+    useDepthShell ? (
       <DepthShell
         depth={5}
         borderRadius={16}
         pressed={pressed}
         outerStyle={fullWidth ? S.btnFull : undefined}
       >
-        <Animated.View
-          style={[S.btnBase, bg, { transform: [{ scale: pressScale }] }]}
-        >
+        <Animated.View style={[S.btnBase, bg]}>
           {loading ? (
             <ActivityIndicator color={spinnerColor} />
           ) : (
@@ -265,7 +268,11 @@ export function Button({
       </DepthShell>
     ) : (
       <Animated.View
-        style={[S.btnBase, bg, { transform: [{ scale: pressScale }] }]}
+        style={[
+          S.btnBase,
+          bg,
+          !useDepthShell && { transform: [{ scale: pressScale }] },
+        ]}
       >
         {loading ? (
           <ActivityIndicator color={spinnerColor} />
@@ -286,7 +293,10 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isOff }}
-      style={[fullWidth && variant !== 'primary' && S.btnFull, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
+      style={[
+        fullWidth && variant !== 'primary' && S.btnFull,
+        Platform.OS === 'web' && ({ cursor: isOff ? 'default' : 'pointer' } as any),
+      ]}
     >
       {primaryWrap}
     </TouchableOpacity>

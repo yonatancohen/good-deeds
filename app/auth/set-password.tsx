@@ -15,10 +15,16 @@ import {
 import { useRouter } from 'expo-router';
 import { Lock, TriangleAlert } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
+import {
+  MIN_PASSWORD_LENGTH,
+  mapPasswordUpdateError,
+  validateNewPassword,
+} from '@/lib/authPassword';
 import { Button, Colors, FormField, Card } from '@/components/ui';
 import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { HEBREW_ROW } from '@/lib/rtlLayout';
+import { getHomeRouteForRole } from '@/lib/navigation';
 
 const AUTH_MAX_W = 440;
 
@@ -41,6 +47,55 @@ function parseTokensFromUrl(): {
   const refresh_token = q.get('refresh_token') ?? undefined;
   if (access_token && refresh_token) return { access_token, refresh_token };
   return null;
+}
+
+function clearAuthParamsFromUrl() {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+function urlHadAuthParams(): boolean {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+  const q = new URLSearchParams(window.location.search);
+  if (q.get('code')) return true;
+  if (q.get('access_token') && q.get('refresh_token')) return true;
+  const hash = window.location.hash?.replace(/^#/, '');
+  if (!hash) return false;
+  const p = new URLSearchParams(hash);
+  return !!(p.get('access_token') && p.get('refresh_token'));
+}
+
+async function establishSessionFromUrl(): Promise<{ ok: true } | { ok: false }> {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return { ok: false };
+  }
+
+  const q = new URLSearchParams(window.location.search);
+  const code = q.get('code');
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      clearAuthParamsFromUrl();
+      return { ok: true };
+    }
+    return { ok: false };
+  }
+
+  const tokens = parseTokensFromUrl();
+  if (tokens?.access_token && tokens?.refresh_token) {
+    const { error } = await supabase.auth.setSession({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    });
+    if (!error) {
+      clearAuthParamsFromUrl();
+      return { ok: true };
+    }
+    return { ok: false };
+  }
+
+  return { ok: false };
 }
 
 function BlobDecoration() {
@@ -145,26 +200,26 @@ export default function SetPasswordScreen() {
   const [linkError, setLinkError] = useState<string | null>(null);
   const [booting, setBooting] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const passwordIssue = password.length > 0 ? validateNewPassword(password) : null;
+  const confirmTouched = confirm.length > 0;
+  const passwordsMatch = password === confirm;
+  const canSave =
+    password.length > 0 &&
+    confirm.length > 0 &&
+    !passwordIssue &&
+    passwordsMatch &&
+    !saving;
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const tokens = parseTokensFromUrl();
-      if (tokens?.access_token && tokens?.refresh_token) {
-        const { error } = await supabase.auth.setSession({
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-        });
-        if (cancelled) return;
-        if (error) {
-          setLinkError('הקישור לא תקין או שפג תוקפו. בקשו מייל חדש מהמנהל או מ"שכחתי סיסמה".');
-        } else {
-          setSessionReady(true);
-          if (Platform.OS === 'web') {
-            window.history.replaceState({}, '', window.location.pathname);
-          }
-        }
+      const fromUrl = await establishSessionFromUrl();
+      if (cancelled) return;
+      if (fromUrl.ok) {
+        setSessionReady(true);
         setBooting(false);
         return;
       }
@@ -173,6 +228,8 @@ export default function SetPasswordScreen() {
       if (cancelled) return;
       if (data.session) {
         setSessionReady(true);
+      } else if (urlHadAuthParams()) {
+        setLinkError('הקישור לא תקין או שפג תוקפו. בקשו מייל חדש מהמנהל או מ"שכחתי סיסמה".');
       } else {
         setLinkError('פתחו את הקישור מהמייל, או בקשו מייל חדש ממנהל המערכת.');
       }
@@ -185,27 +242,40 @@ export default function SetPasswordScreen() {
   }, []);
 
   async function handleSave() {
-    if (password.length < 6) {
-      Alert.alert('שגיאה', 'הסיסמה חייבת להכיל לפחות 6 תווים');
+    const validationError = validateNewPassword(password);
+    if (validationError) {
+      setSaveError(validationError);
       return;
     }
     if (password !== confirm) {
-      Alert.alert('שגיאה', 'הסיסמאות לא תואמות');
+      setSaveError('הסיסמאות לא תואמות');
       return;
     }
 
+    setSaveError(null);
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setSaving(false);
+    const { data, error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      Alert.alert('שגיאה', error.message);
+      setSaving(false);
+      const msg = mapPasswordUpdateError(error.message);
+      setSaveError(msg);
+      Alert.alert('שגיאה', msg);
       return;
     }
 
-    Alert.alert('✅', 'הסיסמה נשמרה בהצלחה', [
-      { text: 'המשך לכניסה', onPress: () => router.replace('/auth/login') },
-    ]);
+    const userId = data.user?.id;
+    let route = getHomeRouteForRole(null);
+    if (userId) {
+      const { data: appUser } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      route = getHomeRouteForRole(appUser?.role);
+    }
+
+    router.replace(route);
   }
 
   if (booting) {
@@ -247,31 +317,62 @@ export default function SetPasswordScreen() {
             <Text style={S.cardSub}>בחרו סיסמה לחשבון המורה שלכם</Text>
           </View>
 
-          <FormField label="סיסמה חדשה" hint="לפחות 6 תווים" required>
+          <FormField
+            label="סיסמה חדשה"
+            hint={`לפחות ${MIN_PASSWORD_LENGTH} תווים, עם אותיות ומספרים`}
+            required
+          >
             <PasswordInput
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(v) => {
+                setPassword(v);
+                setSaveError(null);
+              }}
               focused={focusedField === 'password'}
               onFocus={() => setFocusedField('password')}
               onBlur={() => setFocusedField(null)}
               accessibilityLabel="סיסמה חדשה"
             />
+            {password.length > 0 && passwordIssue ? (
+              <Text style={S.fieldError} accessibilityRole="alert">
+                {passwordIssue}
+              </Text>
+            ) : null}
           </FormField>
 
           <FormField label="אימות סיסמה" hint="הקלידו שוב את אותה סיסמה" required>
             <PasswordInput
               value={confirm}
-              onChangeText={setConfirm}
+              onChangeText={(v) => {
+                setConfirm(v);
+                setSaveError(null);
+              }}
               focused={focusedField === 'confirm'}
               onFocus={() => setFocusedField('confirm')}
               onBlur={() => setFocusedField(null)}
               accessibilityLabel="אימות סיסמה"
-              onSubmitEditing={handleSave}
+              onSubmitEditing={canSave ? handleSave : undefined}
             />
+            {confirmTouched && !passwordsMatch ? (
+              <Text style={S.fieldError} accessibilityRole="alert">
+                הסיסמאות לא תואמות
+              </Text>
+            ) : null}
           </FormField>
 
+          {saveError ? (
+            <Text style={S.fieldError} accessibilityRole="alert">
+              {saveError}
+            </Text>
+          ) : null}
+
           <View style={S.submitWrap}>
-            <Button label="שמור סיסמה" onPress={handleSave} loading={saving} />
+            <Button
+              label="שמור סיסמה"
+              onPress={handleSave}
+              loading={saving}
+              disabled={!canSave}
+            />
           </View>
         </View>
       </Card>
@@ -479,4 +580,13 @@ const S = StyleSheet.create({
     width: '100%',
     marginTop: 8,
   },
+
+  fieldError: {
+    marginTop: 8,
+    fontSize: 13,
+    color: Colors.danger,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    lineHeight: 20,
+  } as object,
 });

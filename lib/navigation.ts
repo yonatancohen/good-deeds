@@ -1,5 +1,14 @@
 import type { Router } from 'expo-router';
 
+export type HomeRoute = '/admin' | '/teacher' | '/auth/login';
+
+/** Post-login / post-password-reset destination from public.users.role */
+export function getHomeRouteForRole(role: string | null | undefined): HomeRoute {
+  if (role === 'admin') return '/admin';
+  if (role === 'teacher') return '/teacher';
+  return '/auth/login';
+}
+
 /**
  * Safe back navigation: if there's no history (e.g. hard-refresh directly to an
  * inner screen on web), navigate to `fallback` instead of crashing with
