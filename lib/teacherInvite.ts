@@ -73,12 +73,18 @@ async function recoverExistingTeacherInvite(params: {
   const emailResult = await sendTeacherSetupEmail(email);
 
   if (!emailResult.ok) {
+    if (linked) {
+      return {
+        ok: true,
+        emailSent: false,
+        message:
+          `המורה ${displayName} נוסף מחדש, אך מייל לקביעת סיסמה לא נשלח:\n${emailResult.message}`,
+      };
+    }
     return {
       ok: false,
-      teacherCreated: linked,
-      message: linked
-        ? `המורה קושר למערכת, אך לא ניתן לשלוח מייל:\n${emailResult.message}`
-        : `לא ניתן לשלוח מייל:\n${emailResult.message}`,
+      teacherCreated: false,
+      message: `לא ניתן לשלוח מייל:\n${emailResult.message}`,
     };
   }
 
@@ -111,6 +117,18 @@ export async function inviteTeacher(params: {
   const redirectTo = getSetPasswordRedirectUrl();
   const randomPwd =
     Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+
+  // Re-invite: auth user already exists — restore without signUp (faster, no extra auth emails).
+  const { data: existingAuthId, error: ensureError } = await supabase.rpc('admin_ensure_teacher', {
+    p_email: normalized,
+    p_display_name: displayName,
+  });
+  if (ensureError) {
+    return { ok: false, teacherCreated: false, message: ensureError.message };
+  }
+  if (existingAuthId) {
+    return recoverExistingTeacherInvite({ email: normalized, displayName, linked: true });
+  }
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: normalized,

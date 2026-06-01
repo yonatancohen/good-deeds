@@ -235,27 +235,33 @@ export default function AdminTeachersScreen() {
     }
     setInviting(true);
 
-    const result = await inviteTeacher({
-      email: inviteEmail,
-      displayName: inviteName,
-    });
+    try {
+      const result = await inviteTeacher({
+        email: inviteEmail,
+        displayName: inviteName,
+      });
 
-    setInviting(false);
+      const teacherAdded =
+        result.ok || (!result.ok && 'teacherCreated' in result && result.teacherCreated);
 
-    if (!result.ok) {
-      if (result.teacherCreated) await loadData();
-      Alert.alert('לא הושלם', result.message);
-      return;
+      if (teacherAdded) {
+        await loadData();
+        closeInviteSheet();
+      }
+
+      if (!result.ok) {
+        Alert.alert('לא הושלם', result.message);
+        return;
+      }
+
+      const title = result.emailSent ? '✅ המורה נוסף' : '⚠️ המורה נוסף — בעיה במייל';
+      Alert.alert(
+        title,
+        result.adminHint ? `${result.message}\n\n${result.adminHint}` : result.message,
+      );
+    } finally {
+      setInviting(false);
     }
-
-    await loadData();
-    closeInviteSheet();
-
-    const title = result.emailSent ? '✅ המורה נוסף' : '⚠️ המורה נוסף — בעיה במייל';
-    Alert.alert(
-      title,
-      result.adminHint ? `${result.message}\n\n${result.adminHint}` : result.message,
-    );
   }
 
   async function handlePickTeacherCsv() {
