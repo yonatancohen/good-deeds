@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback } from 'react';
-import { UserCheck, Trash2, Plus, ChevronRight, FileUp, Pencil } from 'lucide-react-native';
+import { UserCheck, Trash2, Plus, ChevronRight, FileUp, Pencil, Mail } from 'lucide-react-native';
 import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useBreakpoint } from '@/lib/responsive';
@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { inviteTeacher } from '@/lib/teacherInvite';
+import { inviteTeacher, sendTeacherSetupEmail } from '@/lib/teacherInvite';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
 import * as DocumentPicker from 'expo-document-picker';
@@ -187,6 +187,7 @@ export default function AdminTeachersScreen() {
   const [assignTeacher, setAssignTeacher] = useState<UserRow | null>(null);
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set());
   const [assigning, setAssigning] = useState(false);
+  const [passwordEmailSendingId, setPasswordEmailSendingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     const [usersRes, classesRes, accessRes] = await Promise.all([
@@ -427,6 +428,24 @@ export default function AdminTeachersScreen() {
     );
   }
 
+  function handleSendPasswordEmail(teacher: UserRow) {
+    confirmAction(
+      'שליחת מייל איפוס סיסמה',
+      `לשלוח ל-${teacher.display_name} (${teacher.email}) קישור לקביעת סיסמה?`,
+      async () => {
+        setPasswordEmailSendingId(teacher.id);
+        const result = await sendTeacherSetupEmail(teacher.email);
+        setPasswordEmailSendingId(null);
+        if (!result.ok) {
+          Alert.alert('לא נשלח', result.message);
+          return;
+        }
+        Alert.alert('✅', `נשלח מייל ל-${teacher.email} עם קישור לקביעת סיסמה.`);
+      },
+      'שלח',
+    );
+  }
+
   return (
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
@@ -480,6 +499,20 @@ export default function AdminTeachersScreen() {
                         <Text style={S.teacherEmail}>{user.email}</Text>
                       </View>
                       <View style={S.teacherActions}>
+                        <TactileIconBtn
+                          onPress={() => {
+                            if (passwordEmailSendingId) return;
+                            handleSendPasswordEmail(user);
+                          }}
+                          style={AS.iconBtn}
+                          accessibilityLabel={`שלח מייל איפוס סיסמה ל${user.display_name}`}
+                        >
+                          {passwordEmailSendingId === user.id ? (
+                            <ActivityIndicator size="small" color={Colors.secondary} />
+                          ) : (
+                            <Mail size={16} color={Colors.secondary} />
+                          )}
+                        </TactileIconBtn>
                         <TactileIconBtn
                           onPress={() => openEdit(user)}
                           style={AS.iconBtn}
