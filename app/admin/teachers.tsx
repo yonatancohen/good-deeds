@@ -25,7 +25,7 @@ import { inviteTeacher, sendTeacherSetupEmail } from '@/lib/teacherInvite';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
 import * as DocumentPicker from 'expo-document-picker';
-import Papa from 'papaparse';
+import { IMPORT_DOCUMENT_TYPES, parseImportFileToRows } from '@/lib/spreadsheetImport';
 import type { Tables } from '@/types/supabase';
 
 import { HEBREW_ROW } from '@/lib/rtlLayout';
@@ -269,38 +269,42 @@ export default function AdminTeachersScreen() {
     setCsvPickError(null);
     setCsvPreview(null);
     const result = await DocumentPicker.getDocumentAsync({
-      type: ['text/csv', 'text/comma-separated-values', 'text/plain', '*/*'],
+      type: [...IMPORT_DOCUMENT_TYPES],
       copyToCacheDirectory: true,
     });
     if (result.canceled || !result.assets?.[0]) return;
-    const text = await fetch(result.assets[0].uri).then(r => r.text());
 
-    Papa.parse<Record<string, string>>(text, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data;
-        const normalized = rows.map(r => ({
-          display_name: (r.display_name ?? r['שם מלא'] ?? r.name ?? r['שם'] ?? '').trim(),
-          email:        (r.email        ?? r['אימייל'] ?? '').trim().toLowerCase(),
-        })).filter(r => r.display_name && r.email);
+    const asset = result.assets[0];
+    try {
+      const rows = await parseImportFileToRows(asset.uri, {
+        name: asset.name,
+        mimeType: asset.mimeType,
+      });
+      const normalized = rows.map((r) => ({
+        display_name: (r.display_name ?? r['שם מלא'] ?? r.name ?? r['שם'] ?? '').trim(),
+        email: (r.email ?? r['אימייל'] ?? '').trim().toLowerCase(),
+      })).filter((r) => r.display_name && r.email);
 
-        if (normalized.length === 0) {
-          setCsvPickError('לא נמצאו שורות תקינות. עמודות נדרשות: שם מלא, אימייל');
-          return;
-        }
+      if (normalized.length === 0) {
+        setCsvPickError('לא נמצאו שורות תקינות. עמודות נדרשות: שם מלא, אימייל');
+        return;
+      }
 
-        const { data: existingUsers } = await supabase.from('users').select('email');
-        const existingEmails = new Set((existingUsers ?? []).map(u => u.email.toLowerCase()));
+      const { data: existingUsers } = await supabase.from('users').select('email');
+      const existingEmails = new Set((existingUsers ?? []).map((u) => u.email.toLowerCase()));
 
-        setCsvPreview(normalized.map(r => ({
+      setCsvPreview(
+        normalized.map((r) => ({
           display_name: r.display_name,
           email: r.email,
           status: existingEmails.has(r.email) ? ('skip' as const) : ('new' as const),
-        })));
-      },
-      error: (err: Error) => setCsvPickError(`שגיאה בפענוח הקובץ: ${err.message}`),
-    });
+        })),
+      );
+    } catch (err: unknown) {
+      setCsvPickError(
+        `שגיאה בפענוח הקובץ: ${err instanceof Error ? err.message : 'שגיאה'}`,
+      );
+    }
   }
 
   async function handleImportTeachers() {
@@ -633,6 +637,7 @@ export default function AdminTeachersScreen() {
           <View style={S.csvInfoBanner}>
             <Text style={S.csvInfoText}>
               עמודות נדרשות: שם מלא, אימייל{'\n'}
+              קובץ CSV או Excel (.xlsx){'\n'}
               ייוצרו רק מורים שלא קיימים עדיין במערכת
             </Text>
           </View>
@@ -642,13 +647,13 @@ export default function AdminTeachersScreen() {
             <TouchableOpacity
               onPress={handlePickTeacherCsv}
               style={[S.csvPickBtn, webPointer]}
-              accessibilityRole="button" accessibilityLabel="בחר קובץ CSV"
+              accessibilityRole="button" accessibilityLabel="בחר קובץ CSV או Excel"
             >
               <View style={S.csvPickIcon}>
                 <FileUp size={26} color={Colors.primary} />
               </View>
-              <Text style={S.csvPickTitle}>לחץ לבחירת קובץ CSV</Text>
-              <Text style={S.csvPickSub}>שם מלא, אימייל</Text>
+              <Text style={S.csvPickTitle}>לחץ לבחירת קובץ</Text>
+              <Text style={S.csvPickSub}>CSV או Excel (.xlsx) — שם מלא, אימייל</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

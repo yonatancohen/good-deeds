@@ -13,12 +13,13 @@ import '@/lib/i18n';
 import * as DocumentPicker from 'expo-document-picker';
 import { FolderOpen, CheckCircle2 } from 'lucide-react-native';
 import AdminSheet from '@/components/AdminSheet';
-import { Colors } from '@/components/ui';
+import { Badge, Colors } from '@/components/ui';
 import { AS, webPointer } from '@/lib/adminStyles';
 import { useBreakpoint } from '@/lib/responsive';
 import { HEBREW_ROW } from '@/lib/rtlLayout';
+import { IMPORT_DOCUMENT_TYPES } from '@/lib/spreadsheetImport';
 import {
-  parseCsvText,
+  parseImportFile,
   previewStudents,
   insertStudents,
   type PreviewStudent,
@@ -94,83 +95,97 @@ const S = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
   } as any,
-  summaryRow: { flexDirection: HEBREW_ROW, gap: 12, marginBottom: 16 },
-  summaryCard: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  summaryCardNew: { backgroundColor: '#ECFDF5', borderColor: '#6EE7B7' },
-  summaryCardSkip: { backgroundColor: Colors.surface, borderColor: Colors.border },
-  summaryNum: { fontSize: 28, fontWeight: '700', marginBottom: 4 } as any,
-  summaryNumNew: { color: '#065f46' },
-  summaryNumSkip: { color: '#64748b' },
-  summaryLabel: { fontSize: 12, fontWeight: '600', writingDirection: 'rtl' } as any,
-  summaryLabelNew: { color: '#10B981' },
-  summaryLabelSkip: { color: '#94a3b8' },
-  previewTable: {
-    backgroundColor: Colors.bg,
-    borderRadius: 16,
+  summaryBox: {
+    marginBottom: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  summaryNew: {
+    color: Colors.success,
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'Baloo2_700Bold',
+    width: '100%',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as any,
+  summarySkip: {
+    color: Colors.muted,
+    fontSize: 13,
+    fontWeight: '600',
+    width: '100%',
+    textAlign: 'right',
+    marginTop: 4,
+    writingDirection: 'rtl',
+  } as any,
+  otherFileLink: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  otherFileLinkText: {
+    color: Colors.primaryDark,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'left',
+    writingDirection: 'rtl',
+  } as any,
+  previewTable: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(212,197,171,0.4)',
     overflow: 'hidden',
     marginBottom: 16,
   },
   tableHeader: {
     flexDirection: HEBREW_ROW,
-    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#f8fafc',
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: Colors.border,
+    gap: 12,
   },
-  tableHeaderText: {
+  tableHeaderStatus: {
+    width: 72,
     color: Colors.muted,
     fontSize: 12,
     fontWeight: '700',
+    textAlign: 'right',
     writingDirection: 'rtl',
   } as any,
+  tableHeaderName: {
+    flex: 1,
+    color: Colors.muted,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as any,
+  tableBody: { maxHeight: 280 },
   tableRow: {
     flexDirection: HEBREW_ROW,
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
+    borderBottomColor: Colors.surface,
+    gap: 12,
   },
-  tableRowText: { color: '#334155', fontSize: 14, writingDirection: 'rtl' } as any,
-  statusBadgeNew: {
-    backgroundColor: '#D1FAE5',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-  },
-  statusBadgeSkip: {
-    backgroundColor: '#f1f5f9',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-  },
-  statusTextNew: { color: '#065f46', fontSize: 12, fontWeight: '600' } as any,
-  statusTextSkip: { color: '#94a3b8', fontSize: 12, fontWeight: '600' } as any,
-  actionRow: { flexDirection: HEBREW_ROW, gap: 12, marginBottom: 8 },
-  importBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
-  importBtnActive: { backgroundColor: Colors.primary },
-  importBtnDisabled: { backgroundColor: Colors.surfaceDim },
-  importBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 } as any,
-  resetBtn: {
+  tableRowStatus: { width: 72, alignItems: 'flex-end' },
+  tableRowName: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: '#f1f5f9',
-  },
-  resetBtnText: { color: '#475569', fontWeight: '700', fontSize: 16 } as any,
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'right',
+    fontFamily: 'Baloo2_700Bold',
+    writingDirection: 'rtl',
+  } as any,
   doneWrap: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 8 },
   doneIconBox: {
     width: 72,
@@ -241,7 +256,7 @@ export default function StudentCsvUploadSheet({
   async function handlePickFile() {
     setPickError(null);
     const result = await DocumentPicker.getDocumentAsync({
-      type: ['text/csv', 'text/comma-separated-values', 'text/plain', '*/*'],
+      type: [...IMPORT_DOCUMENT_TYPES],
       copyToCacheDirectory: true,
     });
 
@@ -249,8 +264,10 @@ export default function StudentCsvUploadSheet({
 
     const file = result.assets[0];
     try {
-      const text = await fetch(file.uri).then((r) => r.text());
-      const normalized = await parseCsvText(text);
+      const normalized = await parseImportFile(file.uri, {
+        name: file.name,
+        mimeType: file.mimeType,
+      });
 
       if (normalized.length === 0) {
         setPickError('לא נמצאו שורות תקינות בקובץ');
@@ -315,6 +332,7 @@ export default function StudentCsvUploadSheet({
         <Text style={S.infoBannerTitle}>{t('uploadCsvHint')}</Text>
         <Text style={S.infoBannerText}>
           עמודות נדרשות: שם פרטי, שם משפחה{'\n'}
+          קובץ CSV או Excel (.xlsx){'\n'}
           תלמידים שכבר קיימים יישארו ללא שינוי
         </Text>
       </View>
@@ -324,13 +342,13 @@ export default function StudentCsvUploadSheet({
           onPress={handlePickFile}
           style={[S.pickBtn, webPointer]}
           accessibilityRole="button"
-          accessibilityLabel="בחר קובץ CSV"
+          accessibilityLabel="בחר קובץ CSV או Excel"
         >
           <View style={S.pickIconBox}>
             <FolderOpen size={28} color={Colors.primary} />
           </View>
-          <Text style={S.pickTitle}>לחץ לבחירת קובץ CSV</Text>
-          <Text style={S.pickSub}>קובץ .csv עם שמות התלמידים</Text>
+          <Text style={S.pickTitle}>לחץ לבחירת קובץ</Text>
+          <Text style={S.pickSub}>CSV או Excel (.xlsx) עם שמות התלמידים</Text>
         </TouchableOpacity>
       )}
 
@@ -342,83 +360,103 @@ export default function StudentCsvUploadSheet({
 
       {preview && (
         <>
-          <View style={S.summaryRow}>
-            <View style={[S.summaryCard, S.summaryCardNew]}>
-              <Text style={[S.summaryNum, S.summaryNumNew]}>{newCount}</Text>
-              <Text style={[S.summaryLabel, S.summaryLabelNew]}>{t('csvNew')}</Text>
-            </View>
-            <View style={[S.summaryCard, S.summaryCardSkip]}>
-              <Text style={[S.summaryNum, S.summaryNumSkip]}>{skipCount}</Text>
-              <Text style={[S.summaryLabel, S.summaryLabelSkip]}>{t('csvSkipped')}</Text>
-            </View>
+          <TouchableOpacity
+            onPress={() => {
+              setPreview(null);
+              setPickError(null);
+            }}
+            style={[S.otherFileLink, webPointer]}
+            accessibilityRole="button"
+            accessibilityLabel="בחר קובץ אחר"
+          >
+            <Text style={S.otherFileLinkText}>← קובץ אחר</Text>
+          </TouchableOpacity>
+
+          <View style={S.summaryBox}>
+            <Text style={S.summaryNew}>
+              ✓ {newCount} {t('csvNew')}
+            </Text>
+            {skipCount > 0 && (
+              <Text style={S.summarySkip}>
+                {skipCount} {t('csvSkipped')}
+              </Text>
+            )}
           </View>
 
           <View style={S.previewTable}>
             <View style={S.tableHeader}>
-              <Text style={S.tableHeaderText}>שם התלמיד</Text>
-              <Text style={S.tableHeaderText}>סטטוס</Text>
+              <Text style={S.tableHeaderStatus}>סטטוס</Text>
+              <Text style={S.tableHeaderName}>שם התלמיד</Text>
             </View>
-            {preview.map((row, i) => (
-              <View
-                key={i}
-                style={[S.tableRow, row.status === 'skip' && { opacity: 0.5 }]}
-                accessibilityLabel={`${row.first_name} ${row.last_name} — ${row.status === 'new' ? 'תלמיד חדש' : 'כבר קיים'}`}
-              >
-                <Text style={S.tableRowText}>
-                  {row.first_name} {row.last_name}
-                </Text>
-                <View style={row.status === 'new' ? S.statusBadgeNew : S.statusBadgeSkip}>
-                  <Text style={row.status === 'new' ? S.statusTextNew : S.statusTextSkip}>
-                    {row.status === 'new' ? '✓ חדש' : 'קיים'}
+            <ScrollView
+              style={S.tableBody}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+            >
+              {preview.map((row, i) => (
+                <View
+                  key={i}
+                  style={[S.tableRow, row.status === 'skip' && { opacity: 0.5 }]}
+                  accessibilityLabel={`${row.first_name} ${row.last_name} — ${row.status === 'new' ? 'תלמיד חדש' : 'כבר קיים'}`}
+                >
+                  <View style={S.tableRowStatus}>
+                    <Badge
+                      label={row.status === 'new' ? '✓ חדש' : 'קיים'}
+                      variant={row.status === 'new' ? 'success' : 'muted'}
+                    />
+                  </View>
+                  <Text style={S.tableRowName}>
+                    {row.first_name} {row.last_name}
                   </Text>
                 </View>
-              </View>
-            ))}
+              ))}
+            </ScrollView>
           </View>
 
-          <View style={S.actionRow}>
+          <View style={AS.sheetBtns}>
             <TouchableOpacity
               onPress={handleImport}
               disabled={importing || newCount === 0}
               style={[
-                S.importBtn,
-                importing || newCount === 0 ? S.importBtnDisabled : S.importBtnActive,
+                importing || newCount === 0 ? AS.saveBtnDisabled : AS.saveBtn,
                 webPointer,
               ]}
               accessibilityRole="button"
               accessibilityLabel={`ייבא ${newCount} תלמידים חדשים`}
+              accessibilityState={{ disabled: importing || newCount === 0 }}
             >
               {importing ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={Colors.primaryDark} />
               ) : (
-                <Text style={S.importBtnText}>{t('csvImport')}</Text>
+                <Text style={AS.saveBtnText}>
+                  {newCount > 0 ? `${t('csvImport')} (${newCount})` : t('csvImport')}
+                </Text>
               )}
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => {
-                setPreview(null);
-                setPickError(null);
-              }}
-              style={[S.resetBtn, webPointer]}
+              onPress={handleDismiss}
+              style={[AS.cancelBtn, webPointer]}
               accessibilityRole="button"
-              accessibilityLabel="בחר קובץ אחר"
+              accessibilityLabel="ביטול"
             >
-              <Text style={S.resetBtnText}>קובץ אחר</Text>
+              <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>
         </>
       )}
 
-      <View style={AS.sheetBtns}>
-        <TouchableOpacity
-          onPress={handleDismiss}
-          style={[AS.cancelBtn, webPointer]}
-          accessibilityRole="button"
-          accessibilityLabel="ביטול"
-        >
-          <Text style={AS.cancelBtnText}>ביטול</Text>
-        </TouchableOpacity>
-      </View>
+      {!preview && (
+        <View style={AS.sheetBtns}>
+          <TouchableOpacity
+            onPress={handleDismiss}
+            style={[AS.cancelBtn, webPointer]}
+            accessibilityRole="button"
+            accessibilityLabel="ביטול"
+          >
+            <Text style={AS.cancelBtnText}>{t('cancel')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </>
   );
 

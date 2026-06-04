@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import { parseImportFileToRows, type ImportFileMeta } from '@/lib/spreadsheetImport';
 import { supabase } from '@/lib/supabase';
 
 export interface ParsedStudentRow {
@@ -28,6 +29,14 @@ export function parseCsvText(text: string): Promise<ParsedStudentRow[]> {
       error: (err: Error) => reject(err),
     });
   });
+}
+
+export async function parseImportFile(
+  uri: string,
+  meta?: ImportFileMeta,
+): Promise<ParsedStudentRow[]> {
+  const rows = await parseImportFileToRows(uri, meta);
+  return normalizeCsvRows(rows);
 }
 
 export async function getExistingStudentKeys(classId: string): Promise<Set<string>> {

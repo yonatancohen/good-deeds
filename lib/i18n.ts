@@ -37,7 +37,7 @@ const he = {
     deleteCredit: 'מחק נקודה',
     deleteCreditConfirm: 'האם אתה בטוח שברצונך למחוק נקודה זו?',
     uploadCsv: 'העלאת רשימת תלמידים',
-    uploadCsvHint: 'קובץ CSV עם עמודות שם פרטי ושם משפחה',
+    uploadCsvHint: 'קובץ CSV או Excel (.xlsx) עם עמודות שם פרטי ושם משפחה',
     csvPreview: 'תצוגה מקדימה',
     csvNew: 'תלמידים חדשים',
     csvSkipped: 'ייעדר (כבר קיים)',
