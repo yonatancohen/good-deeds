@@ -21,7 +21,11 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { inviteTeacher, sendTeacherSetupEmail } from '@/lib/teacherInvite';
+import {
+  AUTH_EMAIL_RATE_LIMIT_MESSAGE,
+  inviteTeacher,
+  sendTeacherSetupEmail,
+} from '@/lib/teacherInvite';
 import { usesTeacherDefaultPassword } from '@/lib/teacherDefaultPassword';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
@@ -258,11 +262,18 @@ export default function AdminTeachersScreen() {
       }
 
       if (!result.ok) {
-        Alert.alert('לא הושלם', result.message);
+        Alert.alert(
+          result.rateLimited ? 'מגבלת שליחת מיילים' : 'לא הושלם',
+          result.message,
+        );
         return;
       }
 
-      const title = result.emailSent ? '✅ המורה נוסף' : '⚠️ המורה נוסף — בעיה במייל';
+      const title = result.rateLimited
+        ? '⚠️ המורה נוסף — מגבלת מיילים'
+        : result.emailSent
+          ? '✅ המורה נוסף'
+          : '⚠️ המורה נוסף — בעיה במייל';
       Alert.alert(
         title,
         result.adminHint ? `${result.message}\n\n${result.adminHint}` : result.message,
@@ -322,6 +333,7 @@ export default function AdminTeachersScreen() {
     setCsvImporting(true);
     let created = 0;
     const errors: string[] = [];
+    let hitRateLimit = false;
 
     for (const teacher of toCreate) {
       const result = await inviteTeacher({
@@ -330,17 +342,31 @@ export default function AdminTeachersScreen() {
       });
       if (!result.ok) {
         errors.push(`${teacher.email}: ${result.message}`);
+        if (result.rateLimited) {
+          hitRateLimit = true;
+          break;
+        }
         continue;
       }
       if (!result.emailSent) {
         errors.push(`${teacher.email}: נוסף ללא מייל — ${result.message}`);
+        if (result.rateLimited) {
+          hitRateLimit = true;
+          break;
+        }
       }
       created++;
     }
 
     setCsvImporting(false);
 
-    if (errors.length > 0) Alert.alert('חלק מהייבוא נכשל', errors.slice(0, 5).join('\n'));
+    if (hitRateLimit) {
+      const progress =
+        created > 0 ? `\n\n${created} מורים נוספו לפני שהמערכת עצרה את השליחה.` : '';
+      Alert.alert('מגבלת שליחת מיילים', `${AUTH_EMAIL_RATE_LIMIT_MESSAGE}${progress}`);
+    } else if (errors.length > 0) {
+      Alert.alert('חלק מהייבוא נכשל', errors.slice(0, 5).join('\n'));
+    }
     if (created > 0) {
       setCsvVisible(false);
       setCsvPreview(null);
@@ -448,7 +474,10 @@ export default function AdminTeachersScreen() {
         const result = await sendTeacherSetupEmail(teacher.email);
         setPasswordEmailSendingId(null);
         if (!result.ok) {
-          Alert.alert('לא נשלח', result.message);
+          Alert.alert(
+            result.rateLimited ? 'מגבלת שליחת מיילים' : 'לא נשלח',
+            result.message,
+          );
           return;
         }
         Alert.alert('✅', `נשלח מייל ל-${teacher.email} עם קישור לקביעת סיסמה.`);

@@ -11,26 +11,45 @@ export type InviteTeacherResult =
       emailSent: boolean;
       message: string;
       adminHint?: string;
+      rateLimited?: boolean;
     }
   | {
       ok: false;
       message: string;
       teacherCreated: boolean;
       adminHint?: string;
+      rateLimited?: boolean;
     };
 
-function mapAuthError(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes('rate limit') || m.includes('too many')) {
-    return 'יותר מדי בקשות מייל — נסו שוב בעוד כמה דקות';
+type AuthErrorLike = { message: string; status?: number; code?: string };
+
+/** Hebrew message when Supabase Auth returns HTTP 429 (email send rate limit). */
+export const AUTH_EMAIL_RATE_LIMIT_MESSAGE =
+  'נשלחו יותר מדי מיילים בזמן קצר (מגבלת Supabase). המתינו כמה דקות ונסו שוב.';
+
+export function isAuthEmailRateLimited(error: AuthErrorLike): boolean {
+  if (error.status === 429) return true;
+  const code = error.code?.toLowerCase();
+  if (code === 'over_email_send_rate_limit') return true;
+  const m = error.message.toLowerCase();
+  return m.includes('rate limit') || m.includes('too many');
+}
+
+function mapAuthError(error: AuthErrorLike): { message: string; rateLimited: boolean } {
+  if (isAuthEmailRateLimited(error)) {
+    return { message: AUTH_EMAIL_RATE_LIMIT_MESSAGE, rateLimited: true };
   }
+  const m = error.message.toLowerCase();
   if (m.includes('redirect') || m.includes('url')) {
-    return 'כתובת ההפניה לא מאושרת ב-Supabase (Redirect URLs)';
+    return { message: 'כתובת ההפניה לא מאושרת ב-Supabase (Redirect URLs)', rateLimited: false };
   }
   if (m.includes('smtp') || m.includes('email')) {
-    return 'שליחת המייל נכשלה — בדקו הגדרות SMTP / תבניות מייל ב-Supabase';
+    return {
+      message: 'שליחת המייל נכשלה — בדקו הגדרות SMTP / תבניות מייל ב-Supabase',
+      rateLimited: false,
+    };
   }
-  return message;
+  return { message: error.message, rateLimited: false };
 }
 
 function isDuplicateKeyError(error: { code?: string; message?: string }): boolean {
@@ -48,10 +67,13 @@ function isAuthUserFkError(error: { code?: string; message?: string }): boolean 
 /** Sends "set your password" recovery email (requires redirect URL in Supabase). */
 export async function sendTeacherSetupEmail(
   email: string,
-): Promise<{ ok: true } | { ok: false; message: string }> {
+): Promise<{ ok: true } | { ok: false; message: string; rateLimited?: boolean }> {
   const redirectTo = getSetPasswordRedirectUrl();
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) return { ok: false, message: mapAuthError(error.message) };
+  if (error) {
+    const mapped = mapAuthError(error);
+    return { ok: false, message: mapped.message, rateLimited: mapped.rateLimited };
+  }
   return { ok: true };
 }
 
@@ -81,6 +103,7 @@ async function recoverExistingTeacherInvite(params: {
       return {
         ok: true,
         emailSent: false,
+        rateLimited: emailResult.rateLimited,
         message:
           `המורה ${displayName} נוסף מחדש, אך מייל לקביעת סיסמה לא נשלח:\n${emailResult.message}`,
       };
@@ -88,6 +111,7 @@ async function recoverExistingTeacherInvite(params: {
     return {
       ok: false,
       teacherCreated: false,
+      rateLimited: emailResult.rateLimited,
       message: `לא ניתן לשלוח מייל:\n${emailResult.message}`,
     };
   }
@@ -152,7 +176,13 @@ export async function inviteTeacher(params: {
       return recoverExistingTeacherInvite({ email: normalized, displayName, linked });
     }
 
-    return { ok: false, teacherCreated: false, message: mapAuthError(authError.message) };
+    const mapped = mapAuthError(authError);
+    return {
+      ok: false,
+      teacherCreated: false,
+      message: mapped.message,
+      rateLimited: mapped.rateLimited,
+    };
   }
 
   const newUserId = authData.user?.id;
@@ -228,10 +258,12 @@ export async function inviteTeacher(params: {
     return {
       ok: true,
       emailSent: false,
+      rateLimited: emailResult.rateLimited,
       message:
         `המורה ${displayName} נוסף למערכת, אך מייל לקביעת סיסמה לא נשלח:\n${emailResult.message}`,
-      adminHint:
-        `ודאו ב-Supabase → Authentication → URL Configuration שהכתובת ${redirectTo} ברשימת Redirect URLs. המורה יכול גם ללחוץ "שכחתי סיסמה" במסך הכניסה.`,
+      adminHint: emailResult.rateLimited
+        ? 'מגבלת המיילים של Supabase (בדרך כלל ~3 מיילים לשעה עם SMTP מובנה). המתינו או הגדירו SMTP מותאם ב-Authentication.'
+        : `ודאו ב-Supabase → Authentication → URL Configuration שהכתובת ${redirectTo} ברשימת Redirect URLs. המורה יכול גם ללחוץ "שכחתי סיסמה" במסך הכניסה.`,
     };
   }
 

@@ -13,7 +13,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Lock, TriangleAlert } from 'lucide-react-native';
+import { Lock, TriangleAlert, UserRound } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import {
   MIN_PASSWORD_LENGTH,
@@ -96,6 +96,36 @@ async function establishSessionFromUrl(): Promise<{ ok: true } | { ok: false }> 
   }
 
   return { ok: false };
+}
+
+type InvitedUserInfo = {
+  displayName: string | null;
+  email: string | null;
+};
+
+async function loadInvitedUserInfo(): Promise<InvitedUserInfo> {
+  const { data: authData } = await supabase.auth.getUser();
+  const authUser = authData.user;
+  const email = authUser?.email ?? null;
+  const metadataName =
+    typeof authUser?.user_metadata?.display_name === 'string'
+      ? authUser.user_metadata.display_name.trim() || null
+      : null;
+
+  if (!authUser?.id) {
+    return { displayName: metadataName, email };
+  }
+
+  const { data: appUser } = await supabase
+    .from('users')
+    .select('display_name, email')
+    .eq('id', authUser.id)
+    .maybeSingle();
+
+  return {
+    displayName: appUser?.display_name?.trim() || metadataName,
+    email: appUser?.email ?? email,
+  };
 }
 
 function BlobDecoration() {
@@ -201,6 +231,7 @@ export default function SetPasswordScreen() {
   const [booting, setBooting] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [invitedUser, setInvitedUser] = useState<InvitedUserInfo | null>(null);
 
   const passwordIssue = password.length > 0 ? validateNewPassword(password) : null;
   const confirmTouched = confirm.length > 0;
@@ -219,6 +250,9 @@ export default function SetPasswordScreen() {
       const fromUrl = await establishSessionFromUrl();
       if (cancelled) return;
       if (fromUrl.ok) {
+        const userInfo = await loadInvitedUserInfo();
+        if (cancelled) return;
+        setInvitedUser(userInfo);
         setSessionReady(true);
         setBooting(false);
         return;
@@ -227,6 +261,9 @@ export default function SetPasswordScreen() {
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       if (data.session) {
+        const userInfo = await loadInvitedUserInfo();
+        if (cancelled) return;
+        setInvitedUser(userInfo);
         setSessionReady(true);
       } else if (urlHadAuthParams()) {
         setLinkError('הקישור לא תקין או שפג תוקפו. בקשו מייל חדש מהמנהל או מ"שכחתי סיסמה".');
@@ -316,6 +353,22 @@ export default function SetPasswordScreen() {
             <Text style={S.cardTitle}>קביעת סיסמה</Text>
             <Text style={S.cardSub}>בחרו סיסמה לחשבון המורה שלכם</Text>
           </View>
+
+          {invitedUser?.displayName || invitedUser?.email ? (
+            <View style={S.inviteBox} accessibilityRole="summary">
+              <View style={S.inviteIcon}>
+                <UserRound size={20} color={Colors.primary} />
+              </View>
+              <View style={S.inviteTextWrap}>
+                {invitedUser.displayName ? (
+                  <Text style={S.inviteName}>{invitedUser.displayName}</Text>
+                ) : null}
+                {invitedUser.email ? (
+                  <Text style={S.inviteEmail}>{invitedUser.email}</Text>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
 
           <FormField
             label="סיסמה חדשה"
@@ -493,6 +546,53 @@ const S = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
     lineHeight: 22,
+  } as object,
+
+  inviteBox: {
+    flexDirection: HEBREW_ROW,
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fffbf0',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#f5e6c8',
+    padding: 16,
+    marginBottom: 24,
+    width: '100%',
+  },
+  inviteIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  inviteTextWrap: {
+    flex: 1,
+    flexDirection: 'column',
+    gap: 2,
+  },
+  inviteLabel: {
+    fontSize: 12,
+    color: Colors.muted,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as object,
+  inviteName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    fontFamily: 'Baloo2_700Bold',
+  } as object,
+  inviteEmail: {
+    fontSize: 14,
+    color: Colors.text,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   } as object,
 
   alertBox: {
