@@ -18,6 +18,8 @@ export interface StudentWithCredits {
 export interface ClassWithProgress {
   class: ClassRow;
   students: StudentWithCredits[];
+  /** Class-level credits from teacher since last redemption */
+  classCredits: number;
   /** Sum of all student credits since last redemption */
   total: number;
   /** Goal from global settings */
@@ -148,7 +150,7 @@ export function usePublicData(): UsePublicData {
 
       // Assemble final data
       const result: ClassWithProgress[] = classes.map((cls) => {
-        const classStudents = studentsByClass.get(cls.id) ?? [];
+        const classStudents = (studentsByClass.get(cls.id) ?? []).filter((s) => s.credits > 0);
         const studentTotal = classStudents.reduce((sum, s) => sum + s.credits, 0);
         const classExtra = classLevelCredits.get(cls.id) ?? 0;
         const total = studentTotal + classExtra;
@@ -158,6 +160,7 @@ export function usePublicData(): UsePublicData {
         return {
           class: cls,
           students: classStudents,
+          classCredits: classExtra,
           total: cappedTotal,
           goal,
           goalReached: total >= goal,

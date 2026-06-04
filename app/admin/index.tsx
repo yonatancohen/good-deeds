@@ -19,7 +19,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { Colors, DepthPressable } from '@/components/ui';
 import { ScrollReveal } from '@/components/ScrollReveal';
-import { useBreakpoint } from '@/lib/responsive';
+import { useBreakpoint, getContentMaxWidth } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { DepthShell } from '@/lib/DepthShell';
 import { confirmAction } from '@/lib/confirm';
@@ -243,7 +243,7 @@ export default function AdminHomeScreen() {
   }, []);
 
   const menuCols = isDesktop ? 4 : 2;
-  const contentMaxW = isLarge ? 1200 : 960;
+  const contentMaxW = getContentMaxWidth(isLarge);
 
   const loadDashboard = useCallback(async () => {
     setPendingLoading(true);
@@ -640,7 +640,7 @@ export default function AdminHomeScreen() {
 
       {/* ── Header ── */}
       <View style={S.headerBar}>
-        <View style={[S.headerInner, { maxWidth: contentMaxW }]}>
+        <View style={[S.headerInner, { maxWidth: contentMaxW }, isDesktop && S.headerInnerDesktop]}>
           <View style={S.headerBrand}>
             <View style={S.headerAvatarWrap}>
               <Image
@@ -752,10 +752,13 @@ const S = StyleSheet.create({
     flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
     alignSelf: 'center',
     width: '100%',
+  },
+  headerInnerDesktop: {
+    paddingHorizontal: 32,
   },
   headerBrand: {
     flexDirection: HEADER_ROW,

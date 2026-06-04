@@ -19,7 +19,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LogOut, ClipboardList, ShieldCheck, Users } from 'lucide-react-native';
 
-import { AS } from '@/lib/adminStyles';
+import { AS, useAdminLayout } from '@/lib/adminStyles';
 import { Colors, DepthPressable } from '@/components/ui';
 import { StaggeredItem } from '@/components/StaggeredItem';
 import { DepthShell } from '@/lib/DepthShell';
@@ -33,9 +33,6 @@ import { getClassColorScheme } from '@/lib/classColors';
 import { BP } from '@/lib/responsive';
 
 import { HEBREW_ROW, HEADER_ROW, RTL_CHILD_ROW } from '@/lib/rtlLayout';
-// ── Layout constants ──────────────────────────────────────────────────────────
-const MAX_CONTENT_W = 960;
-
 // ── Styles ────────────────────────────────────────────────────────────────────
 const ptr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
 const GRID_PAD = 16;
@@ -315,6 +312,7 @@ export default function TeacherHome() {
   const { settings } = useSettings();
   const { classes, loading, error } = useTeacherClassesWithProgress();
   const { width: screenWidth } = useWindowDimensions();
+  const { isDesktop, contentMaxW, pagePadX } = useAdminLayout();
   const goal  = settings?.global_goal ?? 100;
 
   const displayName = useMemo(() => {
@@ -322,7 +320,7 @@ export default function TeacherHome() {
   }, [user]);
 
   const cols = useMemo(() => gridColumns(screenWidth), [screenWidth]);
-  const contentWidth = Math.min(screenWidth - GRID_PAD * 2, MAX_CONTENT_W);
+  const contentWidth = Math.min(screenWidth - pagePadX * 2, contentMaxW);
   const cardWidth =
     cols === 1
       ? contentWidth
@@ -347,8 +345,8 @@ export default function TeacherHome() {
     router.replace('/');
   }
 
-  const centreStyle = Platform.OS === 'web'
-    ? { maxWidth: MAX_CONTENT_W, alignSelf: 'center' as const, width: '100%' as any }
+  const centreStyle = isDesktop
+    ? { maxWidth: contentMaxW, alignSelf: 'center' as const, width: '100%' as const }
     : undefined;
 
   if (loading) {
@@ -370,17 +368,6 @@ export default function TeacherHome() {
             <Text style={S.headerSub}>הכיתות שלך</Text>
           </View>
           <View style={S.headerBtns}>
-            {user && (
-              <DepthPressable
-                onPress={handleLogout}
-                style={[S.headerIconBtn, ptr]}
-                depth={3}
-                borderRadius={14}
-                accessibilityLabel="התנתק"
-              >
-                <LogOut size={20} color={Colors.primaryDark} />
-              </DepthPressable>
-            )}
             {isAdmin && (
               <DepthPressable
                 onPress={() => router.replace('/admin')}
@@ -391,6 +378,17 @@ export default function TeacherHome() {
               >
                 <ShieldCheck size={15} color={Colors.primaryDark} />
                 <Text style={S.headerBtnText}>תצוגת מנהל</Text>
+              </DepthPressable>
+            )}
+            {user && (
+              <DepthPressable
+                onPress={handleLogout}
+                style={[S.headerIconBtn, ptr]}
+                depth={3}
+                borderRadius={14}
+                accessibilityLabel="התנתק"
+              >
+                <LogOut size={20} color={Colors.primaryDark} />
               </DepthPressable>
             )}
           </View>

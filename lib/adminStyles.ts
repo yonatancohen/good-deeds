@@ -5,20 +5,21 @@
 import { StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/lib/colors';
 import { shadow } from '@/lib/shadow';
-import { useBreakpoint } from '@/lib/responsive';
+import { useBreakpoint, desktopPageContent, getContentMaxWidth } from '@/lib/responsive';
 import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 
 export function useAdminLayout() {
-  const { isDesktop } = useBreakpoint();
+  const { isDesktop, isLarge } = useBreakpoint();
   return {
     isDesktop,
+    isLarge,
+    /** Content column max width (for grids / tile math). */
+    contentMaxW: getContentMaxWidth(isLarge),
     /** Vertical only — horizontal inset comes from `pageContent`. */
     listPad: isDesktop
       ? { paddingTop: 24, paddingBottom: 40 }
       : { paddingTop: 16, paddingBottom: 16 },
-    pageContent: isDesktop
-      ? { maxWidth: 960, alignSelf: 'center' as const, width: '100%' as const, paddingHorizontal: 24 }
-      : { width: '100%' as const, paddingHorizontal: 16 },
+    pageContent: desktopPageContent(isDesktop, isLarge),
     pagePadX: isDesktop ? 24 : 16,
   };
 }

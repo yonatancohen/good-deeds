@@ -46,7 +46,18 @@ function ProgBar({ value, max }: { value: number; max: number }) {
   );
 }
 
-// ── Student pill ───────────────────────────────────────────────────────────────
+// ── Credit pills ───────────────────────────────────────────────────────────────
+function ClassCreditsPill({ credits }: { credits: number }) {
+  return (
+    <View style={S.pill} accessibilityLabel={`נקודות לכיתה מהמורה, ${credits} נקודות`}>
+      <View style={S.pillBadge}>
+        <Text style={S.pillBadgeText}>{credits}</Text>
+      </View>
+      <Text style={S.pillName}>נקודות לכיתה</Text>
+    </View>
+  );
+}
+
 function StudentPill({ s }: { s: StudentWithCredits }) {
   return (
     <View style={S.pill} accessibilityLabel={`${s.first_name} ${s.last_name}, ${s.credits} נקודות`}>
@@ -66,6 +77,8 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
   const chevronRotation = useSharedValue(0);
   const pct = item.goal > 0 ? Math.round((item.total / item.goal) * 100) : 0;
   const scheme = getClassColorScheme(item.class.grade || item.class.name);
+  const showClassCredits = item.classCredits > 0;
+  const hasCreditPills = showClassCredits || item.students.length > 0;
 
   useEffect(() => {
     chevronRotation.value = withSpring(open ? 180 : 0, { damping: 18, stiffness: 220 });
@@ -173,15 +186,20 @@ function ClassCard({ item }: { item: ClassWithProgress }) {
           exiting={EXPAND_EXIT}
           style={S.studentsWrap}
         >
-          {item.students.length === 0 ? (
+          {!hasCreditPills ? (
             <View style={S.noStudentsRow}>
               <Users size={15} color={Colors.muted} />
-              <Text style={S.noStudentsText}>אין תלמידים עדיין</Text>
+              <Text style={S.noStudentsText}>אין נקודות עדיין</Text>
             </View>
           ) : (
             <View style={S.pillGrid}>
+              {showClassCredits && (
+                <StaggeredItem key="class-credits" index={0}>
+                  <ClassCreditsPill credits={item.classCredits} />
+                </StaggeredItem>
+              )}
               {item.students.map((s, index) => (
-                <StaggeredItem key={s.id} index={index}>
+                <StaggeredItem key={s.id} index={showClassCredits ? index + 1 : index}>
                   <StudentPill s={s} />
                 </StaggeredItem>
               ))}
@@ -235,9 +253,9 @@ export default function PublicScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { data, settings, loading, error } = usePublicData();
-  const { isDesktop } = useBreakpoint();
+  const { isDesktop, isLarge } = useBreakpoint();
 
-  const contentCol = desktopContentStyle(isDesktop);
+  const contentCol = desktopContentStyle(isDesktop, isLarge);
   const rowCenter = desktopRowCenter(isDesktop);
 
   return (

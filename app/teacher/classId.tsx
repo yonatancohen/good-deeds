@@ -23,9 +23,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronRight, Plus, ClipboardList, Users, Trash2, Pencil, Trophy, Upload } from 'lucide-react-native';
+import { ChevronRight, Plus, ClipboardList, Users, Trash2, Pencil, Trophy, Upload, Gift, AlertTriangle } from 'lucide-react-native';
 
 import { PompomJar } from '@/components/PomPomJar';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { hapticSuccess } from '@/lib/haptics';
 import { StaggeredItem } from '@/components/StaggeredItem';
 import AdminSheet from '@/components/AdminSheet';
@@ -289,6 +290,166 @@ function ClassCreditSheet({
   );
 }
 
+// ── Redeem gift (class reached goal) ──────────────────────────────────────────
+
+type GiftRow = Tables<'gifts'>;
+
+interface RedeemGiftSheetProps {
+  visible: boolean;
+  classId: string;
+  className: string;
+  userId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function RedeemGiftSheet({
+  visible,
+  classId,
+  className,
+  userId,
+  onClose,
+  onSuccess,
+}: RedeemGiftSheetProps) {
+  const [gifts, setGifts] = useState<GiftRow[]>([]);
+  const [loadingGifts, setLoadingGifts] = useState(false);
+  const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  React.useEffect(() => {
+    if (!visible) return;
+    setSelectedGiftId(null);
+    setNote('');
+    setLoadingGifts(true);
+    supabase
+      .from('gifts')
+      .select('*')
+      .eq('is_active', true)
+      .order('name')
+      .then(({ data, error }) => {
+        setLoadingGifts(false);
+        if (!error) setGifts(data ?? []);
+      });
+  }, [visible]);
+
+  function handleClose() {
+    setSelectedGiftId(null);
+    setNote('');
+    onClose();
+  }
+
+  async function submitRedemption() {
+    if (!selectedGiftId) return;
+    setSaving(true);
+    const { error } = await supabase.from('redemption_rounds').insert({
+      class_id: classId,
+      gift_id: selectedGiftId,
+      note: note.trim() || null,
+      marked_by: userId,
+    });
+    setSaving(false);
+    if (error) {
+      Alert.alert('שגיאה', error.message);
+    } else {
+      hapticSuccess();
+      handleClose();
+      onSuccess();
+    }
+  }
+
+  function handleConfirm() {
+    if (!selectedGiftId) {
+      Alert.alert('שגיאה', 'יש לבחור מתנה');
+      return;
+    }
+    const giftName = gifts.find((g) => g.id === selectedGiftId)?.name ?? 'מתנה';
+    confirmAction(
+      'מימוש מתנה',
+      `לרשום את "${giftName}" לכיתה ${className}?\nהנקודות יתאפסו והסבב יתחיל מחדש.`,
+      submitRedemption,
+      'ממש מתנה',
+    );
+  }
+
+  const canConfirm = !!selectedGiftId && !saving;
+
+  return (
+    <AdminSheet visible={visible} onClose={handleClose}>
+      <Text style={S.sheetTitle} accessibilityRole="header">מימוש מתנה</Text>
+      <Text style={S.sheetSub}>
+        כיתה {className} הגיעה למטרה — בחרו עם הכיתה מה המתנה, ורשמו כאן
+      </Text>
+
+      <Text style={S.sectionLabel}>מתנה</Text>
+      <Text style={S.sectionHint}>המתנה שהכיתה בחרה</Text>
+
+      {loadingGifts ? (
+        <ActivityIndicator color={Colors.primary} style={{ marginVertical: 24 }} />
+      ) : gifts.length === 0 ? (
+        <View style={S.noGiftsBanner}>
+          <AlertTriangle size={18} color="#D97706" />
+          <Text style={S.noGiftsText}>
+            אין מתנות פעילות במערכת. פנה/י למנהל להוספת מתנות בקטלוג.
+          </Text>
+        </View>
+      ) : (
+        <View style={S.giftPillRow}>
+          {gifts.map((gift) => {
+            const active = selectedGiftId === gift.id;
+            return (
+              <TouchableOpacity
+                key={gift.id}
+                onPress={() => setSelectedGiftId(gift.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: active }}
+                accessibilityLabel={`מתנה: ${gift.name}`}
+                style={[S.giftPill, active ? S.giftPillActive : S.giftPillInactive, ptr]}
+              >
+                <Text style={[S.giftPillText, active ? S.giftPillTextActive : S.giftPillTextInactive]}>
+                  {gift.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+
+      <Text style={[S.sectionLabel, { marginTop: 8 }]}>הערה (אופציונלי)</Text>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder="לדוגמה: פיצה עם הכיתה"
+        placeholderTextColor="#94a3b8"
+        textAlign="right"
+        multiline
+        numberOfLines={2}
+        style={S.noteInput}
+        accessibilityLabel="הערה על המתנה"
+      />
+
+      <View style={[AS.sheetBtns, { marginTop: 4 }]}>
+        <TouchableOpacity
+          onPress={handleConfirm}
+          disabled={!canConfirm}
+          accessibilityRole="button"
+          accessibilityLabel="ממש מתנה"
+          style={[canConfirm ? AS.saveBtn : AS.saveBtnDisabled, ptr]}
+        >
+          {saving ? (
+            <ActivityIndicator color={Colors.primaryDark} />
+          ) : (
+            <Text style={AS.saveBtnText}>ממש מתנה</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleClose} style={[AS.cancelBtn, ptr]} accessibilityRole="button" accessibilityLabel="ביטול">
+          <Text style={AS.cancelBtnText}>ביטול</Text>
+        </TouchableOpacity>
+      </View>
+    </AdminSheet>
+  );
+}
+
 // ── Edit class credit entry ───────────────────────────────────────────────────
 
 interface EditClassCreditSheetProps {
@@ -422,26 +583,28 @@ function ClassCreditHistory({
     );
   }
 
-  if (events.length === 0) return null;
+  if (events.length === 0) {
+    return (
+      <View style={S.tabEmptyCard}>
+        <Text style={S.tabEmptyText}>אין נקודות לכיתה בסבב הנוכחי</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={S.classHistorySection}>
-      <View style={S.studentsHeaderRow}>
-        <Text style={S.studentsLabel}>
-          נקודות לכיתה ({events.length})
-        </Text>
-      </View>
-      {events.map((item) => {
+    <View style={S.tabList}>
+      {events.map((item, index) => {
         const canManage = isAdmin || item.given_by === currentUserId;
         return (
-          <ClassCreditItem
-            key={item.id}
-            item={item}
-            canManage={canManage}
-            deleting={deleting === item.id}
-            onEdit={() => onEdit(item)}
-            onDelete={() => handleDelete(item.id)}
-          />
+          <StaggeredItem key={item.id} index={index}>
+            <ClassCreditItem
+              item={item}
+              canManage={canManage}
+              deleting={deleting === item.id}
+              onEdit={() => onEdit(item)}
+              onDelete={() => handleDelete(item.id)}
+            />
+          </StaggeredItem>
         );
       })}
     </View>
@@ -467,7 +630,7 @@ function ClassCreditItem({
 
   return (
     <View
-      style={[AS.row, S.listRowInset]}
+      style={AS.row}
       accessibilityLabel={`${item.amount} נקודות לכיתה, ${moment(item.created_at).fromNow()}`}
     >
       <View style={S.studentAvatar}>
@@ -622,7 +785,7 @@ function StudentItem({ student, credits, onGiveCredit, onViewHistory, onEdit }: 
   const { first_name, last_name } = student;
   return (
     <View
-      style={[AS.row, S.listRowInset]}
+      style={AS.row}
       accessibilityLabel={`${first_name} ${last_name} — ${credits} נקודות`}
     >
       <View style={S.studentAvatar}>
@@ -672,9 +835,8 @@ export default function ClassDetailScreen() {
   const { user, isAdmin } = useAuth();          // ← single call, shared below
   const { settings } = useSettings();
   const { pageContent, isDesktop } = useAdminLayout();
-  const scrollWrap = isDesktop
-    ? { maxWidth: 960, alignSelf: 'center' as const, width: '100%' as const }
-    : undefined;
+  const headerWrap = pageContent;
+  const scrollWrap = isDesktop ? pageContent : undefined;
   const { deeds } = useDeeds();                  // ← single call, passed to sheets
 
   // Fetch only this one class (not all classes)
@@ -713,6 +875,13 @@ export default function ClassDetailScreen() {
   const [studentLastName,    setStudentLastName]    = useState('');
   const [savingStudent,      setSavingStudent]      = useState(false);
   const [uploadVisible,      setUploadVisible]      = useState(false);
+  const [redeemVisible,      setRedeemVisible]      = useState(false);
+  const [pointsTab,          setPointsTab]          = useState<'class' | 'students'>('class');
+  const [studentSearch,      setStudentSearch]      = useState('');
+
+  React.useEffect(() => {
+    setStudentSearch('');
+  }, [classId]);
 
   // Derived student list (with optimistic mutations)
   const visibleStudents = useMemo(() => [
@@ -725,6 +894,31 @@ export default function ClassDetailScreen() {
       credits: credits + (localCreditAdjustments[student.id] ?? 0),
     })),
   ], [students, locallyAddedStudents, localCreditAdjustments]);
+
+  const filteredStudents = useMemo(() => {
+    const q = studentSearch.trim().toLowerCase();
+    if (!q) return visibleStudents;
+    return visibleStudents.filter(({ student }) => {
+      const hay = [
+        student.first_name,
+        student.last_name,
+        `${student.first_name} ${student.last_name}`,
+        `${student.last_name} ${student.first_name}`,
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [visibleStudents, studentSearch]);
+
+  const studentListLabel = useMemo(() => {
+    const total = visibleStudents.length;
+    const shown = filteredStudents.length;
+    if (studentSearch.trim() && shown !== total) {
+      return `תלמידים (${shown} מתוך ${total})`;
+    }
+    return `תלמידים (${total})`;
+  }, [visibleStudents.length, filteredStudents.length, studentSearch]);
 
   const studentTotal = visibleStudents.reduce((sum, s) => sum + s.credits, 0);
   const classTotal   = studentTotal + classLevelCredits + localClassCredits;
@@ -803,8 +997,8 @@ export default function ClassDetailScreen() {
 
       {/* ── Header ── */}
       <View style={AS.header}>
-        <View style={[AS.headerInner, pageContent, S.headerInner]}>
-          <View style={AS.headerLeft}>
+        <View style={[AS.headerInner, headerWrap, S.teacherHeaderInner]}>
+          <View style={[AS.headerLeft, S.headerLeft]}>
             <TactileIconBtn
               onPress={() => safeBack(router, '/teacher')}
               accessibilityLabel="חזור"
@@ -813,7 +1007,7 @@ export default function ClassDetailScreen() {
               <ChevronRight size={20} color={Colors.primaryDark} />
             </TactileIconBtn>
             <View style={S.headerTitleWrap}>
-              <Text style={AS.headerTitle} accessibilityRole="header">
+              <Text style={[S.teacherHeaderTitle, S.headerTitleText]} accessibilityRole="header">
                 כיתה {className}
               </Text>
               <Text style={S.headerSub}>
@@ -842,90 +1036,133 @@ export default function ClassDetailScreen() {
         <View style={S.jarSection}>
           <PompomJar value={cappedTotal} max={goal} size="lg" showHeroStats />
           {cappedTotal >= goal && (
-            <View style={S.goalReachedBadge}>
-              <Trophy size={14} color="#065f46" />
-              <Text style={S.goalReachedText}>הכיתה הגיעה למטרה!</Text>
-            </View>
+            <>
+              <View style={S.goalReachedBadge}>
+                <Trophy size={14} color="#065f46" />
+                <Text style={S.goalReachedText}>הכיתה הגיעה למטרה!</Text>
+              </View>
+              <View style={S.redeemCtaRow}>
+                <DepthPressable
+                  onPress={() => setRedeemVisible(true)}
+                  accessibilityLabel="ממש מתנה לכיתה"
+                  style={[S.redeemCtaBtn, ptr]}
+                  depth={4}
+                  borderRadius={16}
+                  color={Colors.primaryDark}
+                >
+                  <Gift size={18} color={Colors.primaryDark} />
+                  <Text style={S.redeemCtaBtnText}>ממש מתנה</Text>
+                </DepthPressable>
+              </View>
+            </>
           )}
         </View>
 
-        {/* ── 2. Class credit CTA ── */}
-        <View style={S.classCtaRow}>
-          <DepthPressable
-            onPress={() => setClassCreditVisible(true)}
-            accessibilityLabel="הוספת נקודות לכיתה"
-            style={[S.classCtaBtnAlt, ptr]}
-            depth={4}
-            borderRadius={16}
-            color="#1e3a5f"
-          >
-            <Plus size={18} color="#fff" />
-            <Text style={S.classCtaBtnAltText}>הוספת נקודות לכיתה</Text>
-          </DepthPressable>
+        {/* ── 2. Points tabs (class vs students) ── */}
+        <View style={S.pointsTabsSection}>
+          <SegmentedControl
+            value={pointsTab}
+            onChange={setPointsTab}
+            segments={[
+              { id: 'class', label: 'נקודות לכיתה', count: classCreditEvents.length },
+              { id: 'students', label: 'נקודות לתלמידים', count: visibleStudents.length },
+            ]}
+          />
         </View>
 
-        {/* ── 2b. Class credit history ── */}
-        <ClassCreditHistory
-          events={classCreditEvents}
-          currentUserId={user?.id ?? ''}
-          isAdmin={isAdmin}
-          onEdit={setEditingClassCredit}
-          onDeleted={refreshCredits}
-        />
-
-        {/* ── 3. Student list ── */}
-        <View style={S.studentsSection}>
-          <View style={S.studentsHeaderRow}>
-            <Text style={S.studentsLabel}>
-              תלמידים ({visibleStudents.length})
-            </Text>
-            <TactileIconBtn
-              onPress={() => setUploadVisible(true)}
-              style={AS.iconBtnSecondary}
-              shadowColor="rgba(0,96,172,0.2)"
-              accessibilityLabel={rosterImportA11y()}
-            >
-              <Upload size={16} color={Colors.secondary} />
-            </TactileIconBtn>
-          </View>
-
-          {studentsLoading ? (
-            <ActivityIndicator
-              color={Colors.primary}
-              style={{ marginVertical: 40 }}
-              accessibilityLabel="טוען תלמידים"
+        {pointsTab === 'class' ? (
+          <View style={S.pointsTabPanel}>
+            <View style={S.classCtaRow}>
+              <DepthPressable
+                onPress={() => setClassCreditVisible(true)}
+                accessibilityLabel="הוספת נקודות לכיתה"
+                style={[AS.addBtn, S.classCtaAddBtn, ptr]}
+                depth={5}
+                borderRadius={16}
+                color="#003d6b"
+                flat
+              >
+                <Plus size={15} color={Colors.secondary} />
+                <Text style={S.classCtaAddBtnText}>הוספת נקודות לכיתה</Text>
+              </DepthPressable>
+            </View>
+            <ClassCreditHistory
+              events={classCreditEvents}
+              currentUserId={user?.id ?? ''}
+              isAdmin={isAdmin}
+              onEdit={setEditingClassCredit}
+              onDeleted={refreshCredits}
             />
-          ) : studentsError ? (
-            <Text style={[S.emptyText, { color: Colors.danger }]}>{studentsError}</Text>
-          ) : visibleStudents.length === 0 ? (
-            <View style={S.emptyCard}>
-              <View style={S.emptyIconBox}>
-                <Users size={24} color={Colors.muted} />
-              </View>
-              <Text style={S.emptyCardText}>אין תלמידים בכיתה</Text>
+          </View>
+        ) : (
+          <View style={S.pointsTabPanel}>
+            <View style={S.studentsHeaderRow}>
+              <Text style={S.studentsLabel}>{studentListLabel}</Text>
               <TactileIconBtn
                 onPress={() => setUploadVisible(true)}
-                style={[AS.iconBtnSecondary, { marginTop: 12 }]}
+                style={AS.iconBtnSecondary}
                 shadowColor="rgba(0,96,172,0.2)"
-                accessibilityLabel={rosterImportA11y('העלאת רשימת תלמידים')}
+                accessibilityLabel={rosterImportA11y()}
               >
                 <Upload size={16} color={Colors.secondary} />
               </TactileIconBtn>
             </View>
-          ) : (
-            visibleStudents.map(({ student, credits }, index) => (
-              <StaggeredItem key={student.id} index={index}>
-                <StudentItem
-                  student={student}
-                  credits={credits}
-                  onGiveCredit={() => setGiveCreditStudent(student)}
-                  onViewHistory={() => setHistoryStudent(student)}
-                  onEdit={() => openEditStudent(student)}
-                />
-              </StaggeredItem>
-            ))
-          )}
-        </View>
+
+            {!studentsLoading && !studentsError && visibleStudents.length > 0 && (
+              <TextInput
+                value={studentSearch}
+                onChangeText={setStudentSearch}
+                placeholder="חיפוש לפי שם..."
+                placeholderTextColor={Colors.outline}
+                style={[AS.inputSmall, S.studentSearchInput]}
+                textAlign="right"
+                accessibilityLabel="חיפוש תלמיד"
+                clearButtonMode="while-editing"
+              />
+            )}
+
+            {studentsLoading ? (
+              <ActivityIndicator
+                color={Colors.primary}
+                style={{ marginVertical: 40 }}
+                accessibilityLabel="טוען תלמידים"
+              />
+            ) : studentsError ? (
+              <Text style={[S.emptyText, { color: Colors.danger }]}>{studentsError}</Text>
+            ) : visibleStudents.length === 0 ? (
+              <View style={S.emptyCard}>
+                <View style={S.emptyIconBox}>
+                  <Users size={24} color={Colors.muted} />
+                </View>
+                <Text style={S.emptyCardText}>אין תלמידים בכיתה</Text>
+                <TactileIconBtn
+                  onPress={() => setUploadVisible(true)}
+                  style={[AS.iconBtnSecondary, { marginTop: 12 }]}
+                  shadowColor="rgba(0,96,172,0.2)"
+                  accessibilityLabel={rosterImportA11y('העלאת רשימת תלמידים')}
+                >
+                  <Upload size={16} color={Colors.secondary} />
+                </TactileIconBtn>
+              </View>
+            ) : filteredStudents.length === 0 ? (
+              <Text style={S.emptyText}>לא נמצאו תלמידים התואמים לחיפוש</Text>
+            ) : (
+              <View style={S.tabList}>
+                {filteredStudents.map(({ student, credits }, index) => (
+                  <StaggeredItem key={student.id} index={index}>
+                    <StudentItem
+                      student={student}
+                      credits={credits}
+                      onGiveCredit={() => setGiveCreditStudent(student)}
+                      onViewHistory={() => setHistoryStudent(student)}
+                      onEdit={() => openEditStudent(student)}
+                    />
+                  </StaggeredItem>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Bottom padding */}
         <View style={{ height: 32 }} />
@@ -957,6 +1194,20 @@ export default function ClassDetailScreen() {
           refreshCredits();
         }}
       />
+
+      {classId && user ? (
+        <RedeemGiftSheet
+          visible={redeemVisible}
+          classId={classId}
+          className={className}
+          userId={user.id}
+          onClose={() => setRedeemVisible(false)}
+          onSuccess={() => {
+            setLocallyAddedStudents([]);
+            refreshCredits();
+          }}
+        />
+      ) : null}
 
       <EditClassCreditSheet
         visible={!!editingClassCredit}
@@ -1070,12 +1321,23 @@ const S = StyleSheet.create({
   screen:   { flex: 1, backgroundColor: Colors.bg },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg },
 
-  // ── Header (bar uses AS.header / AS.headerInner) ──
-  headerInner: { paddingTop: 8, paddingBottom: 8 },
-  headerTitleWrap: { alignItems: 'flex-end' },
+  // ── Header — match teacher lobby (index) bar height ──
+  teacherHeaderInner: { paddingBottom: 14 },
+  teacherHeaderTitle: {
+    fontSize: 20, fontWeight: '700', color: Colors.primaryDark,
+    fontFamily: 'Baloo2_700Bold',
+    textAlign: 'right', writingDirection: 'rtl',
+  } as any,
+  headerLeft: { flex: 1, minWidth: 0 },
+  headerTitleWrap: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
+  headerTitleText: {
+    textAlign: 'right',
+    width: '100%',
+    writingDirection: 'rtl',
+  } as any,
   headerSub: {
     fontSize: 12, color: Colors.muted,
-    writingDirection: 'rtl', textAlign: 'right', marginTop: 1,
+    writingDirection: 'rtl', textAlign: 'right', width: '100%', marginTop: 1,
   } as any,
 
   // ── Scroll content ──
@@ -1090,8 +1352,6 @@ const S = StyleSheet.create({
     paddingVertical: 32,
     paddingHorizontal: 24,
     backgroundColor: Colors.jarBand,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
@@ -1109,17 +1369,104 @@ const S = StyleSheet.create({
     color: '#065f46', fontWeight: '700', fontSize: 14,
     writingDirection: 'rtl',
   } as any,
-
-  classCtaRow: {
-    marginHorizontal: 16,
-    marginTop: 20,
+  redeemCtaRow: {
+    marginTop: 12,
+    width: '100%',
+  },
+  redeemCtaBtn: {
+    flexDirection: HEBREW_ROW,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'stretch',
+    width: '100%',
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    minHeight: 48,
+    borderRadius: 16,
+  },
+  redeemCtaBtnText: {
+    color: Colors.primaryDark,
+    fontWeight: '700',
+    fontSize: 15,
+    fontFamily: 'Baloo2_700Bold',
+    writingDirection: 'rtl',
+  } as any,
+  sectionHint: {
+    color: Colors.muted,
+    fontSize: 12,
+    textAlign: 'right',
     marginBottom: 8,
+    writingDirection: 'rtl',
+  } as any,
+  giftPillRow: {
+    flexDirection: HEBREW_ROW,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
   },
-  classHistorySection: {
-    paddingTop: 20,
+  giftPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  listRowInset: {
-    marginHorizontal: 16,
+  giftPillActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  giftPillInactive: { backgroundColor: '#fff', borderColor: Colors.border },
+  giftPillText: { fontWeight: '600', fontSize: 14, writingDirection: 'rtl' } as any,
+  giftPillTextActive: { color: Colors.primaryDark },
+  giftPillTextInactive: { color: Colors.text },
+  noGiftsBanner: {
+    flexDirection: HEBREW_ROW,
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  noGiftsText: {
+    flex: 1,
+    color: '#92400E',
+    fontSize: 13,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  } as any,
+
+  pointsTabsSection: {
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  pointsTabPanel: {
+    minHeight: 120,
+  },
+  tabList: {
+    gap: 0,
+  },
+  tabEmptyCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  tabEmptyText: {
+    color: Colors.muted,
+    fontSize: 14,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+  } as any,
+  classCtaRow: {
+    marginBottom: 8,
+    alignItems: 'flex-end',
   },
   classCreditNote: {
     fontSize: 12,
@@ -1131,18 +1478,12 @@ const S = StyleSheet.create({
   classCreditAvatarSm: {
     fontSize: 11,
   } as any,
-  classCtaBtnAlt: {
-    flexDirection: HEBREW_ROW,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.secondary,
-    borderRadius: 16,
-    paddingVertical: 14,
-    minHeight: 52,
+  classCtaAddBtn: {
+    backgroundColor: Colors.secondaryLight,
+    alignSelf: 'flex-end',
   },
-  classCtaBtnAltText: {
-    color: '#fff',
+  classCtaAddBtnText: {
+    color: Colors.secondary,
     fontWeight: '700',
     fontSize: 14,
     fontFamily: 'Baloo2_700Bold',
@@ -1167,22 +1508,20 @@ const S = StyleSheet.create({
   amountBtnText: { fontWeight: '700', fontSize: 16, color: '#334155' } as any,
   amountBtnTextActive: { color: Colors.primaryDark },
 
-  // ── Students section ──
-  studentsSection: {
-    paddingTop: 20,
-  },
   studentsHeaderRow: {
     flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
-    paddingHorizontal: 16,
   },
   studentsLabel: {
     fontSize: 11, fontWeight: '700', color: Colors.muted,
     textTransform: 'uppercase', letterSpacing: 0.8,
     writingDirection: 'rtl',
   } as any,
+  studentSearchInput: {
+    marginBottom: 12,
+  },
   studentAvatar: {
     backgroundColor: Colors.primaryLight,
     borderRadius: 12,

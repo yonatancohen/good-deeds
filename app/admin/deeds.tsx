@@ -24,7 +24,6 @@ import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
-import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import type { Tables } from '@/types/supabase';
 
@@ -70,7 +69,6 @@ function compareDeeds(a: Deed, b: Deed): number {
 }
 
 const GRID_GAP = 12;
-const GRID_MAX_W = 960;
 
 function DeedCube({
   deed,
@@ -160,8 +158,7 @@ function DeedCube({
 }
 
 export default function AdminDeedsScreen() {
-  const { listPad, pageContent, pagePadX, isDesktop } = useAdminLayout();
-  const { isLarge } = useBreakpoint();
+  const { listPad, pageContent, pagePadX, isDesktop, contentMaxW, isLarge } = useAdminLayout();
   const { width: screenWidth } = useWindowDimensions();
   const { t } = useTranslation();
   const router = useRouter();
@@ -180,7 +177,7 @@ export default function AdminDeedsScreen() {
   }, [isLarge, isDesktop]);
 
   const listPadX = pagePadX * 2;
-  const contentWidth = Math.min(screenWidth - listPadX, GRID_MAX_W);
+  const contentWidth = Math.min(screenWidth - listPadX, contentMaxW);
   const cubeWidth = Math.floor((contentWidth - GRID_GAP * (cols - 1)) / cols);
 
   const gridStyle = useMemo(

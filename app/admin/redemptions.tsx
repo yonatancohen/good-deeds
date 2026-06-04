@@ -105,9 +105,9 @@ const S = StyleSheet.create({
     borderRadius: 12, borderWidth: 2, minHeight: 44, justifyContent: 'center',
   },
   pillActiveClass:   { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  pillActiveGift:    { backgroundColor: Colors.success, borderColor: Colors.success },
+  pillActiveGift:    { backgroundColor: Colors.primary, borderColor: Colors.primary },
   pillInactive:      { backgroundColor: '#fff', borderColor: Colors.border },
-  pillTextActive:    { color: '#fff', fontWeight: '600', fontSize: 14 } as any,
+  pillTextActive:    { color: Colors.primaryDark, fontWeight: '600', fontSize: 14 } as any,
   pillTextInactive:  { color: '#334155', fontWeight: '600', fontSize: 14 } as any,
   pillNone:          { backgroundColor: Colors.muted, borderColor: Colors.muted },
   noteInput: {
@@ -115,8 +115,6 @@ const S = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
     color: Colors.text, fontSize: 14, textAlign: 'right', marginBottom: 20, writingDirection: 'rtl',
   } as any,
-  saveActive:   { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.primary },
-  saveDisabled: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.surfaceDim },
   yearHeader: {
     fontSize: 13, fontWeight: '700', color: Colors.primary,
     textAlign: 'right', writingDirection: 'rtl',
@@ -515,12 +513,12 @@ export default function AdminRedemptionsScreen() {
               <TouchableOpacity
                 onPress={handleSave}
                 disabled={!selectedClassId || !selectedGiftId || saving}
-                style={[(!selectedClassId || !selectedGiftId || saving) ? S.saveDisabled : S.saveActive, webPointer]}
+                style={[(!selectedClassId || !selectedGiftId || saving) ? AS.saveBtnDisabled : AS.saveBtn, webPointer]}
                 accessibilityRole="button"
                 accessibilityLabel="רשום מתנה"
                 accessibilityState={{ disabled: !selectedClassId || !selectedGiftId || saving }}
               >
-                {saving ? <ActivityIndicator color="#fff" /> : <Text style={AS.saveBtnText}>רשום מתנה</Text>}
+                {saving ? <ActivityIndicator color={Colors.primaryDark} /> : <Text style={AS.saveBtnText}>רשום מתנה</Text>}
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={[AS.cancelBtn, webPointer]} accessibilityRole="button" accessibilityLabel="ביטול">
                 <Text style={AS.cancelBtnText}>{t('cancel')}</Text>

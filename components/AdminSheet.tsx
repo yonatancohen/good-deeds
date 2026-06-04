@@ -21,6 +21,10 @@ import { useBreakpoint } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 
 import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
+
+/** Modal portals sit outside `#root`; restore RTL on web so sheet layout matches the app. */
+const WEB_RTL = Platform.OS === 'web' ? ({ direction: 'rtl' } as object) : {};
+
 // useNativeDriver is unsupported on web — JS-based animation is fine there
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -174,7 +178,7 @@ export default function AdminSheet({
 
           {/* Centered dialog */}
           <Animated.View
-            style={[S.dialog, { opacity: dialogOpacity, transform: [{ scale: dialogScale }] }]}
+            style={[S.dialog, WEB_RTL, { opacity: dialogOpacity, transform: [{ scale: dialogScale }] }]}
             {...(Platform.OS === 'web' ? { role: 'dialog', 'aria-modal': true } as any : {})}
           >
             {/* Header: title (RTL right) + close button (left) */}
@@ -194,7 +198,7 @@ export default function AdminSheet({
             {/* Scrollable content */}
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={S.dialogContent}
+              contentContainerStyle={[S.dialogContent, S.sheetScrollContentRtl]}
               keyboardShouldPersistTaps="handled"
             >
               {bodyChildren}
@@ -235,6 +239,7 @@ export default function AdminSheet({
         <Animated.View
           style={[
             S.sheet,
+            WEB_RTL,
             { maxHeight: `${maxHeightFraction * 100}%` as any },
             { transform: [{ translateY }] },
             keyboardHeight > 0 && { marginBottom: keyboardHeight },
@@ -255,7 +260,7 @@ export default function AdminSheet({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             bounces={false}
-            contentContainerStyle={S.sheetScrollContent}
+            contentContainerStyle={[S.sheetScrollContent, S.sheetScrollContentRtl]}
           >
             {children}
           </ScrollView>
@@ -323,11 +328,13 @@ const S = StyleSheet.create({
     flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
+    ...WEB_RTL,
   },
   dialogTitle: {
     flex: 1,
@@ -351,5 +358,9 @@ const S = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 28,
+    ...WEB_RTL,
+  },
+  sheetScrollContentRtl: {
+    ...WEB_RTL,
   },
 });
