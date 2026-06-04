@@ -17,6 +17,7 @@ import { Badge, Colors } from '@/components/ui';
 import { AS, webPointer } from '@/lib/adminStyles';
 import { useBreakpoint } from '@/lib/responsive';
 import { HEBREW_ROW } from '@/lib/rtlLayout';
+import { IMPORT_FILE_TYPES } from '@/lib/importCopy';
 import { IMPORT_DOCUMENT_TYPES } from '@/lib/spreadsheetImport';
 import {
   parseImportFile,
@@ -332,7 +333,7 @@ export default function StudentCsvUploadSheet({
         <Text style={S.infoBannerTitle}>{t('uploadCsvHint')}</Text>
         <Text style={S.infoBannerText}>
           עמודות נדרשות: שם פרטי, שם משפחה{'\n'}
-          קובץ CSV או Excel (.xlsx){'\n'}
+          {`קובץ ${IMPORT_FILE_TYPES}`}{'\n'}
           תלמידים שכבר קיימים יישארו ללא שינוי
         </Text>
       </View>
@@ -342,13 +343,13 @@ export default function StudentCsvUploadSheet({
           onPress={handlePickFile}
           style={[S.pickBtn, webPointer]}
           accessibilityRole="button"
-          accessibilityLabel="בחר קובץ CSV או Excel"
+          accessibilityLabel={`בחר קובץ ${IMPORT_FILE_TYPES}`}
         >
           <View style={S.pickIconBox}>
             <FolderOpen size={28} color={Colors.primary} />
           </View>
           <Text style={S.pickTitle}>לחץ לבחירת קובץ</Text>
-          <Text style={S.pickSub}>CSV או Excel (.xlsx) עם שמות התלמידים</Text>
+          <Text style={S.pickSub}>{`${IMPORT_FILE_TYPES} עם שמות התלמידים`}</Text>
         </TouchableOpacity>
       )}
 

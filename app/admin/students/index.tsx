@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/hooks/useSettings';
 import { insertStudents, type ParsedStudentRow } from '@/lib/studentImport';
 import { getClassColorScheme } from '@/lib/classColors';
+import { rosterImportA11y } from '@/lib/importCopy';
 import { studentCountLabel } from '@/lib/studentCountLabel';
 import type { Tables } from '@/types/supabase';
 
@@ -276,7 +277,7 @@ export default function AdminStudentsScreen() {
                         onPress={() => setUploadClass(cls)}
                         style={AS.iconBtnSecondary}
                         shadowColor="rgba(0,96,172,0.2)"
-                        accessibilityLabel={`ייבוא CSV לכיתה ${cls.name}`}
+                        accessibilityLabel={rosterImportA11y(`לכיתה ${cls.name}`)}
                       >
                         <Upload size={16} color={Colors.secondary} />
                       </TactileIconBtn>

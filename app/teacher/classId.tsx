@@ -46,6 +46,7 @@ import type { Tables } from '@/types/supabase';
 import moment from 'moment';
 import 'moment/locale/he';
 
+import { rosterImportA11y } from '@/lib/importCopy';
 import { HEBREW_ROW } from '@/lib/rtlLayout';
 moment.locale('he');
 
@@ -882,7 +883,7 @@ export default function ClassDetailScreen() {
               onPress={() => setUploadVisible(true)}
               style={AS.iconBtnSecondary}
               shadowColor="rgba(0,96,172,0.2)"
-              accessibilityLabel="ייבוא CSV"
+              accessibilityLabel={rosterImportA11y()}
             >
               <Upload size={16} color={Colors.secondary} />
             </TactileIconBtn>
@@ -906,7 +907,7 @@ export default function ClassDetailScreen() {
                 onPress={() => setUploadVisible(true)}
                 style={[AS.iconBtnSecondary, { marginTop: 12 }]}
                 shadowColor="rgba(0,96,172,0.2)"
-                accessibilityLabel="העלה רשימת תלמידים מ-CSV"
+                accessibilityLabel={rosterImportA11y('העלאת רשימת תלמידים')}
               >
                 <Upload size={16} color={Colors.secondary} />
               </TactileIconBtn>

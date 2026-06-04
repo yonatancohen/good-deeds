@@ -74,3 +74,11 @@ export async function insertStudents(
   const { error } = await supabase.from('students').insert(toInsert);
   return { count: toInsert.length, error: error?.message ?? null };
 }
+
+/** Removes every student in the class (credit_events cascade via FK). */
+export async function clearClassStudents(
+  classId: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('students').delete().eq('class_id', classId);
+  return { error: error?.message ?? null };
+}

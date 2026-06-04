@@ -18,10 +18,15 @@ import { Colors, TactileIconBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { safeBack } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
-import { insertStudents, type ParsedStudentRow } from '@/lib/studentImport';
+import {
+  clearClassStudents,
+  insertStudents,
+  type ParsedStudentRow,
+} from '@/lib/studentImport';
 import { getClassColorScheme } from '@/lib/classColors';
 import { studentCountLabel } from '@/lib/studentCountLabel';
 import { confirmAction } from '@/lib/confirm';
+import { ROSTER_IMPORT_EMPTY_HINT, rosterImportA11y } from '@/lib/importCopy';
 import type { Tables } from '@/types/supabase';
 
 import { HEBREW_ROW } from '@/lib/rtlLayout';
@@ -109,6 +114,7 @@ export default function AdminClassStudentsScreen() {
     { id: '1', first_name: '', last_name: '' },
   ]);
   const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const load = useCallback(async () => {
     if (!classId) {
@@ -200,6 +206,24 @@ export default function AdminClassStudentsScreen() {
     );
   }
 
+  function handleClearAllStudents() {
+    if (!classId || students.length === 0) return;
+    const n = students.length;
+    const label = classRow?.name || 'הכיתה';
+    confirmAction(
+      'ניקוי רשימת תלמידים',
+      `למחוק את כל ${n} התלמידים מכיתה ${label}?\n\nפעולה זו תמחק גם את כל נקודות התלמידים ולא ניתן לבטל.`,
+      async () => {
+        setClearing(true);
+        const { error } = await clearClassStudents(classId);
+        setClearing(false);
+        if (error) Alert.alert('שגיאה', error);
+        else setStudents([]);
+      },
+      'מחק הכל',
+    );
+  }
+
   const scheme = getClassColorScheme(classRow?.grade ?? classRow?.name ?? '');
   const className = classRow?.name ?? '';
 
@@ -229,11 +253,27 @@ export default function AdminClassStudentsScreen() {
           </View>
           {classId ? (
             <View style={AS.rowActions}>
+              {students.length > 0 && (
+                <TactileIconBtn
+                  onPress={handleClearAllStudents}
+                  disabled={clearing}
+                  style={AS.iconBtnDanger}
+                  shadowColor="rgba(220,38,38,0.2)"
+                  accessibilityLabel="מחק את כל התלמידים בכיתה"
+                  accessibilityState={{ disabled: clearing }}
+                >
+                  {clearing ? (
+                    <ActivityIndicator size="small" color={Colors.danger} />
+                  ) : (
+                    <Trash2 size={16} color={Colors.danger} />
+                  )}
+                </TactileIconBtn>
+              )}
               <TactileIconBtn
                 onPress={() => setUploadVisible(true)}
                 style={AS.iconBtnSecondary}
                 shadowColor="rgba(0,96,172,0.2)"
-                accessibilityLabel="ייבוא CSV"
+                accessibilityLabel={rosterImportA11y()}
               >
                 <Upload size={16} color={Colors.secondary} />
               </TactileIconBtn>
@@ -261,7 +301,7 @@ export default function AdminClassStudentsScreen() {
             {students.length === 0 ? (
               <View style={AS.emptyWrap}>
                 <Text style={AS.emptyTitle}>אין תלמידים בכיתה</Text>
-                <Text style={AS.emptyHint}>הוסף תלמידים ידנית או ייבא מקובץ CSV.</Text>
+                <Text style={AS.emptyHint}>{ROSTER_IMPORT_EMPTY_HINT}</Text>
               </View>
             ) : (
               students.map((student) => (

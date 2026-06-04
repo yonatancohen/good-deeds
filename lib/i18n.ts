@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { IMPORT_FILE_TYPES, ROSTER_IMPORT_EMPTY_HINT } from '@/lib/importCopy';
 
 const he = {
   translation: {
@@ -37,7 +38,9 @@ const he = {
     deleteCredit: 'מחק נקודה',
     deleteCreditConfirm: 'האם אתה בטוח שברצונך למחוק נקודה זו?',
     uploadCsv: 'העלאת רשימת תלמידים',
-    uploadCsvHint: 'קובץ CSV או Excel (.xlsx) עם עמודות שם פרטי ושם משפחה',
+    uploadCsvHint: `קובץ ${IMPORT_FILE_TYPES} עם עמודות שם פרטי ושם משפחה`,
+    importFileTypes: IMPORT_FILE_TYPES,
+    rosterImportEmptyHint: ROSTER_IMPORT_EMPTY_HINT,
     csvPreview: 'תצוגה מקדימה',
     csvNew: 'תלמידים חדשים',
     csvSkipped: 'ייעדר (כבר קיים)',

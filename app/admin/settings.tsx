@@ -151,11 +151,13 @@ export default function AdminSettingsScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         {/* Header */}
         <View style={AS.header}>
-          <View style={[AS.headerInner, pageContent, { justifyContent: 'flex-start' }]}>
-            <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
-              <ChevronRight size={20} color={Colors.primaryDark} />
-            </TactileIconBtn>
-            <Text style={AS.headerTitle} accessibilityRole="header">{t('settings')}</Text>
+          <View style={[AS.headerInner, pageContent]}>
+            <View style={AS.headerLeft}>
+              <TactileIconBtn onPress={() => safeBack(router, '/admin')} style={AS.backBtn} accessibilityLabel="חזרה">
+                <ChevronRight size={20} color={Colors.primaryDark} />
+              </TactileIconBtn>
+              <Text style={AS.headerTitle} accessibilityRole="header">{t('settings')}</Text>
+            </View>
           </View>
         </View>
 

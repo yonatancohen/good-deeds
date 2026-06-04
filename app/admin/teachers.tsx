@@ -25,6 +25,12 @@ import { inviteTeacher, sendTeacherSetupEmail } from '@/lib/teacherInvite';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
 import * as DocumentPicker from 'expo-document-picker';
+import {
+  IMPORT_FILE_TYPES,
+  TEACHERS_IMPORT_BTN,
+  TEACHERS_IMPORT_SHEET_TITLE,
+  teachersImportA11y,
+} from '@/lib/importCopy';
 import { IMPORT_DOCUMENT_TYPES, parseImportFileToRows } from '@/lib/spreadsheetImport';
 import type { Tables } from '@/types/supabase';
 
@@ -465,10 +471,10 @@ export default function AdminTeachersScreen() {
               <AddBtn
                 onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}
                 light
-                accessibilityLabel="ייבוא מורים מ-CSV"
+                accessibilityLabel={teachersImportA11y}
               >
                 <FileUp size={18} color={Colors.primaryDark} />
-                <Text style={AS.addBtnText}>CSV</Text>
+                <Text style={AS.addBtnText}>{TEACHERS_IMPORT_BTN}</Text>
               </AddBtn>
             )}
             <AddBtn onPress={openInviteSheet} accessibilityLabel="הוסף מורה חדש" />
@@ -630,14 +636,14 @@ export default function AdminTeachersScreen() {
 
       {/* CSV Import Sheet */}
       <AdminSheet visible={csvVisible} onClose={() => setCsvVisible(false)}>
-        <Text style={AS.sheetTitle} accessibilityRole="header">ייבוא מורים מ-CSV</Text>
+        <Text style={AS.sheetTitle} accessibilityRole="header">{TEACHERS_IMPORT_SHEET_TITLE}</Text>
 
         <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
           {/* Format hint */}
           <View style={S.csvInfoBanner}>
             <Text style={S.csvInfoText}>
               עמודות נדרשות: שם מלא, אימייל{'\n'}
-              קובץ CSV או Excel (.xlsx){'\n'}
+              {`קובץ ${IMPORT_FILE_TYPES}`}{'\n'}
               ייוצרו רק מורים שלא קיימים עדיין במערכת
             </Text>
           </View>
@@ -647,13 +653,13 @@ export default function AdminTeachersScreen() {
             <TouchableOpacity
               onPress={handlePickTeacherCsv}
               style={[S.csvPickBtn, webPointer]}
-              accessibilityRole="button" accessibilityLabel="בחר קובץ CSV או Excel"
+              accessibilityRole="button" accessibilityLabel={`בחר קובץ ${IMPORT_FILE_TYPES}`}
             >
               <View style={S.csvPickIcon}>
                 <FileUp size={26} color={Colors.primary} />
               </View>
               <Text style={S.csvPickTitle}>לחץ לבחירת קובץ</Text>
-              <Text style={S.csvPickSub}>CSV או Excel (.xlsx) — שם מלא, אימייל</Text>
+              <Text style={S.csvPickSub}>{`${IMPORT_FILE_TYPES} — שם מלא, אימייל`}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
