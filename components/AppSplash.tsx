@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
           height: '100%',
           minHeight: '100dvh',
           // Isolate from document RTL so splash stays centered on iOS PWA
-          direction: 'ltr',
+          writingDirection: 'ltr',
         } as object)
       : {}),
   },

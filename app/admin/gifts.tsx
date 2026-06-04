@@ -187,7 +187,7 @@ export default function AdminGiftsScreen() {
             gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
             gap: GRID_GAP,
             width: '100%',
-            direction: 'rtl',
+            writingDirection: 'rtl',
           } as object)
         : {
             flexDirection: HEBREW_ROW,

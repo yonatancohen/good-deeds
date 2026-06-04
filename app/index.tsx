@@ -24,7 +24,8 @@ import '@/lib/i18n';
 import { usePublicData, ClassWithProgress, StudentWithCredits } from '@/hooks/usePublicData';
 import { Skeleton, Colors, DepthPressable } from '@/components/ui';
 import { DepthShell } from '@/lib/DepthShell';
-import { useBreakpoint, desktopContentStyle, desktopRowCenter } from '@/lib/responsive';
+import { useBreakpoint, desktopRowCenter } from '@/lib/responsive';
+import { AS, useAdminLayout } from '@/lib/adminStyles';
 import { shadow } from '@/lib/shadow';
 import { getClassColorScheme } from '@/lib/classColors';
 import { PompomJar, POMPOM_JAR_SM } from '@/components/PomPomJar';
@@ -253,17 +254,16 @@ export default function PublicScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { data, settings, loading, error } = usePublicData();
-  const { isDesktop, isLarge } = useBreakpoint();
-
-  const contentCol = desktopContentStyle(isDesktop, isLarge);
+  const { isDesktop } = useBreakpoint();
+  const { pageContent } = useAdminLayout();
   const rowCenter = desktopRowCenter(isDesktop);
 
   return (
     <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
 
       {/* ── Header (full-bleed bar, like teacher) ── */}
-      <View style={[S.headerBar, rowCenter]}>
-        <View style={[S.headerInner, contentCol]}>
+      <View style={[AS.header, rowCenter, isDesktop && AS.headerDesktop]}>
+        <View style={[AS.headerInner, pageContent]}>
           <View style={S.headerText}>
             <Text style={S.headerTitle} accessibilityRole="header">
               {settings?.school_name ?? t('appName')}
@@ -294,7 +294,7 @@ export default function PublicScreen() {
 
       {/* ── Hero (full-bleed yellow strip) ── */}
       <View style={[S.hero, rowCenter]}>
-        <View style={[S.heroInner, contentCol, isDesktop && S.heroInnerDesktop]}>
+        <View style={[S.heroInner, pageContent, isDesktop && S.heroInnerDesktop]}>
           <View style={[S.blob, { width: 130, height: 130, top: -45, right: -35 }]} />
           <View style={[S.blob, { width: 80, height: 80, bottom: -30, left: -20, opacity: 0.12 }]} />
           <View style={[S.blob, { width: 52, height: 52, top: 16, left: 50, opacity: 0.10 }]} />
@@ -316,7 +316,7 @@ export default function PublicScreen() {
         contentContainerStyle={S.scrollBody}
         showsVerticalScrollIndicator={false}
       >
-        <View style={contentCol}>
+        <View style={pageContent}>
           <View style={[S.listContent, isDesktop ? S.grid : undefined]}>
           {loading && Array.from({ length: 6 }, (_, i) => (
             <CardSkeleton key={i} />
@@ -356,20 +356,7 @@ const S = StyleSheet.create({
   pageScroll: { flex: 1, minHeight: 0, width: '100%', backgroundColor: Colors.bg },
   scrollBody: { paddingBottom: 24 },
 
-  // Header — matches teacher screen
-  headerBar: {
-    backgroundColor: Colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerInner: {
-    flexDirection: HEADER_ROW,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 14,
-  },
+  // Header — AS.header + AS.headerInner
   headerText: { flex: 1 },
   headerActions: { flexDirection: HEADER_ROW, alignItems: 'center', gap: 8 },
   headerIconBtn: {
@@ -413,7 +400,6 @@ const S = StyleSheet.create({
   },
   heroInner: {
     width: '100%',
-    paddingHorizontal: 20,
     paddingTop: 14,
     paddingBottom: 14,
     alignItems: 'flex-start',
@@ -458,12 +444,12 @@ const S = StyleSheet.create({
   } as any,
 
   // List
-  listContent: { padding: 16, paddingBottom: 0 },
+  listContent: { paddingTop: 16, paddingBottom: 0 },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
     gap: 18,
-    direction: 'rtl',
+    writingDirection: 'rtl',
   } as any,
   gridFullSpan: {
     gridColumn: '1 / -1',

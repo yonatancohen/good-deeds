@@ -19,7 +19,7 @@ import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button, Colors, FormField, Card } from '@/components/ui';
-import { useBreakpoint } from '@/lib/responsive';
+import { useBreakpoint, PAGE_PAD_X_MOBILE, PAGE_PAD_X_DESKTOP } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 
 import { HEBREW_ROW } from '@/lib/rtlLayout';
@@ -40,7 +40,7 @@ function BlobDecoration() {
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
   kvoid:  { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 72, paddingBottom: 48 },
+  content: { paddingHorizontal: PAGE_PAD_X_MOBILE, paddingTop: 72, paddingBottom: 48 },
 
   // ── Background blobs (web only) ─────────────────────────────────────────
   blob: {
@@ -265,7 +265,13 @@ export default function LoginScreen() {
         >
           <View style={[
             S.content,
-            isDesktop && { alignSelf: 'center', width: '100%', maxWidth: 440, paddingHorizontal: 32, paddingTop: 80 },
+            isDesktop && {
+              alignSelf: 'center',
+              width: '100%',
+              maxWidth: 440,
+              paddingHorizontal: PAGE_PAD_X_DESKTOP,
+              paddingTop: 80,
+            },
           ]}>
 
             {/* ── Logo ── */}

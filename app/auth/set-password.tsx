@@ -21,7 +21,7 @@ import {
   validateNewPassword,
 } from '@/lib/authPassword';
 import { Button, Colors, FormField, Card } from '@/components/ui';
-import { useBreakpoint } from '@/lib/responsive';
+import { useBreakpoint, PAGE_PAD_X_MOBILE, PAGE_PAD_X_DESKTOP } from '@/lib/responsive';
 import { shadow } from '@/lib/shadow';
 import { HEBREW_ROW } from '@/lib/rtlLayout';
 import { getHomeRouteForRole } from '@/lib/navigation';
@@ -440,12 +440,13 @@ const S = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     width: '100%',
-    paddingHorizontal: 20,
+    paddingHorizontal: PAGE_PAD_X_MOBILE,
     paddingTop: 32,
     paddingBottom: 40,
     ...(Platform.OS === 'web' ? ({ alignItems: 'center' } as any) : {}),
   },
   scrollContentDesktop: {
+    paddingHorizontal: PAGE_PAD_X_DESKTOP,
     paddingTop: 64,
     paddingBottom: 64,
     justifyContent: 'center',

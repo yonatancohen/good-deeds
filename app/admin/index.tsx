@@ -19,7 +19,8 @@ import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { Colors, DepthPressable } from '@/components/ui';
 import { ScrollReveal } from '@/components/ScrollReveal';
-import { useBreakpoint, getContentMaxWidth } from '@/lib/responsive';
+import { useBreakpoint } from '@/lib/responsive';
+import { AS, useAdminLayout } from '@/lib/adminStyles';
 import { shadow } from '@/lib/shadow';
 import { DepthShell } from '@/lib/DepthShell';
 import { confirmAction } from '@/lib/confirm';
@@ -220,6 +221,7 @@ export default function AdminHomeScreen() {
   const { user } = useAuth();
   const { settings, refresh } = useSettings();
   const { isDesktop, isLarge, width } = useBreakpoint();
+  const { pageContent, contentMaxW, pagePadX } = useAdminLayout();
 
   const [pendingRedemptions, setPendingRedemptions] = useState<PendingRedemption[]>([]);
   const [pendingLoading, setPendingLoading] = useState(true);
@@ -243,7 +245,6 @@ export default function AdminHomeScreen() {
   }, []);
 
   const menuCols = isDesktop ? 4 : 2;
-  const contentMaxW = getContentMaxWidth(isLarge);
 
   const loadDashboard = useCallback(async () => {
     setPendingLoading(true);
@@ -425,21 +426,24 @@ export default function AdminHomeScreen() {
     (_, i) => MENU.slice(i * menuCols, i * menuCols + menuCols),
   );
 
+  const mobilePadX = isDesktop ? pagePadX : 12;
   const tileWidth = isDesktop
-    ? (contentMaxW - 48 - (menuCols - 1) * 16) / menuCols
-    : (width - 40 - 16) / 2;
+    ? (contentMaxW - pagePadX * 2 - (menuCols - 1) * 16) / menuCols
+    : (width - mobilePadX * 2 - 16) / menuCols;
 
   function renderStats() {
     return (
-      <View style={[S.statsRow, isLarge && S.statsRowDesktop]}>
+      <View style={[S.statsRow, isDesktop && S.statsRowDesktop, isLarge && S.statsRowLarge]}>
         <ScrollReveal index={0} style={S.statOuter}>
           <DepthShell depth={4} borderRadius={14} outerStyle={{ flex: 1 }}>
-            <View style={[S.statCard, S.statCardPrimary]}>
-              <Star size={isDesktop ? 36 : 32} color={Colors.primaryDark} />
+            <View style={[S.statCard, S.statCardPrimary, isDesktop && S.statCardDesktop]}>
+              <Star size={isDesktop ? 36 : 26} color={Colors.primaryDark} />
               {statsLoading ? (
                 <ActivityIndicator size="small" color={Colors.primaryDark} style={{ marginVertical: 8 }} />
               ) : (
-                <Text style={S.statValue}>{todayPoints.toLocaleString('he-IL')}</Text>
+                <Text style={[S.statValue, isDesktop && S.statValueDesktop]}>
+                  {todayPoints.toLocaleString('he-IL')}
+                </Text>
               )}
               <Text style={S.statLabel}>נקודות היום</Text>
             </View>
@@ -447,12 +451,14 @@ export default function AdminHomeScreen() {
         </ScrollReveal>
         <ScrollReveal index={1} style={S.statOuter}>
           <DepthShell depth={4} borderRadius={14} outerStyle={{ flex: 1 }}>
-            <View style={[S.statCard, S.statCardSecondary]}>
-              <School size={isDesktop ? 36 : 32} color="#003e73" />
+            <View style={[S.statCard, S.statCardSecondary, isDesktop && S.statCardDesktop]}>
+              <School size={isDesktop ? 36 : 26} color="#003e73" />
               {statsLoading ? (
                 <ActivityIndicator size="small" color="#003e73" style={{ marginVertical: 8 }} />
               ) : (
-                <Text style={[S.statValue, { color: '#003e73' }]}>{activeClasses}</Text>
+                <Text style={[S.statValue, isDesktop && S.statValueDesktop, { color: '#003e73' }]}>
+                  {activeClasses}
+                </Text>
               )}
               <Text style={[S.statLabel, { color: '#003e73' }]}>כיתות פעילות</Text>
             </View>
@@ -639,8 +645,8 @@ export default function AdminHomeScreen() {
     <SafeAreaView style={S.screen} edges={['top']}>
 
       {/* ── Header ── */}
-      <View style={S.headerBar}>
-        <View style={[S.headerInner, { maxWidth: contentMaxW }, isDesktop && S.headerInnerDesktop]}>
+      <View style={[AS.header, AS.headerShadow, isDesktop && AS.headerDesktop]}>
+        <View style={[AS.headerInner, pageContent]}>
           <View style={S.headerBrand}>
             <View style={S.headerAvatarWrap}>
               <Image
@@ -686,24 +692,16 @@ export default function AdminHomeScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[
-          S.scrollBody,
-          isDesktop && S.scrollBodyDesktop,
-          { maxWidth: contentMaxW, alignSelf: 'center', width: '100%' },
-        ]}
+        contentContainerStyle={[S.scrollBody, isDesktop && S.scrollBodyDesktop]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[S.scrollContent, isDesktop && S.scrollContentDesktop]}>
+        <View style={[pageContent, !isDesktop && S.scrollContentMobile, S.scrollContent]}>
         <ScrollReveal index={0}>
-          <Text style={[S.pageTitle, isDesktop && S.pageTitleDesktop]} accessibilityRole="header">
-            לוח בקרה מנהלי
+          <Text style={[S.pageGreeting, isDesktop && S.pageGreetingDesktop]}>
+            שלום,{' '}
+            <Text style={S.pageGreetingName}>{user?.display_name ?? 'מנהל'}</Text>
           </Text>
         </ScrollReveal>
-        {!isDesktop && user?.display_name && (
-          <ScrollReveal index={1}>
-            <Text style={S.pageGreeting}>שלום, {user.display_name}</Text>
-          </ScrollReveal>
-        )}
 
         {renderStats()}
 
@@ -741,25 +739,7 @@ export default function AdminHomeScreen() {
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
 
-  // ── Header ──
-  headerBar: {
-    backgroundColor: Colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    ...shadow('#000', 1, 4, 0.06, 2),
-  },
-  headerInner: {
-    flexDirection: HEADER_ROW,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  headerInnerDesktop: {
-    paddingHorizontal: 32,
-  },
+  // ── Header (bar shell: AS.header + AS.headerInner) ──
   headerBrand: {
     flexDirection: HEADER_ROW,
     alignItems: 'center',
@@ -819,10 +799,11 @@ const S = StyleSheet.create({
   scrollBody: { flexGrow: 1, paddingBottom: 32 },
   scrollBodyDesktop: { paddingBottom: 48 },
   scrollContent: {
-    paddingHorizontal: 20,
     width: '100%',
   },
-  scrollContentDesktop: { paddingHorizontal: 32 },
+  scrollContentMobile: {
+    paddingHorizontal: 12,
+  },
 
   pageTitle: {
     fontSize: 28,
@@ -836,37 +817,61 @@ const S = StyleSheet.create({
   } as any,
   pageTitleDesktop: { fontSize: 32, marginTop: 28 },
   pageGreeting: {
-    fontSize: 14,
+    fontSize: 17,
+    fontWeight: '600',
     color: Colors.muted,
+    fontFamily: 'Baloo2_600SemiBold',
     writingDirection: 'rtl',
     textAlign: 'right',
-    marginBottom: 16,
+    marginTop: 10,
+    marginBottom: 6,
+    lineHeight: 22,
   } as any,
+  pageGreetingName: {
+    fontWeight: '700',
+    color: Colors.primaryDark,
+    fontFamily: 'Baloo2_700Bold',
+  } as any,
+  pageGreetingDesktop: {
+    fontSize: 22,
+    marginTop: 24,
+    marginBottom: 12,
+  },
 
   // ── Stats ──
   statsRow: {
     flexDirection: HEBREW_ROW,
-    gap: 14,
-    marginTop: 16,
-    marginBottom: 28,
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 18,
   },
-  statsRowDesktop: { gap: 24, marginBottom: 36 },
+  statsRowDesktop: { gap: 14, marginTop: 16, marginBottom: 28 },
+  statsRowLarge: { gap: 24, marginBottom: 36 },
   statOuter: { flex: 1 },
   statCard: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  statCardDesktop: {
     borderRadius: 14,
     paddingVertical: 20,
     paddingHorizontal: 16,
-    alignItems: 'center',
   },
   statCardPrimary: { backgroundColor: Colors.primary },
   statCardSecondary: { backgroundColor: Colors.secondaryLight },
   statValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.primaryDark,
     fontFamily: 'Baloo2_700Bold',
-    marginTop: 6,
+    marginTop: 4,
   } as any,
+  statValueDesktop: {
+    fontSize: 28,
+    marginTop: 6,
+  },
   statLabel: {
     fontSize: 13,
     fontWeight: '600',

@@ -5,9 +5,15 @@
 import { StyleSheet, Platform } from 'react-native';
 import { Colors } from '@/lib/colors';
 import { shadow } from '@/lib/shadow';
-import { useBreakpoint, desktopPageContent, getContentMaxWidth } from '@/lib/responsive';
+import {
+  useBreakpoint,
+  desktopPageContent,
+  getContentMaxWidth,
+  getPagePadX,
+} from '@/lib/responsive';
 import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 
+/** Shared page column layout — use on admin, teacher, and public screens. */
 export function useAdminLayout() {
   const { isDesktop, isLarge } = useBreakpoint();
   return {
@@ -19,10 +25,21 @@ export function useAdminLayout() {
     listPad: isDesktop
       ? { paddingTop: 24, paddingBottom: 40 }
       : { paddingTop: 16, paddingBottom: 16 },
+    /** Centered column + horizontal padding (16 mobile / 24 desktop). */
     pageContent: desktopPageContent(isDesktop, isLarge),
-    pagePadX: isDesktop ? 24 : 16,
+    pagePadX: getPagePadX(isDesktop),
   };
 }
+
+/** @alias useAdminLayout */
+export const useAppLayout = useAdminLayout;
+
+/** Header row height — matches back/add/logout controls (44px). */
+export const HEADER_CONTROL_SIZE = 44;
+export const HEADER_INNER_PAD_TOP = 16;
+export const HEADER_INNER_PAD_BOTTOM = 14;
+export const HEADER_INNER_MIN_HEIGHT =
+  HEADER_INNER_PAD_TOP + HEADER_CONTROL_SIZE + HEADER_INNER_PAD_BOTTOM;
 
 export const AS = StyleSheet.create({
   // ── Screen ───────────────────────────────────────────────────────────────
@@ -33,14 +50,23 @@ export const AS = StyleSheet.create({
   // Usage: <View style={AS.header}><View style={[AS.headerInner, pageContent]}>…</View></View>
   header: {
     backgroundColor: '#fff',
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  headerShadow: {
+    ...shadow('#000', 1, 4, 0.06, 2),
+  },
+  headerDesktop: {
+    alignItems: 'center',
   },
   headerInner: {
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingTop: HEADER_INNER_PAD_TOP,
+    paddingBottom: HEADER_INNER_PAD_BOTTOM,
+    minHeight: HEADER_INNER_MIN_HEIGHT,
     flexDirection: HEADER_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
+    width: '100%',
   },
   headerLeft: { flexDirection: HEADER_ROW, alignItems: 'center', gap: 12, flexShrink: 1 },
   backBtn: {

@@ -23,7 +23,7 @@ import { shadow } from '@/lib/shadow';
 import { HEBREW_ROW, HEADER_ROW } from '@/lib/rtlLayout';
 
 /** Modal portals sit outside `#root`; restore RTL on web so sheet layout matches the app. */
-const WEB_RTL = Platform.OS === 'web' ? ({ direction: 'rtl' } as object) : {};
+const WEB_RTL = Platform.OS === 'web' ? ({ writingDirection: 'rtl' } as object) : {};
 
 // useNativeDriver is unsupported on web — JS-based animation is fine there
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';

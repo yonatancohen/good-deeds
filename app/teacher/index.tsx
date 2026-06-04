@@ -35,7 +35,6 @@ import { BP } from '@/lib/responsive';
 import { HEBREW_ROW, HEADER_ROW, RTL_CHILD_ROW } from '@/lib/rtlLayout';
 // ── Styles ────────────────────────────────────────────────────────────────────
 const ptr = Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {};
-const GRID_PAD = 16;
 const GRID_GAP  = 12;
 
 /** Class colour at ~20% opacity — progress track on white cards */
@@ -47,20 +46,7 @@ function classTrackBg(bg: string): string {
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
 
-  // ── Header bar ──
-  headerBar: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerInner: {
-    flexDirection: HEADER_ROW,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 14,
-  },
+  // ── Header (bar shell: AS.header + AS.headerInner) ──
   headerText: { flex: 1 },
   headerTitle: {
     fontSize: 20, fontWeight: '700', color: Colors.primaryDark,
@@ -88,8 +74,8 @@ const S = StyleSheet.create({
 
   // ── Card grid (layout applied inline for responsive cols) ──
   grid: {
-    paddingHorizontal: GRID_PAD,
     paddingTop: 24,
+    width: '100%',
   },
 
   // ── Class card ──
@@ -312,7 +298,7 @@ export default function TeacherHome() {
   const { settings } = useSettings();
   const { classes, loading, error } = useTeacherClassesWithProgress();
   const { width: screenWidth } = useWindowDimensions();
-  const { isDesktop, contentMaxW, pagePadX } = useAdminLayout();
+  const { isDesktop, pageContent, contentMaxW, pagePadX } = useAdminLayout();
   const goal  = settings?.global_goal ?? 100;
 
   const displayName = useMemo(() => {
@@ -334,7 +320,7 @@ export default function TeacherHome() {
             gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
             gap: GRID_GAP,
             width: '100%',
-            direction: 'rtl',
+            writingDirection: 'rtl',
           } as object)
         : { flexDirection: HEBREW_ROW, flexWrap: 'wrap', gap: GRID_GAP },
     [cols],
@@ -344,10 +330,6 @@ export default function TeacherHome() {
     await supabase.auth.signOut();
     router.replace('/');
   }
-
-  const centreStyle = isDesktop
-    ? { maxWidth: contentMaxW, alignSelf: 'center' as const, width: '100%' as const }
-    : undefined;
 
   if (loading) {
     return (
@@ -361,8 +343,8 @@ export default function TeacherHome() {
     <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
 
       {/* ── Header ── */}
-      <View style={S.headerBar}>
-        <View style={[S.headerInner, centreStyle]}>
+      <View style={[AS.header, isDesktop && AS.headerDesktop]}>
+        <View style={[AS.headerInner, pageContent]}>
           <View style={S.headerText}>
             <Text style={S.headerTitle}>שלום, {displayName} 👋</Text>
             <Text style={S.headerSub}>הכיתות שלך</Text>
@@ -400,7 +382,7 @@ export default function TeacherHome() {
         contentContainerStyle={S.scrollBody}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[S.scrollContent, centreStyle]}>
+        <View style={[pageContent, S.scrollContent]}>
           {error ? (
             <View style={S.errorBanner}>
               <Text style={S.errorText}>{error}</Text>

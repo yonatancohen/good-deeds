@@ -836,7 +836,6 @@ export default function ClassDetailScreen() {
   const { settings } = useSettings();
   const { pageContent, isDesktop } = useAdminLayout();
   const headerWrap = pageContent;
-  const scrollWrap = isDesktop ? pageContent : undefined;
   const { deeds } = useDeeds();                  // ← single call, passed to sheets
 
   // Fetch only this one class (not all classes)
@@ -992,12 +991,148 @@ export default function ClassDetailScreen() {
 
   const className = classRow?.name ?? '';
 
+  const jarBlock = (
+    <View style={S.jarSection}>
+      <PompomJar value={cappedTotal} max={goal} size="lg" showHeroStats />
+      {cappedTotal >= goal && (
+        <>
+          <View style={S.goalReachedBadge}>
+            <Trophy size={14} color="#065f46" />
+            <Text style={S.goalReachedText}>הכיתה הגיעה למטרה!</Text>
+          </View>
+          <View style={S.redeemCtaRow}>
+            <DepthPressable
+              onPress={() => setRedeemVisible(true)}
+              accessibilityLabel="ממש מתנה לכיתה"
+              style={[S.redeemCtaBtn, ptr]}
+              depth={4}
+              borderRadius={16}
+              color={Colors.primaryDark}
+            >
+              <Gift size={18} color={Colors.primaryDark} />
+              <Text style={S.redeemCtaBtnText}>ממש מתנה</Text>
+            </DepthPressable>
+          </View>
+        </>
+      )}
+    </View>
+  );
+
+  const pointsBlock = (
+    <>
+      <View style={S.pointsTabsSection}>
+        <SegmentedControl
+          value={pointsTab}
+          onChange={setPointsTab}
+          segments={[
+            { id: 'class', label: 'נקודות לכיתה', count: classCreditEvents.length },
+            { id: 'students', label: 'נקודות לתלמידים', count: visibleStudents.length },
+          ]}
+        />
+      </View>
+
+      {pointsTab === 'class' ? (
+        <View style={S.pointsTabPanel}>
+          <View style={S.classCtaRow}>
+            <DepthPressable
+              onPress={() => setClassCreditVisible(true)}
+              accessibilityLabel="הוספת נקודות לכיתה"
+              style={[AS.addBtn, S.classCtaAddBtn, ptr]}
+              depth={5}
+              borderRadius={16}
+              color="#003d6b"
+              flat
+            >
+              <Plus size={15} color={Colors.secondary} />
+              <Text style={S.classCtaAddBtnText}>הוספת נקודות לכיתה</Text>
+            </DepthPressable>
+          </View>
+          <ClassCreditHistory
+            events={classCreditEvents}
+            currentUserId={user?.id ?? ''}
+            isAdmin={isAdmin}
+            onEdit={setEditingClassCredit}
+            onDeleted={refreshCredits}
+          />
+        </View>
+      ) : (
+        <View style={S.pointsTabPanel}>
+          <View style={S.studentsHeaderRow}>
+            <Text style={S.studentsLabel}>{studentListLabel}</Text>
+            <TactileIconBtn
+              onPress={() => setUploadVisible(true)}
+              style={AS.iconBtnSecondary}
+              shadowColor="rgba(0,96,172,0.2)"
+              accessibilityLabel={rosterImportA11y()}
+            >
+              <Upload size={16} color={Colors.secondary} />
+            </TactileIconBtn>
+          </View>
+
+          {!studentsLoading && !studentsError && visibleStudents.length > 0 && (
+            <TextInput
+              value={studentSearch}
+              onChangeText={setStudentSearch}
+              placeholder="חיפוש לפי שם..."
+              placeholderTextColor={Colors.outline}
+              style={[AS.inputSmall, S.studentSearchInput]}
+              textAlign="right"
+              accessibilityLabel="חיפוש תלמיד"
+              clearButtonMode="while-editing"
+            />
+          )}
+
+          {studentsLoading ? (
+            <ActivityIndicator
+              color={Colors.primary}
+              style={{ marginVertical: 40 }}
+              accessibilityLabel="טוען תלמידים"
+            />
+          ) : studentsError ? (
+            <Text style={[S.emptyText, { color: Colors.danger }]}>{studentsError}</Text>
+          ) : visibleStudents.length === 0 ? (
+            <View style={S.emptyCard}>
+              <View style={S.emptyIconBox}>
+                <Users size={24} color={Colors.muted} />
+              </View>
+              <Text style={S.emptyCardText}>אין תלמידים בכיתה</Text>
+              <TactileIconBtn
+                onPress={() => setUploadVisible(true)}
+                style={[AS.iconBtnSecondary, { marginTop: 12 }]}
+                shadowColor="rgba(0,96,172,0.2)"
+                accessibilityLabel={rosterImportA11y('העלאת רשימת תלמידים')}
+              >
+                <Upload size={16} color={Colors.secondary} />
+              </TactileIconBtn>
+            </View>
+          ) : filteredStudents.length === 0 ? (
+            <Text style={S.emptyText}>לא נמצאו תלמידים התואמים לחיפוש</Text>
+          ) : (
+            <View style={S.tabList}>
+              {filteredStudents.map(({ student, credits }, index) => (
+                <StaggeredItem key={student.id} index={index}>
+                  <StudentItem
+                    student={student}
+                    credits={credits}
+                    onGiveCredit={() => setGiveCreditStudent(student)}
+                    onViewHistory={() => setHistoryStudent(student)}
+                    onEdit={() => openEditStudent(student)}
+                  />
+                </StaggeredItem>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+    </>
+  );
+
   return (
     <SafeAreaView style={S.screen} edges={['top', 'left', 'right']}>
 
       {/* ── Header ── */}
       <View style={AS.header}>
-        <View style={[AS.headerInner, headerWrap, S.teacherHeaderInner]}>
+        <View style={[AS.headerInner, headerWrap]}>
           <View style={[AS.headerLeft, S.headerLeft]}>
             <TactileIconBtn
               onPress={() => safeBack(router, '/teacher')}
@@ -1030,143 +1165,21 @@ export default function ClassDetailScreen() {
         contentContainerStyle={S.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-      <View style={scrollWrap}>
-
-        {/* ── 1. PomPom Jar ── */}
-        <View style={S.jarSection}>
-          <PompomJar value={cappedTotal} max={goal} size="lg" showHeroStats />
-          {cappedTotal >= goal && (
-            <>
-              <View style={S.goalReachedBadge}>
-                <Trophy size={14} color="#065f46" />
-                <Text style={S.goalReachedText}>הכיתה הגיעה למטרה!</Text>
-              </View>
-              <View style={S.redeemCtaRow}>
-                <DepthPressable
-                  onPress={() => setRedeemVisible(true)}
-                  accessibilityLabel="ממש מתנה לכיתה"
-                  style={[S.redeemCtaBtn, ptr]}
-                  depth={4}
-                  borderRadius={16}
-                  color={Colors.primaryDark}
-                >
-                  <Gift size={18} color={Colors.primaryDark} />
-                  <Text style={S.redeemCtaBtnText}>ממש מתנה</Text>
-                </DepthPressable>
-              </View>
-            </>
-          )}
+      {isDesktop ? (
+        <View style={pageContent}>
+          {jarBlock}
+          {pointsBlock}
+          <View style={{ height: 32 }} />
         </View>
-
-        {/* ── 2. Points tabs (class vs students) ── */}
-        <View style={S.pointsTabsSection}>
-          <SegmentedControl
-            value={pointsTab}
-            onChange={setPointsTab}
-            segments={[
-              { id: 'class', label: 'נקודות לכיתה', count: classCreditEvents.length },
-              { id: 'students', label: 'נקודות לתלמידים', count: visibleStudents.length },
-            ]}
-          />
-        </View>
-
-        {pointsTab === 'class' ? (
-          <View style={S.pointsTabPanel}>
-            <View style={S.classCtaRow}>
-              <DepthPressable
-                onPress={() => setClassCreditVisible(true)}
-                accessibilityLabel="הוספת נקודות לכיתה"
-                style={[AS.addBtn, S.classCtaAddBtn, ptr]}
-                depth={5}
-                borderRadius={16}
-                color="#003d6b"
-                flat
-              >
-                <Plus size={15} color={Colors.secondary} />
-                <Text style={S.classCtaAddBtnText}>הוספת נקודות לכיתה</Text>
-              </DepthPressable>
-            </View>
-            <ClassCreditHistory
-              events={classCreditEvents}
-              currentUserId={user?.id ?? ''}
-              isAdmin={isAdmin}
-              onEdit={setEditingClassCredit}
-              onDeleted={refreshCredits}
-            />
+      ) : (
+        <>
+          {jarBlock}
+          <View style={pageContent}>
+            {pointsBlock}
+            <View style={{ height: 32 }} />
           </View>
-        ) : (
-          <View style={S.pointsTabPanel}>
-            <View style={S.studentsHeaderRow}>
-              <Text style={S.studentsLabel}>{studentListLabel}</Text>
-              <TactileIconBtn
-                onPress={() => setUploadVisible(true)}
-                style={AS.iconBtnSecondary}
-                shadowColor="rgba(0,96,172,0.2)"
-                accessibilityLabel={rosterImportA11y()}
-              >
-                <Upload size={16} color={Colors.secondary} />
-              </TactileIconBtn>
-            </View>
-
-            {!studentsLoading && !studentsError && visibleStudents.length > 0 && (
-              <TextInput
-                value={studentSearch}
-                onChangeText={setStudentSearch}
-                placeholder="חיפוש לפי שם..."
-                placeholderTextColor={Colors.outline}
-                style={[AS.inputSmall, S.studentSearchInput]}
-                textAlign="right"
-                accessibilityLabel="חיפוש תלמיד"
-                clearButtonMode="while-editing"
-              />
-            )}
-
-            {studentsLoading ? (
-              <ActivityIndicator
-                color={Colors.primary}
-                style={{ marginVertical: 40 }}
-                accessibilityLabel="טוען תלמידים"
-              />
-            ) : studentsError ? (
-              <Text style={[S.emptyText, { color: Colors.danger }]}>{studentsError}</Text>
-            ) : visibleStudents.length === 0 ? (
-              <View style={S.emptyCard}>
-                <View style={S.emptyIconBox}>
-                  <Users size={24} color={Colors.muted} />
-                </View>
-                <Text style={S.emptyCardText}>אין תלמידים בכיתה</Text>
-                <TactileIconBtn
-                  onPress={() => setUploadVisible(true)}
-                  style={[AS.iconBtnSecondary, { marginTop: 12 }]}
-                  shadowColor="rgba(0,96,172,0.2)"
-                  accessibilityLabel={rosterImportA11y('העלאת רשימת תלמידים')}
-                >
-                  <Upload size={16} color={Colors.secondary} />
-                </TactileIconBtn>
-              </View>
-            ) : filteredStudents.length === 0 ? (
-              <Text style={S.emptyText}>לא נמצאו תלמידים התואמים לחיפוש</Text>
-            ) : (
-              <View style={S.tabList}>
-                {filteredStudents.map(({ student, credits }, index) => (
-                  <StaggeredItem key={student.id} index={index}>
-                    <StudentItem
-                      student={student}
-                      credits={credits}
-                      onGiveCredit={() => setGiveCreditStudent(student)}
-                      onViewHistory={() => setHistoryStudent(student)}
-                      onEdit={() => openEditStudent(student)}
-                    />
-                  </StaggeredItem>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Bottom padding */}
-        <View style={{ height: 32 }} />
-      </View>{/* /pageContent */}
+        </>
+      )}
       </ScrollView>
 
       {classId ? (
@@ -1321,8 +1334,7 @@ const S = StyleSheet.create({
   screen:   { flex: 1, backgroundColor: Colors.bg },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg },
 
-  // ── Header — match teacher lobby (index) bar height ──
-  teacherHeaderInner: { paddingBottom: 14 },
+  // ── Header — AS.headerInner; larger title on class detail ──
   teacherHeaderTitle: {
     fontSize: 20, fontWeight: '700', color: Colors.primaryDark,
     fontFamily: 'Baloo2_700Bold',
