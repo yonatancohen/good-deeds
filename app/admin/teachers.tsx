@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { inviteTeacher, sendTeacherSetupEmail } from '@/lib/teacherInvite';
+import { usesTeacherDefaultPassword } from '@/lib/teacherDefaultPassword';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
 import * as DocumentPicker from 'expo-document-picker';
@@ -607,7 +608,9 @@ export default function AdminTeachersScreen() {
 
         <View style={{ backgroundColor: '#EFF6FF', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#BFDBFE' }}>
           <Text style={{ color: '#3b82f6', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', lineHeight: 18 } as any}>
-            המורה אמור לקבל מייל עם קישור לקביעת סיסמה. אם לא מגיע — בדקו ספאם והגדרות אימייל ב-Supabase (Redirect URLs + SMTP).
+            {usesTeacherDefaultPassword()
+              ? 'מורה חדש נוצר עם סיסמת בית הספר הקבועה — העבירו למורה את האימייל והסיסמה. אין צורך במייל הגדרת סיסמה.'
+              : 'המורה אמור לקבל מייל עם קישור לקביעת סיסמה. אם לא מגיע — בדקו ספאם והגדרות אימייל ב-Supabase (Redirect URLs + SMTP).'}
           </Text>
         </View>
 

@@ -130,6 +130,7 @@ This is what you'll run after a feature is ready: it deploys the web build to Ve
 | `EXPO_PUBLIC_SUPABASE_URL` | Expo app (web + native) | `.env` locally, Vercel env vars in prod |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Expo app (web + native) | `.env` locally, Vercel env vars in prod |
 | `EXPO_PUBLIC_SITE_URL` | Auth email redirect links | `.env` locally, Vercel env vars in prod |
+| `EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD` | Optional fixed password for new teacher invites | `.env` / Vercel only (never commit) |
 
 > The `EXPO_PUBLIC_` prefix is required — it's how Expo exposes vars to the client bundle.
 > Never put secrets here — only the public anon key. Server-only secrets stay on Supabase.
@@ -176,6 +177,14 @@ Set the same origin in Vercel env:
 ```bash
 EXPO_PUBLIC_SITE_URL=https://good-omega-three.vercel.app
 ```
+
+Optional — fixed password for **new** teacher invites (same for every invite; embedded in the client bundle):
+
+```bash
+EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD=your-school-password
+```
+
+Teachers can sign in with their email and this password (no setup email is sent when this is set). Add the same variable in Vercel for production. **Do not commit the real password to git** — set it only in `.env` / Vercel.
 
 ### 2. Confirm email setting
 

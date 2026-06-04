@@ -228,6 +228,7 @@ For **standalone-app** behavior (real `.apk` on Android, no Expo Go needed), run
 | `EXPO_PUBLIC_SUPABASE_URL` | `.env` locally; Vercel **Production + Preview** env vars |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `.env` locally; Vercel **Production + Preview** env vars |
 | `EXPO_PUBLIC_SITE_URL` | `.env` locally; Vercel **Production + Preview** (production URL for auth/invite links) |
+| `EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD` | Optional — fixed initial password for new teacher invites (set in `.env` / Vercel only, not in git) |
 
 The `EXPO_PUBLIC_` prefix is required — Expo only exposes vars with that prefix to the client bundle.
 

@@ -101,6 +101,9 @@ for env in production preview; do
   push_env "EXPO_PUBLIC_SUPABASE_URL"      "$EXPO_PUBLIC_SUPABASE_URL"      "$env"
   push_env "EXPO_PUBLIC_SUPABASE_ANON_KEY" "$EXPO_PUBLIC_SUPABASE_ANON_KEY" "$env"
   push_env "EXPO_PUBLIC_SITE_URL"          "$SITE_URL"                      "$env"
+  if [ -n "${EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD:-}" ]; then
+    push_env "EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD" "$EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD" "$env"
+  fi
 done
 
 # ---------- EAS ----------

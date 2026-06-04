@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import { getSetPasswordRedirectUrl } from '@/lib/authRedirect';
+import {
+  getTeacherInvitePassword,
+  usesTeacherDefaultPassword,
+} from '@/lib/teacherDefaultPassword';
 
 export type InviteTeacherResult =
   | {
@@ -115,8 +119,7 @@ export async function inviteTeacher(params: {
   const normalized = params.email.trim().toLowerCase();
   const displayName = params.displayName.trim();
   const redirectTo = getSetPasswordRedirectUrl();
-  const randomPwd =
-    Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+  const invitePassword = getTeacherInvitePassword();
 
   // Re-invite: auth user already exists — restore without signUp (faster, no extra auth emails).
   const { data: existingAuthId, error: ensureError } = await supabase.rpc('admin_ensure_teacher', {
@@ -132,7 +135,7 @@ export async function inviteTeacher(params: {
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: normalized,
-    password: randomPwd,
+    password: invitePassword,
     options: {
       data: { display_name: displayName },
       emailRedirectTo: redirectTo,
@@ -196,13 +199,27 @@ export async function inviteTeacher(params: {
   const needsEmailConfirmation = !!authData.user && !authData.session;
 
   if (needsEmailConfirmation) {
+    const pwdHint = usesTeacherDefaultPassword()
+      ? '\n\nאחרי האימות: כניסה עם סיסמת בית הספר הקבועה.'
+      : '';
     return {
       ok: true,
       emailSent: true,
       message:
-        `המורה ${displayName} נוסף.\n\nנשלח מייל אימות ל-${normalized}. אחרי לחיצה על הקישור במייל, המורה יוכל להיכנס.\n\nאם לא מגיע מייל — בדקו ספאם והגדרות אימייל ב-Supabase.`,
+        `המורה ${displayName} נוסף.\n\nנשלח מייל אימות ל-${normalized}. אחרי לחיצה על הקישור במייל, המורה יוכל להיכנס.${pwdHint}\n\nאם לא מגיע מייל — בדקו ספאם והגדרות אימייל ב-Supabase.`,
       adminHint:
         'ב-Supabase מופעל "Confirm email". המורה מקבל מייל אימות (לא מייל סיסמה). לכיבוי: Authentication → Providers → Email → כבו Confirm email, ואז שלחו שוב הזמנה.',
+    };
+  }
+
+  if (usesTeacherDefaultPassword()) {
+    return {
+      ok: true,
+      emailSent: false,
+      message:
+        `המורה ${displayName} נוסף.\n\nהמורה יכול להיכנס עם האימייל וסיסמת בית הספר הקבועה.`,
+      adminHint:
+        'העבירו למורה את סיסמת בית הספר. מומלץ לכבות "Confirm email" ב-Supabase (Authentication → Providers → Email).',
     };
   }
 
