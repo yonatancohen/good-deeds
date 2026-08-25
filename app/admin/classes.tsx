@@ -45,7 +45,7 @@ function getSchoolYears(): string[] {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const GRADES  = ['א', 'ב', 'ג', 'ד', 'ה', 'ו'];
-const NUMBERS = ['1', '2', '3', '4'];
+const NUMBERS = ['1', '2', '3', '4', '5', '6'];
 
 function buildName(grade: string, num: string) {
   return grade && num ? `${grade}׳${num}` : '';
@@ -83,7 +83,7 @@ function PillGroup({
 }
 
 // ── Stepper ───────────────────────────────────────────────────────────────────
-function Stepper({ value, onChange, max = 4 }: { value: number; onChange: (v: number) => void; max?: number }) {
+function Stepper({ value, onChange, max = NUMBERS.length }: { value: number; onChange: (v: number) => void; max?: number }) {
   return (
     <View style={{ flexDirection: HEBREW_ROW, alignItems: 'center', gap: 4 }}>
       <TouchableOpacity
