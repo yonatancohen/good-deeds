@@ -13,6 +13,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { filterClassesByCurrentYear } from '@/lib/schoolYear';
 import type { Tables } from '@/types/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -42,16 +43,19 @@ export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
     if (!user) return;
 
     try {
-      // ── Step 1: all teachers see all classes (no per-teacher access filter) ──
-      const classesRes = await supabase
-        .from('classes')
-        .select('*')
-        .is('deleted_at', null)
-        .order('name');
+      // ── Step 1: current-year classes for all teachers (no per-teacher access filter) ──
+      const [settingsRes, classesRes] = await Promise.all([
+        supabase.from('settings').select('current_year').limit(1).maybeSingle(),
+        supabase.from('classes').select('*').is('deleted_at', null).order('name'),
+      ]);
 
+      if (settingsRes.error) throw settingsRes.error;
       if (classesRes.error) throw classesRes.error;
 
-      const visibleClasses = classesRes.data ?? [];
+      const visibleClasses = filterClassesByCurrentYear(
+        classesRes.data ?? [],
+        settingsRes.data?.current_year,
+      );
 
       if (visibleClasses.length === 0) {
         setClasses([]);
@@ -149,6 +153,7 @@ export function useTeacherClassesWithProgress(): UseTeacherClassesWithProgress {
     const channel = supabase
       .channel(`teacher-classes-progress-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_events' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'class_credit_events' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_rounds' }, load)

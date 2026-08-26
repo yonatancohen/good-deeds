@@ -347,7 +347,11 @@ export default function TeacherHome() {
         <View style={[AS.headerInner, pageContent]}>
           <View style={S.headerText}>
             <Text style={S.headerTitle}>שלום, {displayName} 👋</Text>
-            <Text style={S.headerSub}>הכיתות שלך</Text>
+            <Text style={S.headerSub}>
+              {settings?.current_year
+                ? `הכיתות שלך · שנת ${settings.current_year}`
+                : 'הכיתות שלך'}
+            </Text>
           </View>
           <View style={S.headerBtns}>
             {isAdmin && (
@@ -394,7 +398,11 @@ export default function TeacherHome() {
                 <ClipboardList size={28} color={Colors.primaryDark} />
               </View>
               <Text style={S.emptyTitle}>אין כיתות עדיין</Text>
-              <Text style={S.emptyHint}>פנה/י למנהל המערכת להוספת כיתות</Text>
+              <Text style={S.emptyHint}>
+                {settings?.current_year
+                  ? `אין כיתות לשנת לימודים ${settings.current_year}. פנה/י למנהל המערכת להוספת כיתות`
+                  : 'פנה/י למנהל המערכת להוספת כיתות'}
+              </Text>
             </View>
 
           ) : (

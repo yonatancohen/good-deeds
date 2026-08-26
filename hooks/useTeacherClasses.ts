@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { filterClassesByCurrentYear } from '@/lib/schoolYear';
 import type { Tables } from '@/types/supabase';
 import { useAuth } from './useAuth';
 
@@ -18,7 +19,8 @@ interface UseTeacherClasses {
 }
 
 /**
- * Returns all classes for teachers and admins (no user_class_access filter).
+ * Returns current-year classes for teachers and admins (no user_class_access filter).
+ * Matches admin lists: if settings.current_year is set, only that year is shown.
  */
 export function useTeacherClasses(): UseTeacherClasses {
   const { user } = useAuth();
@@ -30,11 +32,13 @@ export function useTeacherClasses(): UseTeacherClasses {
     if (!user) return;
 
     try {
-      const [classesRes, studentsRes] = await Promise.all([
+      const [settingsRes, classesRes, studentsRes] = await Promise.all([
+        supabase.from('settings').select('current_year').limit(1).maybeSingle(),
         supabase.from('classes').select('*').is('deleted_at', null).order('name'),
         supabase.from('students').select('class_id'),
       ]);
 
+      if (settingsRes.error) throw settingsRes.error;
       if (classesRes.error) throw classesRes.error;
       if (studentsRes.error) throw studentsRes.error;
 
@@ -43,7 +47,12 @@ export function useTeacherClasses(): UseTeacherClasses {
         counts[s.class_id] = (counts[s.class_id] || 0) + 1;
       }
 
-      const result: TeacherClass[] = (classesRes.data ?? []).map((c) => ({
+      const visibleClasses = filterClassesByCurrentYear(
+        classesRes.data ?? [],
+        settingsRes.data?.current_year,
+      );
+
+      const result: TeacherClass[] = visibleClasses.map((c) => ({
         class: c,
         studentCount: counts[c.id] ?? 0,
       }));
@@ -65,6 +74,7 @@ export function useTeacherClasses(): UseTeacherClasses {
     const channel = supabase
       .channel(`teacher-classes-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, load)
       .subscribe();
 
