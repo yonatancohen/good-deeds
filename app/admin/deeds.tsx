@@ -16,7 +16,9 @@ import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { BookOpen, Pencil, Trash2, Plus, ChevronRight, Sparkles } from 'lucide-react-native';
 import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
+import { DismissiblePromoBanner } from '@/components/DismissiblePromoBanner';
 import { StaggeredItem } from '@/components/StaggeredItem';
+import { PROMO_IDS } from '@/lib/promoDismiss';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -287,15 +289,13 @@ export default function AdminDeedsScreen() {
       ) : (
         <ScrollView style={AS.list} contentContainerStyle={listPad}>
           <View style={pageContent}>
-            <View style={S.infoBanner}>
-              <View style={S.infoIcon}>
-                <Sparkles size={18} color={Colors.accent} />
-              </View>
-              <Text style={S.infoBannerText}>
-                מעשים טובים הם הפעולות שהמורה בוחר כשנותן נקודות.{'\n'}
-                כל מעשה מקבל ערך 1–10. ניתן להשבית ללא מחיקה.
-              </Text>
-            </View>
+            <DismissiblePromoBanner
+              promoId={PROMO_IDS.adminDeeds}
+              variant="accent"
+              icon={<Sparkles size={18} color={Colors.accent} />}
+            >
+              {`מעשים טובים הם הפעולות שהמורה בוחר כשנותן נקודות.\nכל מעשה מקבל ערך 1–10. ניתן להשבית ללא מחיקה.`}
+            </DismissiblePromoBanner>
 
             {deeds.length === 0 ? (
               <View style={AS.emptyWrap}>
@@ -367,36 +367,6 @@ export default function AdminDeedsScreen() {
 }
 
 const S = StyleSheet.create({
-  infoBanner: {
-    flexDirection: HEBREW_ROW,
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: '#FFF0EB',
-    borderWidth: 1,
-    borderColor: '#FFD4C4',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 18,
-  },
-  infoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#FFE4D9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  infoBannerText: {
-    flex: 1,
-    color: Colors.accent,
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  } as any,
-
   grid: { width: '100%' },
 
   cube: {

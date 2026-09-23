@@ -16,6 +16,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import AdminSheet from '@/components/AdminSheet';
+import { DismissiblePromoBanner } from '@/components/DismissiblePromoBanner';
+import { PROMO_IDS } from '@/lib/promoDismiss';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import '@/lib/i18n';
@@ -38,35 +40,6 @@ type RedemptionRound = Tables<'redemption_rounds'> & {
 };
 
 const S = StyleSheet.create({
-  infoBanner: {
-    flexDirection: HEBREW_ROW,
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: Colors.successSurface,
-    borderWidth: 1,
-    borderColor: Colors.successLight,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 18,
-  },
-  infoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#DCFCE7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  infoBannerText: {
-    flex: 1,
-    color: Colors.success,
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  } as any,
   redemptionRow: {
     backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 16,
     marginBottom: 12, borderWidth: 1, borderColor: '#f1f5f9',
@@ -293,15 +266,13 @@ export default function AdminRedemptionsScreen() {
       ) : (
         <ScrollView style={AS.list} contentContainerStyle={listPad}>
           <View style={pageContent}>
-            <View style={S.infoBanner}>
-              <View style={S.infoIcon}>
-                <Trophy size={18} color={Colors.success} />
-              </View>
-              <Text style={S.infoBannerText}>
-                כשכיתה מגיעה למטרה ובוחרת מתנה — לחץ "רשום מתנה".{'\n'}
-                הנקודות של הכיתה יתאפסו אוטומטית. סמן "מומש" כשהפרס נמסר בפועל.
-              </Text>
-            </View>
+            <DismissiblePromoBanner
+              promoId={PROMO_IDS.adminRedemptions}
+              variant="success"
+              icon={<Trophy size={18} color={Colors.success} />}
+            >
+              {`כשכיתה מגיעה למטרה ובוחרת מתנה — לחץ "רשום מתנה".\nהנקודות של הכיתה יתאפסו אוטומטית. סמן "מומש" כשהפרס נמסר בפועל.`}
+            </DismissiblePromoBanner>
 
             <View style={S.filterRow}>
               {([

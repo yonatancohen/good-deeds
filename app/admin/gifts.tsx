@@ -16,7 +16,9 @@ import PrimarySwitch from '@/components/PrimarySwitch';
 import AdminSheet from '@/components/AdminSheet';
 import { Gift as GiftIcon, Pencil, Trash2, Plus, ChevronRight } from 'lucide-react-native';
 import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
+import { DismissiblePromoBanner } from '@/components/DismissiblePromoBanner';
 import { StaggeredItem } from '@/components/StaggeredItem';
+import { PROMO_IDS } from '@/lib/promoDismiss';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -288,15 +290,13 @@ export default function AdminGiftsScreen() {
       ) : (
         <ScrollView style={AS.list} contentContainerStyle={listPad}>
           <View style={pageContent}>
-            <View style={S.infoBanner}>
-              <View style={S.infoIcon}>
-                <GiftIcon size={18} color={Colors.success} />
-              </View>
-              <Text style={S.infoBannerText}>
-                פרסים הם הפרסים שכיתה בוחרת כשמגיעה למטרה.{'\n'}
-                המורה בוחר מהרשימה בעת רישום הפרס.
-              </Text>
-            </View>
+            <DismissiblePromoBanner
+              promoId={PROMO_IDS.adminGifts}
+              variant="success"
+              icon={<GiftIcon size={18} color={Colors.success} />}
+            >
+              {`פרסים הם הפרסים שכיתה בוחרת כשמגיעה למטרה.\nהמורה בוחר מהרשימה בעת רישום הפרס.`}
+            </DismissiblePromoBanner>
 
             {gifts.length === 0 ? (
               <View style={AS.emptyWrap}>
@@ -362,36 +362,6 @@ export default function AdminGiftsScreen() {
 }
 
 const S = StyleSheet.create({
-  infoBanner: {
-    flexDirection: HEBREW_ROW,
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: Colors.successSurface,
-    borderWidth: 1,
-    borderColor: Colors.successLight,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 18,
-  },
-  infoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#DCFCE7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  infoBannerText: {
-    flex: 1,
-    color: Colors.success,
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  } as any,
-
   grid: { width: '100%' },
 
   cube: {
