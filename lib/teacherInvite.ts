@@ -236,9 +236,9 @@ export async function inviteTeacher(params: {
       ok: true,
       emailSent: true,
       message:
-        `המורה ${displayName} נוסף.\n\nנשלח מייל אימות ל-${normalized}. אחרי לחיצה על הקישור במייל, המורה יוכל להיכנס.${pwdHint}\n\nאם לא מגיע מייל — בדקו ספאם והגדרות אימייל ב-Supabase.`,
+        `המורה ${displayName} נוסף.\n\nנשלח מייל אימות ל-${normalized}. אחרי לחיצה על הקישור במייל, המורה יוכל להיכנס עם סיסמת בית הספר הקבועה.${pwdHint}\n\nאם לא מגיע מייל — בדקו תיקיית דואר זבל, והגדירו SMTP מותאם ב-Supabase.`,
       adminHint:
-        'ב-Supabase מופעל "Confirm email". המורה מקבל מייל אימות (לא מייל סיסמה). לכיבוי: Authentication → Providers → Email → כבו Confirm email, ואז שלחו שוב הזמנה.',
+        'ב-Supabase מופעל "Confirm email". לכיבוי (מומלץ): Authentication → Providers → Email → כבו Confirm email. לשליחה חוזרת של קישור — אייקון המייל ליד המורה.',
     };
   }
 
@@ -247,9 +247,9 @@ export async function inviteTeacher(params: {
       ok: true,
       emailSent: false,
       message:
-        `המורה ${displayName} נוסף.\n\nהמורה יכול להיכנס עם האימייל וסיסמת בית הספר הקבועה.`,
+        `המורה ${displayName} נוסף.\n\nהמורה יכול להיכנס עם האימייל וסיסמת בית הספר הקבועה.\n\nלשליחת קישור לאיפוס סיסמה — לחצו על אייקון המייל ליד המורה (אפשר לשלוח שוב בכל עת).`,
       adminHint:
-        'העבירו למורה את סיסמת בית הספר. מומלץ לכבות "Confirm email" ב-Supabase (Authentication → Providers → Email).',
+        'מומלץ לכבות "Confirm email" ב-Supabase (Authentication → Providers → Email) כדי למנוע מייל אימות שנחסם כדואר זבל.',
     };
   }
 
@@ -271,7 +271,7 @@ export async function inviteTeacher(params: {
     ok: true,
     emailSent: true,
     message:
-      `המורה ${displayName} נוסף.\n\nנשלח מייל ל-${normalized} עם קישור לקביעת סיסמה.\n\nאם לא מגיע — בדקו תיקיית ספאם, והגדרות SMTP / מגבלות מייל ב-Supabase.`,
+      `המורה ${displayName} נוסף.\n\nנשלח מייל ל-${normalized} עם קישור לקביעת סיסמה.\n\nאם לא מגיע — בדקו תיקיית דואר זבל, והגדרות SMTP / מגבלות מייל ב-Supabase.`,
     adminHint:
       `קישור ההגדרה חייב להיות מאושר: ${redirectTo}`,
   };

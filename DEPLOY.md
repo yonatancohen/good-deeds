@@ -178,13 +178,15 @@ Set the same origin in Vercel env:
 EXPO_PUBLIC_SITE_URL=https://good-omega-three.vercel.app
 ```
 
-Optional — fixed password for **new** teacher invites (same for every invite; embedded in the client bundle):
+Optional — override the built-in school password (`Bi123456`) for **new** teacher invites:
 
 ```bash
 EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD=your-school-password
 ```
 
-Teachers can sign in with their email and this password (no setup email is sent when this is set). Add the same variable in Vercel for production. **Do not commit the real password to git** — set it only in `.env` / Vercel.
+By default every new teacher is created with `Bi123456`. Teachers can sign in immediately with email + that password. Use the mail icon on the teachers page to send (or **resend**) a set-password link anytime.
+
+Add the same variable in Vercel only if you override it. **Do not commit a custom password to git** — set overrides only in `.env` / Vercel.
 
 ### 2. Confirm email setting
 
@@ -195,7 +197,11 @@ Teachers can sign in with their email and this password (no setup email is sent 
 
 ### 3. Email delivery (spam / SMTP)
 
-Default mail is sent from `noreply@mail.supabase.io` (free tier has rate limits). Ask teachers to check **spam**. For production, configure **Custom SMTP** under **Project Settings** → **Authentication** (or use a school domain on Supabase Pro).
+Default mail is sent from `noreply@mail.supabase.io` and often lands in **junk**. For production:
+
+1. Turn **Confirm email** OFF (fewer surprise auth emails).
+2. Configure **Custom SMTP** under **Project Settings → Authentication** using a school domain (Google Workspace / Microsoft 365 / SendGrid). This is the real fix for deliverability.
+3. Prefer sharing the school default password (`Bi123456`) for first login; use the teachers-page mail icon only when a teacher needs a reset link (you can resend anytime).
 
 ### 4. Auth logs
 

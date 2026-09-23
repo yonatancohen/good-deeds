@@ -26,7 +26,11 @@ import {
   inviteTeacher,
   sendTeacherSetupEmail,
 } from '@/lib/teacherInvite';
-import { usesTeacherDefaultPassword } from '@/lib/teacherDefaultPassword';
+import {
+  SCHOOL_DEFAULT_PASSWORD,
+  usesTeacherDefaultPassword,
+} from '@/lib/teacherDefaultPassword';
+import { filterClassesByCurrentYear } from '@/lib/schoolYear';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
 import * as DocumentPicker from 'expo-document-picker';
@@ -201,10 +205,11 @@ export default function AdminTeachersScreen() {
   const [passwordEmailSendingId, setPasswordEmailSendingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    const [usersRes, classesRes, accessRes] = await Promise.all([
+    const [usersRes, classesRes, accessRes, settingsRes] = await Promise.all([
       supabase.from('users').select('*').eq('role', 'teacher').is('deleted_at', null).order('display_name'),
       supabase.from('classes').select('*').is('deleted_at', null).order('name'),
       supabase.from('user_class_access').select('*'),
+      supabase.from('settings').select('current_year').limit(1).maybeSingle(),
     ]);
 
     if (!usersRes.error && !classesRes.error && !accessRes.error) {
@@ -214,7 +219,12 @@ export default function AdminTeachersScreen() {
         accessMap.get(a.user_id)!.push(a.class_id);
       }
       setTeachers((usersRes.data ?? []).map((u) => ({ user: u, classIds: accessMap.get(u.id) ?? [] })));
-      setClasses(classesRes.data ?? []);
+      setClasses(
+        filterClassesByCurrentYear(
+          classesRes.data ?? [],
+          settingsRes.data?.current_year,
+        ),
+      );
     }
     setLoading(false);
   }, []);
@@ -480,7 +490,10 @@ export default function AdminTeachersScreen() {
           );
           return;
         }
-        Alert.alert('✅', `נשלח מייל ל-${teacher.email} עם קישור לקביעת סיסמה.`);
+        Alert.alert(
+          '✅ נשלח',
+          `נשלח מייל ל-${teacher.email} עם קישור לקביעת סיסמה.\n\nאפשר לשלוח שוב בכל עת מאותו כפתור.`,
+        );
       },
       'שלח',
     );
@@ -638,8 +651,8 @@ export default function AdminTeachersScreen() {
         <View style={{ backgroundColor: '#EFF6FF', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#BFDBFE' }}>
           <Text style={{ color: '#3b82f6', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', lineHeight: 18 } as any}>
             {usesTeacherDefaultPassword()
-              ? 'מורה חדש נוצר עם סיסמת בית הספר הקבועה — העבירו למורה את האימייל והסיסמה. אין צורך במייל הגדרת סיסמה.'
-              : 'המורה אמור לקבל מייל עם קישור לקביעת סיסמה. אם לא מגיע — בדקו ספאם והגדרות אימייל ב-Supabase (Redirect URLs + SMTP).'}
+              ? `מורה חדש נוצר עם סיסמת בית הספר הקבועה (${SCHOOL_DEFAULT_PASSWORD}). העבירו למורה את האימייל והסיסמה. אפשר תמיד לשלוח שוב קישור לאיפוס סיסמה מהכפתור עם האייקון של המייל.`
+              : 'המורה אמור לקבל מייל עם קישור לקביעת סיסמה. אם לא מגיע — בדקו תיקיית דואר זבל והגדרות אימייל ב-Supabase (Redirect URLs + SMTP).'}
           </Text>
         </View>
 
@@ -648,7 +661,7 @@ export default function AdminTeachersScreen() {
         <TextInput value={inviteName} onChangeText={setInviteName} placeholder="דנה כהן" placeholderTextColor="#94a3b8" textAlign="right" style={AS.input} accessibilityLabel="שם המורה" />
 
         <Text style={AS.fieldLabel}>{t('email')}</Text>
-        <Text style={AS.fieldHint}>יישלח קישור לכתובת זו</Text>
+        <Text style={AS.fieldHint}>כתובת האימייל לכניסה למערכת</Text>
         <TextInput value={inviteEmail} onChangeText={setInviteEmail} placeholder="dana@school.com" placeholderTextColor="#94a3b8" keyboardType="email-address" autoCapitalize="none" textAlign="right" style={[AS.input, { marginBottom: 20 }]} accessibilityLabel="אימייל" />
 
         <View style={AS.sheetBtns}>
