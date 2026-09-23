@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { filterClassesByCurrentYear } from '@/lib/schoolYear';
 import type { Tables } from '@/types/supabase';
 
 type ClassRow = Tables<'classes'>;
@@ -72,7 +73,10 @@ export function usePublicData(): UsePublicData {
       if (redemptionsRes.error) throw redemptionsRes.error;
 
       const fetchedSettings = settingsRes.data;
-      const classes: ClassRow[] = classesRes.data ?? [];
+      const classes: ClassRow[] = filterClassesByCurrentYear(
+        classesRes.data ?? [],
+        fetchedSettings?.current_year,
+      );
       const students: StudentRow[] = studentsRes.data ?? [];
       const credits: Pick<CreditEvent, 'student_id' | 'amount' | 'created_at'>[] = creditsRes.data ?? [];
       const classCredits: { class_id: string; amount: number; created_at: string }[] =

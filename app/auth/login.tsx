@@ -24,6 +24,8 @@ import { shadow } from '@/lib/shadow';
 
 import { HEBREW_ROW } from '@/lib/rtlLayout';
 import { getHomeRouteForRole } from '@/lib/navigation';
+import { sendTeacherSetupEmail } from '@/lib/teacherInvite';
+import { authRedirectUrl } from '@/lib/authRedirect';
 type Tab = 'password' | 'magic';
 
 // ── Background blob (web: CSS radial gradient; native: tinted circle) ─────────
@@ -237,7 +239,10 @@ export default function LoginScreen() {
     setSubmitting(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: false },
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: authRedirectUrl('/auth/login'),
+      },
     });
     setSubmitting(false);
     if (error) {
@@ -245,6 +250,31 @@ export default function LoginScreen() {
     } else {
       setMagicSent(true);
     }
+  }
+
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      Alert.alert('שגיאה', 'יש להזין כתובת אימייל כדי לקבל קישור לאיפוס סיסמה');
+      return;
+    }
+    setSubmitting(true);
+    const result = await sendTeacherSetupEmail(email.trim().toLowerCase());
+    setSubmitting(false);
+    if (!result.ok) {
+      Alert.alert(
+        result.rateLimited ? 'מגבלת שליחת מיילים' : 'שגיאה',
+        result.message,
+      );
+      return;
+    }
+    Alert.alert(
+      'נשלח מייל',
+      'נשלח קישור לאיפוס סיסמה. בדקו גם את תיקיית דואר הזבל. אפשר לשלוח שוב בכל עת.',
+    );
+  }
+
+  async function handleResendMagicLink() {
+    await handleMagicLink();
   }
 
   if (authLoading) return <SafeAreaView style={S.screen} />;
@@ -372,9 +402,10 @@ export default function LoginScreen() {
                   <Button label={t('login')} onPress={handlePasswordLogin} loading={submitting} />
 
                   <TouchableOpacity
-                    onPress={() => setTab('magic')}
+                    onPress={handleForgotPassword}
+                    disabled={submitting}
                     accessibilityRole="link"
-                    accessibilityLabel="שלח לי קישור כניסה לאימייל"
+                    accessibilityLabel="שכחתי סיסמה — שלח קישור לאימייל"
                     style={[S.forgotBtn, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
                   >
                     <Text style={S.forgotText}>{t('forgotPassword')}? שלח לי קישור לאימייל</Text>
@@ -392,16 +423,19 @@ export default function LoginScreen() {
                       </View>
                       <Text style={S.magicSentTitle}>הקישור נשלח!</Text>
                       <Text style={S.magicSentDesc}>
-                        בדוק את תיבת הדואר שלך{'\n'}
+                        בדוק את תיבת הדואר שלך (וגם דואר זבל){'\n'}
                         <Text style={S.magicSentEmail}>{email}</Text>
                       </Text>
                       <TouchableOpacity
-                        onPress={() => setMagicSent(false)}
+                        onPress={handleResendMagicLink}
+                        disabled={submitting}
                         style={[S.resendBtn, Platform.OS === 'web' && { cursor: 'pointer' } as any]}
                         accessibilityRole="button"
                         accessibilityLabel="שלח קישור מחדש"
                       >
-                        <Text style={S.resendText}>שלח שוב</Text>
+                        <Text style={S.resendText}>
+                          {submitting ? 'שולח…' : 'שלח שוב'}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   ) : (

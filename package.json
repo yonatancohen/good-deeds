@@ -18,7 +18,8 @@
     "eas:login": "eas login",
     "eas:init": "eas init",
     "eas:update": "eas update --branch preview --message \"$(date +%Y-%m-%d_%H:%M)\"",
-    "eas:update:prod": "eas update --branch production --message \"$(date +%Y-%m-%d_%H:%M)\""
+    "eas:update:prod": "eas update --branch production --message \"$(date +%Y-%m-%d_%H:%M)\"",
+    "test": "npx tsx --test lib/*.test.ts"
   },
   "dependencies": {
     "@expo-google-fonts/baloo-2": "^0.4.2",

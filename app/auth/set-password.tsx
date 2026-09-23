@@ -16,6 +16,10 @@ import { useRouter } from 'expo-router';
 import { Lock, TriangleAlert, UserRound } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import {
+  authCallbackHadParams,
+  parseAuthCallbackFromLocation,
+} from '@/lib/authCallback';
+import {
   MIN_PASSWORD_LENGTH,
   mapPasswordUpdateError,
   validateNewPassword,
@@ -28,74 +32,81 @@ import { getHomeRouteForRole } from '@/lib/navigation';
 
 const AUTH_MAX_W = 440;
 
-function parseTokensFromUrl(): {
-  access_token?: string;
-  refresh_token?: string;
-} | null {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
-
-  const hash = window.location.hash?.replace(/^#/, '');
-  if (hash) {
-    const p = new URLSearchParams(hash);
-    const access_token = p.get('access_token') ?? undefined;
-    const refresh_token = p.get('refresh_token') ?? undefined;
-    if (access_token && refresh_token) return { access_token, refresh_token };
-  }
-
-  const q = new URLSearchParams(window.location.search);
-  const access_token = q.get('access_token') ?? undefined;
-  const refresh_token = q.get('refresh_token') ?? undefined;
-  if (access_token && refresh_token) return { access_token, refresh_token };
-  return null;
-}
-
 function clearAuthParamsFromUrl() {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     window.history.replaceState({}, '', window.location.pathname);
   }
 }
 
-function urlHadAuthParams(): boolean {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
-  const q = new URLSearchParams(window.location.search);
-  if (q.get('code')) return true;
-  if (q.get('access_token') && q.get('refresh_token')) return true;
-  const hash = window.location.hash?.replace(/^#/, '');
-  if (!hash) return false;
-  const p = new URLSearchParams(hash);
-  return !!(p.get('access_token') && p.get('refresh_token'));
-}
-
-async function establishSessionFromUrl(): Promise<{ ok: true } | { ok: false }> {
+async function establishSessionFromUrl(): Promise<
+  { ok: true } | { ok: false; message?: string }
+> {
   if (Platform.OS !== 'web' || typeof window === 'undefined') {
     return { ok: false };
   }
 
-  const q = new URLSearchParams(window.location.search);
-  const code = q.get('code');
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const callback = parseAuthCallbackFromLocation({
+    search: window.location.search,
+    hash: window.location.hash,
+  });
+
+  if (!callback) return { ok: false };
+
+  if (callback.kind === 'error') {
+    clearAuthParamsFromUrl();
+    return { ok: false, message: callback.message };
+  }
+
+  if (callback.kind === 'code') {
+    const { error } = await supabase.auth.exchangeCodeForSession(callback.code);
     if (!error) {
       clearAuthParamsFromUrl();
       return { ok: true };
     }
-    return { ok: false };
+    return {
+      ok: false,
+      message: error.message || 'הקישור לא תקין או שפג תוקפו.',
+    };
   }
 
-  const tokens = parseTokensFromUrl();
-  if (tokens?.access_token && tokens?.refresh_token) {
+  if (callback.kind === 'tokens') {
     const { error } = await supabase.auth.setSession({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
+      access_token: callback.access_token,
+      refresh_token: callback.refresh_token,
     });
     if (!error) {
       clearAuthParamsFromUrl();
       return { ok: true };
     }
-    return { ok: false };
+    return {
+      ok: false,
+      message: error.message || 'הקישור לא תקין או שפג תוקפו.',
+    };
   }
 
-  return { ok: false };
+  if (callback.kind === 'token_hash') {
+    const type = callback.type as
+      | 'recovery'
+      | 'signup'
+      | 'invite'
+      | 'magiclink'
+      | 'email';
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: callback.token_hash,
+      type,
+    });
+    if (!error) {
+      clearAuthParamsFromUrl();
+      return { ok: true };
+    }
+    return {
+      ok: false,
+      message: error.message || 'הקישור לא תקין או שפג תוקפו.',
+    };
+  }
+
+  const _exhaustive: never = callback;
+  return { ok: false, message: String(_exhaustive) };
 }
 
 type InvitedUserInfo = {
@@ -265,8 +276,19 @@ export default function SetPasswordScreen() {
         if (cancelled) return;
         setInvitedUser(userInfo);
         setSessionReady(true);
-      } else if (urlHadAuthParams()) {
-        setLinkError('הקישור לא תקין או שפג תוקפו. בקשו מייל חדש מהמנהל או מ"שכחתי סיסמה".');
+      } else if (
+        fromUrl.message ||
+        (Platform.OS === 'web' &&
+          typeof window !== 'undefined' &&
+          authCallbackHadParams({
+            search: window.location.search,
+            hash: window.location.hash,
+          }))
+      ) {
+        setLinkError(
+          fromUrl.message ||
+            'הקישור לא תקין או שפג תוקפו. בקשו מייל חדש מהמנהל או מ"שכחתי סיסמה".',
+        );
       } else {
         setLinkError('פתחו את הקישור מהמייל, או בקשו מייל חדש ממנהל המערכת.');
       }
