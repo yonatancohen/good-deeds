@@ -68,22 +68,17 @@ const S = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(212,197,171,0.4)',
     ...shadow('#785900', 0, 8, 0.05, 12),
   },
-  teacherTop: { flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between' },
-  teacherAvatar: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: Colors.secondarySurface,
-    alignItems: 'center', justifyContent: 'center',
-    marginLeft: 12,
-    flexShrink: 0,
-  },
-  teacherAvatarText: {
-    fontSize: 16, fontWeight: '700', color: Colors.secondary,
-    fontFamily: 'Baloo2_700Bold',
-  } as any,
-  teacherInfo: { flex: 1 },
+  teacherTop: { flexDirection: HEBREW_ROW, alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  teacherInfo: { flex: 1, minWidth: 0 },
   teacherName: { fontSize: 15, fontWeight: '700', color: Colors.text, textAlign: 'right', writingDirection: 'rtl' } as any,
-  teacherEmail: { color: '#94a3b8', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginTop: 1 } as any,
-  teacherActions: { flexDirection: HEBREW_ROW, gap: 6 },
+  teacherEmail: {
+    color: '#94a3b8',
+    fontSize: 12,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    marginTop: 1,
+  } as any,
+  teacherActions: { flexDirection: HEBREW_ROW, gap: 6, flexShrink: 0 },
   assignBtn: {
     backgroundColor: Colors.surface, borderRadius: 14, paddingHorizontal: 12, height: 44,
     flexDirection: HEBREW_ROW, alignItems: 'center', gap: 6,
@@ -609,15 +604,17 @@ export default function AdminTeachersScreen() {
                 return (
                   <View key={user.id} style={S.teacherCard} accessibilityLabel={`מורה: ${user.display_name}`}>
                     <View style={S.teacherTop}>
-                      {/* Initials avatar */}
-                      <View style={S.teacherAvatar}>
-                        <Text style={S.teacherAvatarText}>
-                          {user.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
-                        </Text>
-                      </View>
                       <View style={S.teacherInfo}>
-                        <Text style={S.teacherName}>{user.display_name}</Text>
-                        <Text style={S.teacherEmail}>{user.email}</Text>
+                        <Text style={S.teacherName} numberOfLines={1}>
+                          {user.display_name}
+                        </Text>
+                        <Text
+                          style={S.teacherEmail}
+                          numberOfLines={1}
+                          ellipsizeMode="middle"
+                        >
+                          {user.email}
+                        </Text>
                       </View>
                       <View style={S.teacherActions}>
                         <TactileIconBtn

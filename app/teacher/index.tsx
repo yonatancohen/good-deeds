@@ -30,6 +30,7 @@ import { supabase } from '@/lib/supabase';
 import { useTeacherClassesWithProgress, type TeacherClassWithProgress } from '@/hooks/useTeacherClassesWithProgress';
 import '@/lib/i18n';
 import { getClassColorScheme } from '@/lib/classColors';
+import { groupClassesByGrade } from '@/lib/classGrades';
 import { BP } from '@/lib/responsive';
 
 import { HEBREW_ROW, HEADER_ROW, RTL_CHILD_ROW } from '@/lib/rtlLayout';
@@ -72,9 +73,37 @@ const S = StyleSheet.create({
   scrollBody: { flexGrow: 1 },
   scrollContent: { paddingBottom: 40, width: '100%' },
 
-  // ── Card grid (layout applied inline for responsive cols) ──
+  // ── Grade sections + card grid ──
+  gradeSections: {
+    width: '100%',
+    paddingTop: 16,
+  },
+  gradeSection: {
+    width: '100%',
+    marginTop: 20,
+  },
+  gradeSectionFirst: {
+    marginTop: 0,
+  },
+  gradeSectionHeader: {
+    flexDirection: HEBREW_ROW,
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  gradeSectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+    fontFamily: 'Baloo2_700Bold',
+    writingDirection: 'rtl',
+  } as object,
+  gradeSectionLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
   grid: {
-    paddingTop: 24,
     width: '100%',
   },
 
@@ -326,6 +355,8 @@ export default function TeacherHome() {
     [cols],
   );
 
+  const classGroups = useMemo(() => groupClassesByGrade(classes), [classes]);
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace('/');
@@ -406,22 +437,38 @@ export default function TeacherHome() {
             </View>
 
           ) : (
-            <View style={[S.grid, gridStyle]}>
-              {classes.map((item, index) => (
-                <StaggeredItem key={item.class.id} index={index}>
-                  <TeacherClassCard
-                    item={item}
-                    goal={goal}
-                    compact={cols >= 3}
-                    cardWidth={cardWidth}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/teacher/classId',
-                        params: { classId: item.class.id },
-                      })
-                    }
-                  />
-                </StaggeredItem>
+            <View style={S.gradeSections}>
+              {classGroups.map(({ grade, items }, sectionIndex) => (
+                <View
+                  key={grade}
+                  style={[S.gradeSection, sectionIndex === 0 && S.gradeSectionFirst]}
+                >
+                  <View style={S.gradeSectionHeader} accessibilityRole="header">
+                    <Text style={S.gradeSectionTitle}>כיתות {grade}</Text>
+                    <View style={S.gradeSectionLine} />
+                  </View>
+                  <View style={[S.grid, gridStyle]}>
+                    {items.map((item, index) => (
+                      <StaggeredItem
+                        key={item.class.id}
+                        index={sectionIndex * 8 + index}
+                      >
+                        <TeacherClassCard
+                          item={item}
+                          goal={goal}
+                          compact={cols >= 3}
+                          cardWidth={cardWidth}
+                          onPress={() =>
+                            router.push({
+                              pathname: '/teacher/classId',
+                              params: { classId: item.class.id },
+                            })
+                          }
+                        />
+                      </StaggeredItem>
+                    ))}
+                  </View>
+                </View>
               ))}
             </View>
           )}

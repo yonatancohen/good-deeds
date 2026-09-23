@@ -22,6 +22,7 @@ import type { Tables } from '@/types/supabase';
 import moment from 'moment';
 import 'moment/locale/he';
 
+import { groupClassesByGrade } from '@/lib/classGrades';
 import { HEBREW_ROW } from '@/lib/rtlLayout';
 moment.locale('he');
 
@@ -51,26 +52,6 @@ const S = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: Colors.muted,
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  } as any,
-  chipRow: {
-    flexDirection: HEBREW_ROW,
-    flexWrap: 'wrap',
-    gap: 8,
-    alignSelf: 'stretch',
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1.5,
-  },
-  chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipInactive: { backgroundColor: '#fff', borderColor: Colors.border },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '600',
     textAlign: 'right',
     writingDirection: 'rtl',
   } as any,
@@ -122,6 +103,15 @@ const S = StyleSheet.create({
   teacherRowText: { flex: 1, fontWeight: '600', fontSize: 14, textAlign: 'right', writingDirection: 'rtl' } as any,
   teacherRowTextActive: { color: Colors.primaryDark },
   teacherRowTextInactive: { color: '#334155' },
+  pickerGradeTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    marginTop: 14,
+    marginBottom: 6,
+  } as any,
   logRow: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -177,6 +167,8 @@ export default function AdminCreditLogScreen() {
   const [filterTeacherId, setFilterTeacherId] = useState<string | 'all'>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [classPickerVisible, setClassPickerVisible] = useState(false);
+  const [classSearch, setClassSearch] = useState('');
   const [teacherPickerVisible, setTeacherPickerVisible] = useState(false);
   const [teacherSearch, setTeacherSearch] = useState('');
 
@@ -270,10 +262,23 @@ export default function AdminCreditLogScreen() {
     load();
   }, [load]);
 
+  const selectedClassLabel = useMemo(() => {
+    if (filterClassId === 'all') return 'כל הכיתות';
+    return classes.find((c) => c.id === filterClassId)?.name ?? 'כל הכיתות';
+  }, [filterClassId, classes]);
+
   const selectedTeacherLabel = useMemo(() => {
     if (filterTeacherId === 'all') return 'כל המורים';
     return teachers.find((t) => t.id === filterTeacherId)?.display_name ?? 'כל המורים';
   }, [filterTeacherId, teachers]);
+
+  const pickerClassGroups = useMemo(() => {
+    const q = classSearch.trim().toLowerCase();
+    const list = q
+      ? classes.filter((c) => c.name.toLowerCase().includes(q))
+      : classes;
+    return groupClassesByGrade(list.map((c) => ({ class: c })));
+  }, [classes, classSearch]);
 
   const pickerTeachers = useMemo(() => {
     const q = teacherSearch.trim().toLowerCase();
@@ -293,6 +298,17 @@ export default function AdminCreditLogScreen() {
       return true;
     });
   }, [entries, filterClassId, filterTeacherId, dateFrom, dateTo]);
+
+  function selectClass(id: string | 'all') {
+    setFilterClassId(id);
+    setClassPickerVisible(false);
+    setClassSearch('');
+  }
+
+  function openClassPicker() {
+    setClassSearch('');
+    setClassPickerVisible(true);
+  }
 
   function selectTeacher(id: string | 'all') {
     setFilterTeacherId(id);
@@ -372,31 +388,16 @@ export default function AdminCreditLogScreen() {
           <View style={pageContent}>
             <View style={S.filters}>
               <Text style={S.filterLabel}>כיתה</Text>
-              <View style={S.chipRow}>
-                <TouchableOpacity
-                  onPress={() => setFilterClassId('all')}
-                  style={[S.chip, filterClassId === 'all' ? S.chipActive : S.chipInactive, webPointer]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: filterClassId === 'all' }}
-                  accessibilityLabel="כל הכיתות"
-                >
-                  <Text style={[S.chipText, { color: filterClassId === 'all' ? '#fff' : '#334155' }]}>הכל</Text>
-                </TouchableOpacity>
-                {classes.map((c) => (
-                  <TouchableOpacity
-                    key={c.id}
-                    onPress={() => setFilterClassId(c.id)}
-                    style={[S.chip, filterClassId === c.id ? S.chipActive : S.chipInactive, webPointer]}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: filterClassId === c.id }}
-                    accessibilityLabel={c.name}
-                  >
-                    <Text style={[S.chipText, { color: filterClassId === c.id ? '#fff' : '#334155' }]}>
-                      {c.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <TouchableOpacity
+                onPress={openClassPicker}
+                style={[S.selectField, webPointer]}
+                accessibilityRole="button"
+                accessibilityLabel={`כיתה: ${selectedClassLabel}`}
+                accessibilityHint="פתח רשימת כיתות"
+              >
+                <Text style={S.selectFieldText}>{selectedClassLabel}</Text>
+                <ChevronDown size={18} color={Colors.muted} />
+              </TouchableOpacity>
 
               <Text style={[S.filterLabel, { marginTop: 8 }]}>מורה</Text>
               <TouchableOpacity
@@ -473,6 +474,92 @@ export default function AdminCreditLogScreen() {
           </View>
         </ScrollView>
       )}
+
+      <AdminSheet
+        visible={classPickerVisible}
+        onClose={() => {
+          setClassPickerVisible(false);
+          setClassSearch('');
+        }}
+        maxHeightFraction={0.75}
+      >
+        <Text style={AS.sheetTitle} accessibilityRole="header">בחירת כיתה</Text>
+
+        <TextInput
+          value={classSearch}
+          onChangeText={setClassSearch}
+          placeholder="חיפוש כיתה..."
+          placeholderTextColor="#94a3b8"
+          style={S.searchInput}
+          textAlign="right"
+          accessibilityLabel="חיפוש כיתה"
+        />
+
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity
+            onPress={() => selectClass('all')}
+            style={[
+              S.teacherRow,
+              filterClassId === 'all' ? S.teacherRowActive : S.teacherRowInactive,
+              webPointer,
+            ]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: filterClassId === 'all' }}
+            accessibilityLabel="כל הכיתות"
+          >
+            <Text
+              style={[
+                S.teacherRowText,
+                filterClassId === 'all' ? S.teacherRowTextActive : S.teacherRowTextInactive,
+              ]}
+            >
+              כל הכיתות
+            </Text>
+            {filterClassId === 'all' ? (
+              <Check size={18} color={Colors.primaryDark} />
+            ) : (
+              <View style={{ width: 18 }} />
+            )}
+          </TouchableOpacity>
+
+          {pickerClassGroups.length === 0 ? (
+            <Text style={[S.logMeta, { marginBottom: 12 }]}>לא נמצאו כיתות</Text>
+          ) : (
+            pickerClassGroups.map(({ grade, items }) => (
+              <View key={grade}>
+                <Text style={S.pickerGradeTitle}>כיתות {grade}</Text>
+                {items.map(({ class: cls }) => {
+                  const active = filterClassId === cls.id;
+                  return (
+                    <TouchableOpacity
+                      key={cls.id}
+                      onPress={() => selectClass(cls.id)}
+                      style={[S.teacherRow, active ? S.teacherRowActive : S.teacherRowInactive, webPointer]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: active }}
+                      accessibilityLabel={cls.name}
+                    >
+                      <Text
+                        style={[
+                          S.teacherRowText,
+                          active ? S.teacherRowTextActive : S.teacherRowTextInactive,
+                        ]}
+                      >
+                        {cls.name}
+                      </Text>
+                      {active ? (
+                        <Check size={18} color={Colors.primaryDark} />
+                      ) : (
+                        <View style={{ width: 18 }} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))
+          )}
+        </ScrollView>
+      </AdminSheet>
 
       <AdminSheet
         visible={teacherPickerVisible}

@@ -39,14 +39,14 @@ type DeedScheme = {
   thumbOn: string;
 };
 
-/** Fixed palette: tier 0 = 1–2 pts … tier 4 = 9–10 pts */
-const AMOUNT_TIER_SCHEMES: DeedScheme[] = [
-  { bg: Colors.peach,      text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    bubble: 'rgba(255,255,255,0.45)', icon: 'rgba(255,255,255,0.35)', thumbOn: Colors.primaryDark },
-  { bg: Colors.secondary,  text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)', thumbOn: '#004578' },
-  { bg: '#6BC99A',          text: '#ffffff',          sub: 'rgba(255,255,255,0.88)', bubble: 'rgba(255,255,255,0.38)', icon: 'rgba(255,255,255,0.28)', thumbOn: Colors.success },
-  { bg: Colors.accent,     text: '#ffffff',          sub: 'rgba(255,255,255,0.72)', bubble: 'rgba(255,255,255,0.28)', icon: 'rgba(255,255,255,0.22)', thumbOn: '#C44E1A' },
-  { bg: Colors.primary,    text: Colors.primaryDark, sub: 'rgba(120,89,0,0.65)',    bubble: 'rgba(255,255,255,0.45)', icon: 'rgba(255,255,255,0.22)', thumbOn: Colors.primaryDark },
-];
+const DEED_SCHEME_ACTIVE: DeedScheme = {
+  bg: '#fff',
+  text: Colors.text,
+  sub: Colors.muted,
+  bubble: Colors.surface,
+  icon: Colors.primaryLight,
+  thumbOn: Colors.success,
+};
 
 const INACTIVE_SCHEME: DeedScheme = {
   bg: '#fff',
@@ -57,10 +57,8 @@ const INACTIVE_SCHEME: DeedScheme = {
   thumbOn: Colors.primaryDark,
 };
 
-function schemeForAmount(amount: number, isActive: boolean): DeedScheme {
-  if (!isActive) return INACTIVE_SCHEME;
-  const tier = Math.min(Math.floor((amount - 1) / 2), AMOUNT_TIER_SCHEMES.length - 1);
-  return AMOUNT_TIER_SCHEMES[tier];
+function schemeForAmount(_amount: number, isActive: boolean): DeedScheme {
+  return isActive ? DEED_SCHEME_ACTIVE : INACTIVE_SCHEME;
 }
 
 function compareDeeds(a: Deed, b: Deed): number {
@@ -140,6 +138,9 @@ function DeedCube({
           </Text>
         </View>
         <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
+          <Text style={[S.cubeStatus, { color: scheme.sub }]}>
+            {deed.is_active ? 'פעיל' : 'מושבת'}
+          </Text>
           <PrimarySwitch
             variant={deed.is_active ? 'onColor' : 'default'}
             thumbOnColor={scheme.thumbOn}
@@ -148,9 +149,6 @@ function DeedCube({
             accessibilityLabel={`${deed.is_active ? 'השבת' : 'הפעל'} ${deed.name}`}
             accessibilityState={{ checked: deed.is_active }}
           />
-          <Text style={[S.cubeStatus, { color: scheme.sub }]}>
-            {deed.is_active ? 'פעיל' : 'מושבת'}
-          </Text>
         </View>
       </View>
     </View>
@@ -402,13 +400,15 @@ const S = StyleSheet.create({
   grid: { width: '100%' },
 
   cube: {
-    borderRadius: 22,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 10,
     minHeight: 168,
     overflow: 'hidden',
-    ...shadow('#000', 4, 12, 0.14, 6),
+    borderWidth: 1,
+    borderColor: 'rgba(212,197,171,0.4)',
+    ...shadow('#785900', 0, 8, 0.05, 12),
   },
   cubeDesktop: { minHeight: 180 },
   cubeInactive: {
@@ -441,11 +441,11 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: Colors.border,
   },
   cubeActionDanger: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: '#fff',
+    borderColor: 'rgba(186,26,26,0.15)',
   },
   cubeActionDangerMuted: {
     backgroundColor: Colors.dangerLight,
@@ -465,6 +465,7 @@ const S = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
     lineHeight: 38,
+    color: Colors.primaryDark,
   } as any,
   cubeName: {
     fontSize: 18,
@@ -477,7 +478,7 @@ const S = StyleSheet.create({
   } as any,
 
   cubeFooter: {
-    flexDirection: RTL_CHILD_ROW,
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: 12,

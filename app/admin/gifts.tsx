@@ -40,11 +40,11 @@ type GiftScheme = {
 };
 
 const GIFT_SCHEME_ACTIVE: GiftScheme = {
-  bg: '#6BC99A',
-  text: '#ffffff',
-  sub: 'rgba(255,255,255,0.88)',
-  bubble: 'rgba(255,255,255,0.38)',
-  icon: 'rgba(255,255,255,0.28)',
+  bg: '#fff',
+  text: Colors.text,
+  sub: Colors.muted,
+  bubble: Colors.surface,
+  icon: Colors.primaryLight,
   thumbOn: Colors.success,
 };
 
@@ -139,6 +139,9 @@ function GiftCube({
         </View>
 
         <View style={[S.cubeFooter, { backgroundColor: scheme.bubble }]}>
+          <Text style={[S.cubeStatus, { color: scheme.sub }]}>
+            {gift.is_active ? 'פעיל' : 'מושבת'}
+          </Text>
           <PrimarySwitch
             variant={gift.is_active ? 'onColor' : 'default'}
             thumbOnColor={scheme.thumbOn}
@@ -147,9 +150,6 @@ function GiftCube({
             accessibilityLabel={`${gift.is_active ? 'השבת' : 'הפעל'} ${gift.name}`}
             accessibilityState={{ checked: gift.is_active }}
           />
-          <Text style={[S.cubeStatus, { color: scheme.sub }]}>
-            {gift.is_active ? 'פעיל' : 'מושבת'}
-          </Text>
         </View>
       </View>
     </View>
@@ -395,13 +395,15 @@ const S = StyleSheet.create({
   grid: { width: '100%' },
 
   cube: {
-    borderRadius: 22,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 10,
     minHeight: 168,
     overflow: 'hidden',
-    ...shadow('#000', 4, 12, 0.14, 6),
+    borderWidth: 1,
+    borderColor: 'rgba(212,197,171,0.4)',
+    ...shadow('#785900', 0, 8, 0.05, 12),
   },
   cubeDesktop: { minHeight: 180 },
   cubeInactive: {
@@ -434,11 +436,11 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: Colors.border,
   },
   cubeActionDanger: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: '#fff',
+    borderColor: 'rgba(186,26,26,0.15)',
   },
   cubeActionDangerMuted: {
     backgroundColor: Colors.dangerLight,
@@ -470,7 +472,7 @@ const S = StyleSheet.create({
   } as any,
 
   cubeFooter: {
-    flexDirection: RTL_CHILD_ROW,
+    flexDirection: HEBREW_ROW,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: 12,
