@@ -211,6 +211,12 @@ Default mail is sent from `noreply@mail.supabase.io` and often lands in **junk**
 
 Re-inviting the same email sends a **password recovery** email instead of creating a duplicate user. If the teacher still cannot log in, use **Forgot password** on the login screen (after redirect URLs are fixed).
 
+### 6. Reset existing teacher passwords to `Bi123456`
+
+1. Run migration `supabase/migrations/009_admin_reset_teacher_passwords.sql` in the Supabase **SQL Editor** (or `supabase db push`).
+2. In the app: **Admin → Teachers → "אפס סיסמאות"** (or the key icon on one teacher).
+3. Admins are never changed. Teachers must sign in again with email + `Bi123456`.
+
 ---
 
 ## Quick reference

@@ -380,6 +380,14 @@ export type Database = {
         Args: { p_email: string; p_display_name: string }
         Returns: string
       }
+      admin_reset_teacher_passwords: {
+        Args: { p_password?: string }
+        Returns: number
+      }
+      admin_reset_teacher_password: {
+        Args: { p_user_id: string; p_password?: string }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
     }

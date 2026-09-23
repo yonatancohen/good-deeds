@@ -11,3 +11,8 @@ export function getTeacherInvitePassword(): string {
   const fromEnv = process.env.EXPO_PUBLIC_TEACHER_DEFAULT_PASSWORD?.trim();
   return fromEnv || SCHOOL_DEFAULT_PASSWORD;
 }
+
+/** Password applied when resetting existing teachers (matches invite default). */
+export function getSchoolDefaultPassword(): string {
+  return getTeacherInvitePassword();
+}

@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useState, useCallback } from 'react';
-import { UserCheck, Trash2, Plus, ChevronRight, FileUp, Pencil, Mail } from 'lucide-react-native';
+import { UserCheck, Trash2, Plus, ChevronRight, FileUp, Pencil, Mail, KeyRound } from 'lucide-react-native';
 import { Colors, TactileIconBtn, AddBtn } from '@/components/ui';
 import { AS, webPointer, useAdminLayout } from '@/lib/adminStyles';
 import { useBreakpoint } from '@/lib/responsive';
@@ -24,6 +24,8 @@ import { supabase } from '@/lib/supabase';
 import {
   AUTH_EMAIL_RATE_LIMIT_MESSAGE,
   inviteTeacher,
+  resetAllTeacherPasswords,
+  resetTeacherPassword,
   sendTeacherSetupEmail,
 } from '@/lib/teacherInvite';
 import {
@@ -203,6 +205,8 @@ export default function AdminTeachersScreen() {
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set());
   const [assigning, setAssigning] = useState(false);
   const [passwordEmailSendingId, setPasswordEmailSendingId] = useState<string | null>(null);
+  const [resettingPasswords, setResettingPasswords] = useState(false);
+  const [resettingTeacherId, setResettingTeacherId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     const [usersRes, classesRes, accessRes, settingsRes] = await Promise.all([
@@ -499,6 +503,51 @@ export default function AdminTeachersScreen() {
     );
   }
 
+  function handleResetTeacherPassword(teacher: UserRow) {
+    confirmAction(
+      'איפוס סיסמה',
+      `לאפס את הסיסמה של ${teacher.display_name} ל-${SCHOOL_DEFAULT_PASSWORD}?`,
+      async () => {
+        setResettingTeacherId(teacher.id);
+        const result = await resetTeacherPassword(teacher.id);
+        setResettingTeacherId(null);
+        if (!result.ok) {
+          Alert.alert('שגיאה', result.message);
+          return;
+        }
+        Alert.alert(
+          '✅ עודכן',
+          `${teacher.display_name} יכול להיכנס עם:\n${teacher.email}\n${SCHOOL_DEFAULT_PASSWORD}`,
+        );
+      },
+      'אפס סיסמה',
+    );
+  }
+
+  function handleResetAllTeacherPasswords() {
+    confirmAction(
+      'איפוס סיסמאות לכל המורים',
+      `לאפס את הסיסמה של כל המורים (לא מנהלים) ל-${SCHOOL_DEFAULT_PASSWORD}?\n\nהמורים יצטרכו להתחבר מחדש.`,
+      async () => {
+        setResettingPasswords(true);
+        const result = await resetAllTeacherPasswords();
+        setResettingPasswords(false);
+        if (!result.ok) {
+          Alert.alert(
+            'שגיאה',
+            `${result.message}\n\nאם הפונקציה לא קיימת — הריצו את מיגרציה 009_admin_reset_teacher_passwords ב-Supabase SQL Editor.`,
+          );
+          return;
+        }
+        Alert.alert(
+          '✅ עודכן',
+          `עודכנו ${result.count} מורים.\nסיסמה: ${SCHOOL_DEFAULT_PASSWORD}`,
+        );
+      },
+      'אפס הכל',
+    );
+  }
+
   return (
     <SafeAreaView style={AS.screen}>
       <View style={AS.header}>
@@ -510,6 +559,25 @@ export default function AdminTeachersScreen() {
             <Text style={AS.headerTitle} accessibilityRole="header">{t('teachers')}</Text>
           </View>
           <View style={{ flexDirection: HEBREW_ROW, gap: 8 }}>
+            {teachers.length > 0 && (
+              <AddBtn
+                onPress={() => {
+                  if (resettingPasswords) return;
+                  handleResetAllTeacherPasswords();
+                }}
+                light
+                accessibilityLabel={`אפס סיסמאות כל המורים ל${SCHOOL_DEFAULT_PASSWORD}`}
+              >
+                {resettingPasswords ? (
+                  <ActivityIndicator size="small" color={Colors.primaryDark} />
+                ) : (
+                  <KeyRound size={18} color={Colors.primaryDark} />
+                )}
+                {isDesktop && (
+                  <Text style={AS.addBtnText}>אפס סיסמאות</Text>
+                )}
+              </AddBtn>
+            )}
             {isDesktop && (
               <AddBtn
                 onPress={() => { setCsvVisible(true); setCsvPreview(null); setCsvPickError(null); }}
@@ -552,6 +620,20 @@ export default function AdminTeachersScreen() {
                         <Text style={S.teacherEmail}>{user.email}</Text>
                       </View>
                       <View style={S.teacherActions}>
+                        <TactileIconBtn
+                          onPress={() => {
+                            if (resettingTeacherId) return;
+                            handleResetTeacherPassword(user);
+                          }}
+                          style={AS.iconBtn}
+                          accessibilityLabel={`אפס סיסמה של ${user.display_name} ל${SCHOOL_DEFAULT_PASSWORD}`}
+                        >
+                          {resettingTeacherId === user.id ? (
+                            <ActivityIndicator size="small" color={Colors.primaryDark} />
+                          ) : (
+                            <KeyRound size={16} color={Colors.primaryDark} />
+                          )}
+                        </TactileIconBtn>
                         <TactileIconBtn
                           onPress={() => {
                             if (passwordEmailSendingId) return;

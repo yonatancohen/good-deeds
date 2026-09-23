@@ -276,3 +276,31 @@ export async function inviteTeacher(params: {
       `קישור ההגדרה חייב להיות מאושר: ${redirectTo}`,
   };
 }
+
+/** Reset every active teacher (not admin) to the school default password. */
+export async function resetAllTeacherPasswords(
+  password: string = getTeacherInvitePassword(),
+): Promise<{ ok: true; count: number } | { ok: false; message: string }> {
+  const { data, error } = await supabase.rpc('admin_reset_teacher_passwords', {
+    p_password: password,
+  });
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+  return { ok: true, count: typeof data === 'number' ? data : 0 };
+}
+
+/** Reset one teacher to the school default password. */
+export async function resetTeacherPassword(
+  userId: string,
+  password: string = getTeacherInvitePassword(),
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { error } = await supabase.rpc('admin_reset_teacher_password', {
+    p_user_id: userId,
+    p_password: password,
+  });
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+  return { ok: true };
+}
