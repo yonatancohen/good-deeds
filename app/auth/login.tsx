@@ -9,12 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Mail, Lock, ArrowRight } from 'lucide-react-native';
+import { Mail, Lock, ArrowRight, TriangleAlert, CircleCheck } from 'lucide-react-native';
 import '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +26,15 @@ import { getHomeRouteForRole } from '@/lib/navigation';
 import { sendTeacherSetupEmail } from '@/lib/teacherInvite';
 import { authRedirectUrl } from '@/lib/authRedirect';
 type Tab = 'password' | 'magic';
+
+type Banner = { tone: 'error' | 'success'; message: string };
+
+function mapSignInError(message: string): string {
+  if (message === 'Invalid login credentials') {
+    return 'אימייל או סיסמה שגויים. אם זו הפעם הראשונה, נסו את סיסמת בית הספר או בקשו איפוס מהמנהל.';
+  }
+  return message;
+}
 
 // ── Background blob (web: CSS radial gradient; native: tinted circle) ─────────
 function BlobDecoration() {
@@ -190,6 +198,42 @@ const S = StyleSheet.create({
     color: Colors.primaryDark, fontSize: 14, fontWeight: '600',
     fontFamily: 'Baloo2_700Bold',
   } as any,
+
+  banner: {
+    flexDirection: HEBREW_ROW,
+    alignItems: 'flex-start',
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 20,
+    width: '100%',
+  },
+  bannerError: {
+    backgroundColor: Colors.dangerLight,
+    borderColor: '#fecaca',
+  },
+  bannerSuccess: {
+    backgroundColor: Colors.successSurface,
+    borderColor: '#a7f3d0',
+  },
+  bannerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  bannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.primaryDark,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    lineHeight: 22,
+  } as any,
 });
 
 export default function LoginScreen() {
@@ -203,7 +247,12 @@ export default function LoginScreen() {
   const [password, setPassword]     = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [magicSent, setMagicSent]   = useState(false);
+  const [banner, setBanner]         = useState<Banner | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  function clearBanner() {
+    setBanner(null);
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -214,28 +263,63 @@ export default function LoginScreen() {
 
   async function handlePasswordLogin() {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('שגיאה', 'יש להזין אימייל וסיסמה');
+      setBanner({ tone: 'error', message: 'יש להזין אימייל וסיסמה' });
       return;
     }
+    clearBanner();
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
-    setSubmitting(false);
     if (error) {
-      Alert.alert(
-        'שגיאת כניסה',
-        error.message === 'Invalid login credentials' ? 'אימייל או סיסמה שגויים' : error.message,
-      );
+      setSubmitting(false);
+      setBanner({ tone: 'error', message: mapSignInError(error.message) });
+      return;
     }
+
+    const userId = data.user?.id ?? data.session?.user?.id;
+    if (!userId) {
+      setSubmitting(false);
+      setBanner({ tone: 'error', message: 'הכניסה נכשלה. נסו שוב.' });
+      return;
+    }
+
+    const { data: appUser, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profileError || !appUser?.role) {
+      await supabase.auth.signOut();
+      setSubmitting(false);
+      setBanner({
+        tone: 'error',
+        message:
+          'החשבון קיים אבל לא משויך למערכת בית הספר. פנו למנהל כדי לשייך את האימייל.',
+      });
+      return;
+    }
+
+    const route = getHomeRouteForRole(appUser.role);
+    if (route === '/auth/login') {
+      await supabase.auth.signOut();
+      setSubmitting(false);
+      setBanner({ tone: 'error', message: 'לחשבון אין הרשאת כניסה. פנו למנהל.' });
+      return;
+    }
+
+    setSubmitting(false);
+    router.replace(route);
   }
 
   async function handleMagicLink() {
     if (!email.trim()) {
-      Alert.alert('שגיאה', 'יש להזין כתובת אימייל');
+      setBanner({ tone: 'error', message: 'יש להזין כתובת אימייל' });
       return;
     }
+    clearBanner();
     setSubmitting(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
@@ -246,7 +330,7 @@ export default function LoginScreen() {
     });
     setSubmitting(false);
     if (error) {
-      Alert.alert('שגיאה', error.message);
+      setBanner({ tone: 'error', message: error.message });
     } else {
       setMagicSent(true);
     }
@@ -254,23 +338,25 @@ export default function LoginScreen() {
 
   async function handleForgotPassword() {
     if (!email.trim()) {
-      Alert.alert('שגיאה', 'יש להזין כתובת אימייל כדי לקבל קישור לאיפוס סיסמה');
+      setBanner({
+        tone: 'error',
+        message: 'יש להזין כתובת אימייל כדי לקבל קישור לאיפוס סיסמה',
+      });
       return;
     }
+    clearBanner();
     setSubmitting(true);
     const result = await sendTeacherSetupEmail(email.trim().toLowerCase());
     setSubmitting(false);
     if (!result.ok) {
-      Alert.alert(
-        result.rateLimited ? 'מגבלת שליחת מיילים' : 'שגיאה',
-        result.message,
-      );
+      setBanner({ tone: 'error', message: result.message });
       return;
     }
-    Alert.alert(
-      'נשלח מייל',
-      'נשלח קישור לאיפוס סיסמה. בדקו גם את תיקיית דואר הזבל. אפשר לשלוח שוב בכל עת.',
-    );
+    setBanner({
+      tone: 'success',
+      message:
+        'נשלח קישור לאיפוס סיסמה. בדקו גם את תיקיית דואר הזבל. אפשר לשלוח שוב בכל עת.',
+    });
   }
 
   async function handleResendMagicLink() {
@@ -329,7 +415,7 @@ export default function LoginScreen() {
                 return (
                   <TouchableOpacity
                     key={tabId}
-                    onPress={() => { setTab(tabId); setMagicSent(false); }}
+                    onPress={() => { setTab(tabId); setMagicSent(false); clearBanner(); }}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
                     accessibilityLabel={tabId === 'password' ? 'כניסה עם סיסמה' : 'כניסה עם קישור לאימייל'}
@@ -352,6 +438,26 @@ export default function LoginScreen() {
             {/* ── Login card (glass on web) ── */}
             <Card glass style={{ padding: 24 }}>
 
+              {banner && tab === 'password' ? (
+                <View
+                  style={[
+                    S.banner,
+                    banner.tone === 'error' ? S.bannerError : S.bannerSuccess,
+                  ]}
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                >
+                  <View style={S.bannerIcon}>
+                    {banner.tone === 'error' ? (
+                      <TriangleAlert size={20} color={Colors.danger} />
+                    ) : (
+                      <CircleCheck size={20} color={Colors.success} />
+                    )}
+                  </View>
+                  <Text style={S.bannerText}>{banner.message}</Text>
+                </View>
+              ) : null}
+
               {/* Password tab */}
               {tab === 'password' && (
                 <View>
@@ -359,7 +465,7 @@ export default function LoginScreen() {
                     <View style={[S.inputRow, focusedField === 'email-pw' && S.inputRowFocused]}>
                       <TextInput
                         value={email}
-                        onChangeText={setEmail}
+                        onChangeText={(v) => { setEmail(v); clearBanner(); }}
                         placeholder="teacher@school.com"
                         placeholderTextColor={Colors.outline}
                         keyboardType="email-address"
@@ -381,7 +487,7 @@ export default function LoginScreen() {
                     <View style={[S.inputRow, focusedField === 'password' && S.inputRowFocused]}>
                       <TextInput
                         value={password}
-                        onChangeText={setPassword}
+                        onChangeText={(v) => { setPassword(v); clearBanner(); }}
                         placeholder="••••••••"
                         placeholderTextColor={Colors.outline}
                         secureTextEntry
@@ -416,6 +522,18 @@ export default function LoginScreen() {
               {/* Magic link tab */}
               {tab === 'magic' && (
                 <View>
+                  {banner ? (
+                    <View
+                      style={[S.banner, S.bannerError]}
+                      accessibilityRole="alert"
+                      accessibilityLiveRegion="polite"
+                    >
+                      <View style={S.bannerIcon}>
+                        <TriangleAlert size={20} color={Colors.danger} />
+                      </View>
+                      <Text style={S.bannerText}>{banner.message}</Text>
+                    </View>
+                  ) : null}
                   {magicSent ? (
                     <View style={S.magicSentWrap}>
                       <View style={S.mailIcon}>
@@ -448,7 +566,7 @@ export default function LoginScreen() {
                         <View style={[S.inputRow, focusedField === 'email-magic' && S.inputRowFocused]}>
                           <TextInput
                             value={email}
-                            onChangeText={setEmail}
+                            onChangeText={(v) => { setEmail(v); clearBanner(); }}
                             placeholder="teacher@school.com"
                             placeholderTextColor={Colors.outline}
                             keyboardType="email-address"
