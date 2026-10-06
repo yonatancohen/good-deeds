@@ -859,8 +859,7 @@ export default function ClassDetailScreen() {
   const goal = settings?.global_goal ?? 100;
 
   // Local optimistic state
-  const [locallyAddedStudents,   setLocallyAddedStudents]   = useState<Array<{ student: StudentRow; credits: number }>>([]);
-  const [localCreditAdjustments, setLocalCreditAdjustments] = useState<Record<string, number>>({});
+  const [locallyAddedStudents, setLocallyAddedStudents] = useState<Array<{ student: StudentRow; credits: number }>>([]);
   const [localClassCredits, setLocalClassCredits] = useState(0);
 
   // Sheet visibility
@@ -884,15 +883,9 @@ export default function ClassDetailScreen() {
 
   // Derived student list (with optimistic mutations)
   const visibleStudents = useMemo(() => [
-    ...students.map(({ student, credits }) => ({
-      student,
-      credits: credits + (localCreditAdjustments[student.id] ?? 0),
-    })),
-    ...locallyAddedStudents.map(({ student, credits }) => ({
-      student,
-      credits: credits + (localCreditAdjustments[student.id] ?? 0),
-    })),
-  ], [students, locallyAddedStudents, localCreditAdjustments]);
+    ...students,
+    ...locallyAddedStudents,
+  ], [students, locallyAddedStudents]);
 
   const filteredStudents = useMemo(() => {
     const q = studentSearch.trim().toLowerCase();
@@ -925,7 +918,6 @@ export default function ClassDetailScreen() {
 
   function refreshCredits() {
     setLocalClassCredits(0);
-    setLocalCreditAdjustments({});
     refetch();
   }
 
@@ -1239,12 +1231,8 @@ export default function ClassDetailScreen() {
         deeds={deeds}
         userId={user?.id ?? ''}
         onClose={() => setGiveCreditStudent(null)}
-        onSuccess={(studentId, amount) => {
+        onSuccess={() => {
           setGiveCreditStudent(null);
-          setLocalCreditAdjustments((prev) => ({
-            ...prev,
-            [studentId]: (prev[studentId] ?? 0) + amount,
-          }));
           refetch();
         }}
       />
