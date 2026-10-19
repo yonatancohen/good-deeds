@@ -20,6 +20,7 @@ export interface Class {
   name: string;
   grade: string | null;
   year: string | null;
+  points_goal: number | null;
   created_at: string;
 }
 

@@ -25,6 +25,7 @@ import { StaggeredItem } from '@/components/StaggeredItem';
 import { DepthShell } from '@/lib/DepthShell';
 import { shadow } from '@/lib/shadow';
 import { useAuth } from '@/contexts/AuthContext';
+import { resolveClassGoal } from '@/lib/classGoal';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/lib/supabase';
 import { useTeacherClassesWithProgress, type TeacherClassWithProgress } from '@/hooks/useTeacherClassesWithProgress';
@@ -328,7 +329,7 @@ export default function TeacherHome() {
   const { classes, loading, error } = useTeacherClassesWithProgress();
   const { width: screenWidth } = useWindowDimensions();
   const { isDesktop, pageContent, contentMaxW, pagePadX } = useAdminLayout();
-  const goal  = settings?.global_goal ?? 100;
+  const globalGoal = settings?.global_goal;
 
   const displayName = useMemo(() => {
     return user?.display_name ?? user?.email?.split('@')[0] ?? 'מורה';
@@ -455,7 +456,7 @@ export default function TeacherHome() {
                       >
                         <TeacherClassCard
                           item={item}
-                          goal={goal}
+                          goal={resolveClassGoal(item.class, globalGoal)}
                           compact={cols >= 3}
                           cardWidth={cardWidth}
                           onPress={() =>

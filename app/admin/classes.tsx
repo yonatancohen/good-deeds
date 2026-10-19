@@ -115,6 +115,7 @@ export default function AdminClassesScreen() {
   const router = useRouter();
   const { settings } = useSettings();
   const currentYear = settings?.current_year ?? '';
+  const globalGoalDefault = settings?.global_goal ?? 100;
   const [classes, setClasses]       = useState<ClassRow[]>([]);
   const [loading, setLoading]       = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -124,6 +125,7 @@ export default function AdminClassesScreen() {
 
   const [selGrade, setSelGrade] = useState('');
   const [selNum,   setSelNum]   = useState('');
+  const [pointsGoal, setPointsGoal] = useState('');
   const [saving,   setSaving]   = useState(false);
 
   const previewName = buildName(selGrade, selNum);
@@ -192,6 +194,7 @@ export default function AdminClassesScreen() {
   function openAdd() {
     setEditingClass(null);
     setSelGrade(''); setSelNum('');
+    setPointsGoal('');
     setModalVisible(true);
   }
 
@@ -200,6 +203,7 @@ export default function AdminClassesScreen() {
     const parsed = parseClassName(cls.name);
     setSelGrade(parsed.grade);
     setSelNum(parsed.num);
+    setPointsGoal(cls.points_goal != null ? String(cls.points_goal) : '');
     setModalVisible(true);
   }
 
@@ -208,15 +212,27 @@ export default function AdminClassesScreen() {
     setEditingClass(null);
     setSelGrade('');
     setSelNum('');
+    setPointsGoal('');
   }
 
   async function handleSave() {
     if (!canSave) { Alert.alert('שגיאה', 'יש לבחור שכבה ומספר כיתה'); return; }
+    const trimmedGoal = pointsGoal.trim();
+    let parsedGoal: number | null = null;
+    if (trimmedGoal !== '') {
+      const goalNum = parseInt(trimmedGoal, 10);
+      if (isNaN(goalNum) || goalNum < 1 || goalNum > 10000) {
+        Alert.alert('שגיאה', 'מטרת הנקודות חייבת להיות מספר בין 1 ל-10,000');
+        return;
+      }
+      parsedGoal = goalNum;
+    }
     setSaving(true);
     const payload = {
       name:  previewName,
       grade: selGrade,
       year:  currentYear || bulkEffectiveYear || null,
+      points_goal: parsedGoal,
     };
 
     let error: { message: string } | null = null;
@@ -319,6 +335,9 @@ export default function AdminClassesScreen() {
                   </View>
                   <View style={AS.rowLeft}>
                     <Text style={AS.rowTitle}>כיתה {cls.name}</Text>
+                    {cls.points_goal != null ? (
+                      <Text style={S.classGoalSub}>מטרה: {cls.points_goal} נקודות</Text>
+                    ) : null}
                   </View>
                   <View style={AS.rowActions}>
                     <TactileIconBtn onPress={() => setUploadClass(cls)} style={AS.iconBtnSecondary} shadowColor="rgba(0,96,172,0.2)" accessibilityLabel={`העלאת תלמידים לכיתה ${cls.name}`}>
@@ -427,6 +446,21 @@ export default function AdminClassesScreen() {
               <Text style={AS.fieldHint}>בחר מספר מקבילה</Text>
               <PillGroup options={NUMBERS} value={selNum} onSelect={setSelNum} label="מספר כיתה" />
 
+              <Text style={[AS.fieldLabel, { marginTop: 16 }]}>{t('classPointsGoal')}</Text>
+              <Text style={AS.fieldHint}>
+                {t('classPointsGoalHint', { globalGoal: globalGoalDefault })}
+              </Text>
+              <TextInput
+                value={pointsGoal}
+                onChangeText={setPointsGoal}
+                placeholder={t('classPointsGoalPlaceholder')}
+                placeholderTextColor="#94a3b8"
+                keyboardType="number-pad"
+                textAlign="right"
+                style={AS.inputSmall}
+                accessibilityLabel={t('classPointsGoal')}
+              />
+
               {/* Preview */}
               {previewName ? (
                 <View style={S.preview}>
@@ -515,6 +549,9 @@ const S = StyleSheet.create({
   classCircleText: {
     fontSize: 18, fontWeight: '700',
     fontFamily: 'Baloo2_700Bold',
+  } as any,
+  classGoalSub: {
+    color: '#64748b', fontSize: 12, marginTop: 2, textAlign: 'right', writingDirection: 'rtl',
   } as any,
 
   // Stepper

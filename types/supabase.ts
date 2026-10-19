@@ -63,6 +63,7 @@ export type Database = {
           grade: string | null
           id: string
           name: string
+          points_goal: number | null
           year: string | null
         }
         Insert: {
@@ -71,6 +72,7 @@ export type Database = {
           grade?: string | null
           id?: string
           name: string
+          points_goal?: number | null
           year?: string | null
         }
         Update: {
@@ -79,6 +81,7 @@ export type Database = {
           grade?: string | null
           id?: string
           name?: string
+          points_goal?: number | null
           year?: string | null
         }
         Relationships: []
