@@ -41,6 +41,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminLayout } from '@/lib/adminStyles';
 import { confirmAction } from '@/lib/confirm';
 import { safeBack } from '@/lib/navigation';
+import { resolveClassGoal } from '@/lib/classGoal';
 import { supabase } from '@/lib/supabase';
 
 import type { Tables } from '@/types/supabase';
@@ -856,7 +857,7 @@ export default function ClassDetailScreen() {
     refetch,
   } = useClassStudents(classId ?? null);
 
-  const goal = settings?.global_goal ?? 100;
+  const goal = resolveClassGoal(classRow, settings?.global_goal);
 
   // Local optimistic state
   const [locallyAddedStudents, setLocallyAddedStudents] = useState<Array<{ student: StudentRow; credits: number }>>([]);

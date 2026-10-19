@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { resolveClassGoal } from '@/lib/classGoal';
 import { filterClassesByCurrentYear } from '@/lib/schoolYear';
 import type { Tables } from '@/types/supabase';
 
@@ -23,7 +24,7 @@ export interface ClassWithProgress {
   classCredits: number;
   /** Sum of all student credits since last redemption */
   total: number;
-  /** Goal from global settings */
+  /** Effective points goal (class override or global default) */
   goal: number;
   /** Whether class has met (or exceeded) the goal */
   goalReached: boolean;
@@ -83,7 +84,7 @@ export function usePublicData(): UsePublicData {
         classCreditsRes.data ?? [];
       const redemptions: Pick<RedemptionRound, 'class_id' | 'redeemed_at'>[] = redemptionsRes.data ?? [];
 
-      const goal = fetchedSettings?.global_goal ?? 100;
+      const globalGoal = fetchedSettings?.global_goal ?? 100;
 
       const prizesWonByClass = new Map<string, number>();
       for (const r of redemptions) {
@@ -158,6 +159,7 @@ export function usePublicData(): UsePublicData {
         const studentTotal = classStudents.reduce((sum, s) => sum + s.credits, 0);
         const classExtra = classLevelCredits.get(cls.id) ?? 0;
         const total = studentTotal + classExtra;
+        const goal = resolveClassGoal(cls, globalGoal);
         const cappedTotal = Math.min(total, goal);
         const lastRedemption = lastRedemptionByClass.get(cls.id) ?? null;
 
